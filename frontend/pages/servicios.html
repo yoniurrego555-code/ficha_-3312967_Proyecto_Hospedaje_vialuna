@@ -1,265 +1,134 @@
-<section class="hero">
-  <div>
-    <h2>Módulo de Servicios</h2>
-    <p>Crea, consulta, edita y elimina servicios adicionales</p>
-  </div>
-  <div class="badge">CRUD conectado</div>
-</section>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicios | Via Luna</title>
+    <link rel="stylesheet" href="../css/admin-theme.css">
+</head>
+<body>
+    <div class="mobile-topbar">
+        <button class="secondary menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="backendSidebar">
+            <span></span><span></span><span></span>
+        </button>
+        <strong>Servicios</strong>
+    </div>
+    <div class="layout">
+        <aside class="sidebar" id="backendSidebar">
+            <div class="brand">
+                <h1>Via Luna</h1>
+                <p>Administra el catalogo de servicios con la misma interfaz visual que el resto del sistema.</p>
+            </div>
 
-<section class="grid">
-  <article class="panel">
-    <div class="panel-header">
-      <h3>Formulario</h3>
-      <p id="formTitle">Registra un nuevo servicio</p>
+            <nav class="admin-nav" aria-label="Modulos del sistema">
+                <a class="admin-link icon-room" href="habitaciones.html">Habitaciones</a>
+                <a class="admin-link icon-package" href="paquetes.html">Paquetes</a>
+                <a class="admin-link icon-service active" href="servicios.html">Servicios</a>
+                <a class="admin-link icon-user" href="usuarios.html">Usuarios</a>
+                <a class="admin-link icon-reservation" href="reservas.html">Reservas</a>
+            </nav>
+
+            <div class="sidebar-actions">
+                <button class="primary icon-new" id="btnNuevoServicio" type="button">Nuevo servicio</button>
+                <button class="secondary icon-reload" id="btnRecargar" type="button">Recargar listado</button>
+                <button class="ghost icon-clear" id="btnLimpiarBusqueda" type="button">Limpiar busqueda</button>
+            </div>
+
+            <div class="sidebar-stats">
+                <div class="stat-card">
+                    <span>Total de servicios</span>
+                    <strong id="totalServicios">0</strong>
+                </div>
+                <div class="stat-card">
+                    <span>Disponibles</span>
+                    <strong id="totalDisponibles">0</strong>
+                </div>
+                <div class="stat-card">
+                    <span>No disponibles</span>
+                    <strong id="totalNoDisponibles">0</strong>
+                </div>
+            </div>
+
+            <div class="auth-card">
+                <h3>Acceso rapido</h3>
+                <p>La autenticacion publica sigue disponible desde aqui con una caja consistente en todos los modulos.</p>
+                <div class="auth-links">
+                    <a class="secondary icon-register" href="registro.html">Crear cuenta</a>
+                    <a class="primary icon-login" href="login.html">Iniciar sesion</a>
+                    <a class="ghost icon-recover" href="recuperar.html">Recuperar cuenta</a>
+                    <a class="ghost icon-delete-account" href="eliminar-cuenta.html">Eliminar cuenta</a>
+                </div>
+            </div>
+        </aside>
+
+        <main class="content">
+            <section class="hero">
+                <div>
+                    <h2>Modulo de servicios</h2>
+                    <p>Crea, consulta, edita y elimina servicios adicionales. Tambien puedes cambiar su estado para controlar su disponibilidad comercial.</p>
+                </div>
+                <div class="badge">CRUD conectado</div>
+            </section>
+
+            <section class="grid">
+                <article class="panel">
+                    <div class="panel-header">
+                        <h3>Formulario</h3>
+                        <p id="formTitle">Registra un nuevo servicio</p>
+                    </div>
+
+                    <div id="mensaje" class="message"></div>
+
+                    <form id="servicioForm">
+                        <input type="hidden" id="servicioId">
+
+                        <div class="field">
+                            <label for="nombre">Nombre</label>
+                            <input type="text" id="nombre" name="nombre" placeholder="Ej. Spa, desayuno premium" required>
+                        </div>
+
+                        <div class="field">
+                            <label for="descripcion">Descripcion</label>
+                            <textarea id="descripcion" name="descripcion" placeholder="Describe que incluye el servicio."></textarea>
+                        </div>
+
+                        <div class="field-grid">
+                            <div class="field">
+                                <label for="precio">Precio</label>
+                                <input type="number" id="precio" name="precio" min="0" step="0.01" placeholder="450" required>
+                            </div>
+                            <div class="field">
+                                <label for="estado">Estado</label>
+                                <select id="estado" name="estado" required>
+                                    <option value="disponible">Disponible</option>
+                                    <option value="no_disponible">No disponible</option>
+                                    <option value="inactivo">Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="actions">
+                            <button class="primary" type="submit" id="submitButton">Guardar servicio</button>
+                            <button class="secondary" type="button" id="btnCancelarEdicion">Cancelar</button>
+                        </div>
+                    </form>
+                </article>
+
+                <article class="panel">
+                    <div class="toolbar">
+                        <input class="search" type="search" id="buscador" placeholder="Buscar por nombre, descripcion o estado">
+                        <button class="secondary" type="button" id="btnListar">Listar servicios</button>
+                    </div>
+
+                    <div id="serviciosContainer" class="cards">
+                        <div class="empty">Cargando servicios...</div>
+                    </div>
+                </article>
+            </section>
+        </main>
     </div>
 
-    <div id="mensaje" class="message"></div>
-
-    <form id="servicioForm">
-      <input type="hidden" id="servicioId">
-
-      <div class="field">
-        <label for="nombre">Nombre</label>
-        <input type="text" id="nombre" name="nombre" placeholder="Ej. Spa, desayuno premium" required>
-      </div>
-
-      <div class="field">
-        <label for="descripcion">Descripción</label>
-        <textarea id="descripcion" name="descripcion" placeholder="Describe que incluye el servicio."></textarea>
-      </div>
-
-      <div class="field-grid">
-        <div class="field">
-          <label for="precio">Precio</label>
-          <input type="number" id="precio" name="precio" min="0" step="0.01" placeholder="450" required>
-        </div>
-        <div class="field">
-          <label for="estado">Estado</label>
-          <select id="estado" name="estado" required>
-            <option value="disponible">Disponible</option>
-            <option value="no_disponible">No disponible</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="primary" type="submit" id="submitButton">Guardar servicio</button>
-        <button class="secondary" type="button" id="btnCancelarEdicion">Cancelar</button>
-      </div>
-    </form>
-  </article>
-
-  <article class="panel">
-    <div class="toolbar">
-      <input class="search" type="search" id="buscador" placeholder="Buscar por nombre, descripción o estado">
-      <button class="secondary" type="button" id="btnListar">Listar servicios</button>
-    </div>
-
-    <div id="serviciosContainer" class="cards">
-      <div class="empty">Cargando servicios...</div>
-    </div>
-  </article>
-</section>
-
-<script>
-// API REST CONEXIÓN PARA SERVICIOS
-class ServiciosAPI {
-  constructor() {
-    this.baseURL = 'http://localhost:3000/api';
-    // No auto-inicializar en constructor
-  }
-
-  inicializar() {
-    console.log('Inicializando módulo de servicios con API...');
-    setTimeout(() => {
-      this.cargarServicios();
-      this.configurarEventos();
-    }, 500);
-  }
-
-  async cargarServicios() {
-    try {
-      const container = document.getElementById('serviciosContainer');
-      if (!container) {
-        console.error('Elemento serviciosContainer no encontrado');
-        return;
-      }
-      container.innerHTML = '<div class="loading">Cargando servicios...</div>';
-
-      const response = await fetch(`${this.baseURL}/servicios`);
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudieron cargar los servicios`);
-      }
-      
-      const servicios = await response.json();
-      this.renderServicios(servicios);
-      
-    } catch (error) {
-      console.error('Error al cargar servicios:', error);
-      this.mostrarMensaje('Error al cargar servicios: ' + error.message, 'error');
-
-    }
-  }
-
-  renderServicios(servicios) {
-    const container = document.getElementById('serviciosContainer');
-    if (!container) {
-      console.error('Elemento serviciosContainer no encontrado en renderServicios');
-      return;
-    }
-    
-    if (servicios.length === 0) {
-      container.innerHTML = '<div class="empty">No hay servicios configurados</div>';
-      return;
-    }
-
-    container.innerHTML = servicios.map(serv => `
-      <div class="card">
-        <h4>${serv.NombreServicio || serv.nombre}</h4>
-        <p>${serv.Descripcion || serv.descripcion || 'Sin descripción'}</p>
-        <div class="card-actions">
-          <span class="price">$${serv.Costo || serv.precio || 0}</span>
-          <span class="status ${serv.Estado == 1 || serv.estado === 'disponible' ? 'active' : 'inactive'}">
-            ${serv.Estado || serv.estado}
-          </span>
-        </div>
-        <div class="card-buttons">
-          <button class="secondary" onclick="editarServicio(${serv.IDServicio || serv.id})">Editar</button>
-          <button class="ghost" onclick="eliminarServicio(${serv.IDServicio || serv.id})">Eliminar</button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  getDatosEjemplo() {
-    return [
-      {
-        IDServicio: 1,
-        NombreServicio: 'Spa',
-        Descripcion: 'Tratamientos de relajación y bienestar',
-        Precio: 150000,
-        Estado: 'disponible'
-      },
-      {
-        IDServicio: 2,
-        NombreServicio: 'Desayuno Premium',
-        Descripcion: 'Desayuno buffet incluido',
-        Precio: 45000,
-        Estado: 'disponible'
-      }
-    ];
-  }
-
-  mostrarMensaje(mensaje, tipo) {
-    const mensajeDiv = document.getElementById('mensaje');
-    if (mensajeDiv) {
-      mensajeDiv.className = tipo;
-      mensajeDiv.textContent = mensaje;
-      setTimeout(() => {
-        mensajeDiv.textContent = '';
-        mensajeDiv.className = '';
-      }, 3000);
-    }
-  }
-
-  configurarEventos() {
-    const form = document.getElementById('servicioForm');
-    if (form) {
-      form.addEventListener('submit', (e) => this.guardarServicio(e));
-    }
-  }
-
-  async guardarServicio(e) {
-    e.preventDefault();
-    const id = document.getElementById('servicioId').value;
-    const datos = {
-      NombreServicio: document.getElementById('nombre').value,
-      Descripcion: document.getElementById('descripcion').value,
-      Costo: parseFloat(document.getElementById('precio').value),
-      Estado: document.getElementById('estado').value === 'disponible' ? 1 : 0,
-      Duracion: '1 hora',
-      CantidadMaximaPersonas: 1
-    };
-
-    try {
-      const url = id ? `${this.baseURL}/servicios/${id}` : `${this.baseURL}/servicios`;
-      const method = id ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
-      });
-
-      if (!response.ok) throw new Error('Error al guardar servicio');
-
-      this.mostrarMensaje(id ? 'Servicio actualizado' : 'Servicio creado', 'success');
-      document.getElementById('servicioForm').reset();
-      document.getElementById('servicioId').value = '';
-      this.cargarServicios();
-    } catch (error) {
-      console.error('Error al guardar servicio:', error);
-      this.mostrarMensaje('Error al guardar: ' + error.message, 'error');
-    }
-  }
-  async obtenerServicio(id) {
-    try {
-      const response = await fetch(`${this.baseURL}/servicios/${id}`);
-      if (!response.ok) throw new Error('Servicio no encontrado');
-      return await response.json();
-    } catch (error) {
-      this.mostrarMensaje('Error al obtener servicio: ' + error.message, 'error');
-      return null;
-    }
-  }
-
-  async eliminarServicio(id) {
-    try {
-      const response = await fetch(`${this.baseURL}/servicios/${id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error(`Error ${response.status}`);
-      this.mostrarMensaje('Servicio eliminado exitosamente', 'success');
-      this.cargarServicios();
-    } catch (error) {
-      this.mostrarMensaje('Error al eliminar servicio: ' + error.message, 'error');
-    }
-  }
-}
-
-// Funciones globales
-async function editarServicio(id) {
-  if (window.serviciosApi) {
-    const serv = await window.serviciosApi.obtenerServicio(id);
-    if (serv) {
-      document.getElementById('servicioId').value = serv.IDServicio;
-      document.getElementById('nombre').value = serv.NombreServicio;
-      document.getElementById('descripcion').value = serv.Descripcion || '';
-      document.getElementById('precio').value = serv.Costo;
-      document.getElementById('estado').value = serv.Estado === 1 ? 'disponible' : 'no_disponible';
-      
-      document.getElementById('formTitle').textContent = `Editar Servicio #${serv.IDServicio}`;
-      window.scrollTo(0, 0);
-    }
-  }
-}
-
-function eliminarServicio(id) {
-  if (confirm('¿Está seguro de eliminar este servicio?')) {
-    if (window.serviciosApi) {
-      window.serviciosApi.eliminarServicio(id);
-    }
-  }
-}
-
-// Función de inicialización
-function inicializarServiciosAPI() {
-  if (!window.serviciosApi) {
-    window.serviciosApi = new ServiciosAPI();
-    window.serviciosApi.inicializar();
-}
-}
-
-window.inicializarServiciosAPI = inicializarServiciosAPI;
-window.editarServicio = editarServicio;
-window.eliminarServicio = eliminarServicio;
-</script>
+    <script src="../js/shared/admin-layout.js"></script>
+    <script type="module" src="../js/servicios.js"></script>
+</body>
+</html>

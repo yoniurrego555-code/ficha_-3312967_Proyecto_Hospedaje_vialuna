@@ -1,5 +1,5 @@
-import { createCrudModule } from './core/crud-module.js';
-import { apiUrl, getConnectionErrorMessage } from './core/api-config.js';
+import { createCrudModule } from './shared/crud-module.js';
+import { apiUrl, getConnectionErrorMessage } from './shared/api-config.js';
 
 function siguienteRol(rolActual) {
     return rolActual === 'admin' ? 'usuario' : 'admin';

@@ -1,4 +1,4 @@
-import { createCrudModule, escapeHtml } from './core/crud-module.js';
+import { createCrudModule, escapeHtml } from './shared/crud-module.js';
 
 const API = 'http://localhost:3000/api';
 

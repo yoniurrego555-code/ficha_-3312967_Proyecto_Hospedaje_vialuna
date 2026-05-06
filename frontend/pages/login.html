@@ -1,12 +1,121 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login | ViaLuna</title>
-  <script>
-    window.location.replace("./public/login.html" + window.location.search);
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Via Luna | Iniciar sesion</title>
+    <link rel="stylesheet" href="../css/public-theme.css">
 </head>
-<body></body>
+<body>
+    <main class="auth-shell">
+        <section class="split-card">
+            <aside class="side-panel">
+                <div>
+                    <div class="badge">Acceso</div>
+                    <h1>Inicia sesion y continua tu reserva</h1>
+                    <p>
+                        Este acceso ya forma parte del flujo publico. Si vienes desde habitaciones o servicios,
+                        despues del login te enviaremos a la pestaña unica de reserva.
+                    </p>
+                </div>
+
+                <ul>
+                    <li>Diseno alineado con la landing y el proceso de reserva.</li>
+                    <li>Enlaces visibles para crear cuenta y recuperar acceso.</li>
+                    <li>Redireccion automatica a `reservar.html` para usuarios normales.</li>
+                </ul>
+
+                <div class="side-actions">
+                    <a class="button light" href="index.html">Volver al inicio</a>
+                    <a class="button ghost" href="reservar.html">Ir a reservar</a>
+                </div>
+            </aside>
+
+            <section class="form-panel">
+                <h2>Iniciar sesion</h2>
+                <p>Ingresa tus credenciales para continuar.</p>
+
+                <div class="form-card">
+                    <form id="loginForm">
+                        <div class="field">
+                            <label for="email">Correo electronico</label>
+                            <input id="email" name="email" type="email" placeholder="tucorreo@ejemplo.com" required>
+                        </div>
+
+                        <div class="field">
+                            <label for="password">Contrasena</label>
+                            <input id="password" name="password" type="password" placeholder="Ingresa tu contrasena" required>
+                        </div>
+
+                        <p class="helper">Si tu cuenta es de cliente te llevaremos a `reservar.html`. Si es admin, mantendremos el acceso interno.</p>
+
+                        <button class="button primary" id="submitButton" type="submit">Entrar</button>
+                    </form>
+
+                    <div id="message" class="message"></div>
+
+                    <div class="support-links">
+                        <a href="registro.html">Crear cuenta</a>
+                        <a href="recuperar.html">Recuperar cuenta</a>
+                        <a href="eliminar-cuenta.html">Eliminar cuenta</a>
+                        <a href="reservar.html">Reservar sin perder el flujo</a>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <script type="module">
+        import { loginUsuario } from '../js/usuarios.js';
+
+        const redirectParam = new URLSearchParams(window.location.search).get('redirect');
+        const form = document.getElementById('loginForm');
+        const message = document.getElementById('message');
+        const submitButton = document.getElementById('submitButton');
+
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = `message show ${type}`;
+        }
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            submitButton.disabled = true;
+            submitButton.textContent = 'Ingresando...';
+            message.className = 'message';
+            message.textContent = '';
+
+            try {
+                const response = await loginUsuario({
+                    email: form.email.value.trim(),
+                    password: form.password.value
+                });
+
+                if (!response.token) {
+                    throw new Error(response.mensaje || response.error || 'No fue posible iniciar sesion');
+                }
+
+                localStorage.setItem('token', response.token);
+                if (response.user) {
+                    localStorage.setItem('usuario', JSON.stringify(response.user));
+                }
+
+                showMessage('Inicio de sesion exitoso. Redirigiendo...', 'success');
+
+                const destino = response.user && response.user.rol === 'admin'
+                    ? 'usuarios.html'
+                    : (redirectParam || 'reservar.html');
+
+                window.setTimeout(() => {
+                    window.location.href = destino;
+                }, 900);
+            } catch (error) {
+                showMessage(error.message || 'Ocurrio un error al iniciar sesion.', 'error');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Entrar';
+            }
+        });
+    </script>
+</body>
 </html>

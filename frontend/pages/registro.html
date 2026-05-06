@@ -78,7 +78,7 @@
     </main>
 
     <script type="module">
-        import { apiUrl, getConnectionErrorMessage } from '../js/core/api-config.js';
+        import { apiUrl, getConnectionErrorMessage } from '../js/shared/api-config.js';
 
         const redirectParam = new URLSearchParams(window.location.search).get('redirect');
         const form = document.getElementById('registerForm');
@@ -225,13 +225,13 @@
 
         <div class="auth-actions">
           <button type="submit" class="btn btn-primary">Registrarse</button>
-          <a class="btn btn-secondary" href="./public/login.html">Volver al login</a>
+          <a class="btn btn-secondary" href="../public/login.html">Volver al login</a>
         </div>
       </form>
     </section>
   </main>
 
-  <script type="module" src="../js/core/auth.js"></script>
+  <script type="module" src="../dashboard/core/auth.js"></script>
 >>>>>>> 0e0a6ca006747a8b66194f972a2a4bebc4c44336
 </body>
 </html>

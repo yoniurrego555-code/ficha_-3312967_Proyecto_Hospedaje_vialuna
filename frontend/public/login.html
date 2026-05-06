@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | ViaLuna</title>
+  <link rel="stylesheet" href="../styles/login.css">
+</head>
+<body>
+  <main class="auth-shell">
+    <section class="auth-panel">
+      <div class="auth-brand">
+        <span class="auth-chip">ViaLuna</span>
+        <h1>Iniciar sesion</h1>
+        <p>Accede con tu correo y contrasena para entrar como cliente o administrador.</p>
+      </div>
+
+      <form id="loginForm" class="auth-form">
+        <div class="auth-field">
+          <label for="email">Correo electronico</label>
+          <div class="auth-input">
+            <span class="auth-icon">@</span>
+            <input type="email" id="email" placeholder="correo@ejemplo.com" autocomplete="email" required>
+          </div>
+        </div>
+
+        <div class="auth-field">
+          <label for="password">Contrasena</label>
+          <div class="auth-input">
+            <span class="auth-icon">*</span>
+            <input type="password" id="password" placeholder="Ingresa tu contrasena" autocomplete="current-password" required>
+            <button type="button" id="togglePassword">Mostrar</button>
+          </div>
+        </div>
+
+        <p id="loginError" class="feedback" aria-live="polite"></p>
+
+        <div class="auth-meta">
+          <label class="auth-check" for="rememberMe">
+            <input type="checkbox" id="rememberMe">
+            <span>Recordarme</span>
+          </label>
+        </div>
+
+        <div class="auth-actions">
+          <button type="submit" class="btn btn-primary">Iniciar sesion</button>
+          <a class="btn btn-secondary" href="../pages/registro.html">Registrarse</a>
+        </div>
+
+        <div class="auth-links">
+          <a class="btn btn-link" href="./reset-password.html">Recuperar contrasena</a>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script type="module" src="../dashboard/core/auth.js"></script>
+</body>
+</html>

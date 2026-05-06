@@ -1,4 +1,4 @@
-import { apiUrl, getConnectionErrorMessage } from './core/api-config.js';
+import { apiUrl, getConnectionErrorMessage } from './shared/api-config.js';
 
 const BASE_URL = apiUrl('reservas');
 const HABITACIONES_URL = apiUrl('habitaciones');

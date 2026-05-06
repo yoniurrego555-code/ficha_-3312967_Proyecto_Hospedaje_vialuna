@@ -18,14 +18,14 @@
   </main>
 
   <script type="module">
-    import { getSession } from "./js/core/api.js";
-    import { LOGIN_URL } from "./js/core/authGuard.js";
+    import { getSession } from "./dashboard/core/api.js";
+    import { LOGIN_URL } from "./dashboard/core/authGuard.js";
 
     /**
      * Redirección segura por rol
      */
     function redirectByRole(session) {
-      const role = session?.tipoAcceso || session?.rol;
+      const role = session?.tipoAcceso;
 
       // 🔐 ADMIN
       if (role === "admin") {

@@ -1,266 +1,134 @@
-<section class="hero">
-  <div>
-    <h2>Módulo de Paquetes</h2>
-    <p>Crea, consulta, edita y elimina paquetes del hospedaje</p>
-  </div>
-  <div class="badge">CRUD conectado</div>
-</section>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paquetes | Via Luna</title>
+    <link rel="stylesheet" href="../css/admin-theme.css">
+</head>
+<body>
+    <div class="mobile-topbar">
+        <button class="secondary menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="backendSidebar">
+            <span></span><span></span><span></span>
+        </button>
+        <strong>Paquetes</strong>
+    </div>
+    <div class="layout">
+        <aside class="sidebar" id="backendSidebar">
+            <div class="brand">
+                <h1>Via Luna</h1>
+                <p>Organiza los paquetes comerciales del hospedaje con el mismo estilo que el resto de modulos.</p>
+            </div>
 
-<section class="grid">
-  <article class="panel">
-    <div class="panel-header">
-      <h3>Formulario</h3>
-      <p id="formTitle">Registra un nuevo paquete</p>
+            <nav class="admin-nav" aria-label="Modulos del sistema">
+                <a class="admin-link icon-room" href="habitaciones.html">Habitaciones</a>
+                <a class="admin-link icon-package active" href="paquetes.html">Paquetes</a>
+                <a class="admin-link icon-service" href="servicios.html">Servicios</a>
+                <a class="admin-link icon-user" href="usuarios.html">Usuarios</a>
+                <a class="admin-link icon-reservation" href="reservas.html">Reservas</a>
+            </nav>
+
+            <div class="sidebar-actions">
+                <button class="primary icon-new" id="btnNuevoPaquete" type="button">Nuevo paquete</button>
+                <button class="secondary icon-reload" id="btnRecargar" type="button">Recargar listado</button>
+                <button class="ghost icon-clear" id="btnLimpiarBusqueda" type="button">Limpiar busqueda</button>
+            </div>
+
+            <div class="sidebar-stats">
+                <div class="stat-card">
+                    <span>Total de paquetes</span>
+                    <strong id="totalPaquetes">0</strong>
+                </div>
+                <div class="stat-card">
+                    <span>Disponibles</span>
+                    <strong id="totalDisponibles">0</strong>
+                </div>
+                <div class="stat-card">
+                    <span>Agotados</span>
+                    <strong id="totalAgotados">0</strong>
+                </div>
+            </div>
+
+            <div class="auth-card">
+                <h3>Acceso rapido</h3>
+                <p>La caja flotante de autenticacion se repite aqui para mantener coherencia entre todos los modulos.</p>
+                <div class="auth-links">
+                    <a class="secondary icon-register" href="registro.html">Crear cuenta</a>
+                    <a class="primary icon-login" href="login.html">Iniciar sesion</a>
+                    <a class="ghost icon-recover" href="recuperar.html">Recuperar cuenta</a>
+                    <a class="ghost icon-delete-account" href="eliminar-cuenta.html">Eliminar cuenta</a>
+                </div>
+            </div>
+        </aside>
+
+        <main class="content">
+            <section class="hero">
+                <div>
+                    <h2>Modulo de paquetes</h2>
+                    <p>Crea, consulta, edita y elimina paquetes del hospedaje. Tambien puedes cambiar su estado para controlar disponibilidad comercial.</p>
+                </div>
+                <div class="badge">CRUD conectado</div>
+            </section>
+
+            <section class="grid">
+                <article class="panel">
+                    <div class="panel-header">
+                        <h3>Formulario</h3>
+                        <p id="formTitle">Registra un nuevo paquete</p>
+                    </div>
+
+                    <div id="mensaje" class="message"></div>
+
+                    <form id="paqueteForm">
+                        <input type="hidden" id="paqueteId">
+
+                        <div class="field">
+                            <label for="nombre">Nombre</label>
+                            <input type="text" id="nombre" name="nombre" placeholder="Ej. Escapada romantica" required>
+                        </div>
+
+                        <div class="field">
+                            <label for="descripcion">Descripcion</label>
+                            <textarea id="descripcion" name="descripcion" placeholder="Describe que incluye el paquete."></textarea>
+                        </div>
+
+                        <div class="field-grid">
+                            <div class="field">
+                                <label for="precio">Precio</label>
+                                <input type="number" id="precio" name="precio" min="0" step="0.01" placeholder="1800" required>
+                            </div>
+                            <div class="field">
+                                <label for="estado">Estado</label>
+                                <select id="estado" name="estado" required>
+                                    <option value="disponible">Disponible</option>
+                                    <option value="agotado">Agotado</option>
+                                    <option value="inactivo">Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="actions">
+                            <button class="primary" type="submit" id="submitButton">Guardar paquete</button>
+                            <button class="secondary" type="button" id="btnCancelarEdicion">Cancelar</button>
+                        </div>
+                    </form>
+                </article>
+
+                <article class="panel">
+                    <div class="toolbar">
+                        <input class="search" type="search" id="buscador" placeholder="Buscar por nombre, descripcion o estado">
+                        <button class="secondary" type="button" id="btnListar">Listar paquetes</button>
+                    </div>
+
+                    <div id="contenedor" class="cards">
+                        <div class="empty">Cargando paquetes...</div>
+                    </div>
+                </article>
+            </section>
+        </main>
     </div>
 
-    <div id="mensaje" class="message"></div>
-
-    <form id="paqueteForm">
-      <input type="hidden" id="paqueteId">
-
-      <div class="field">
-        <label for="nombre">Nombre</label>
-        <input type="text" id="nombre" name="nombre" placeholder="Ej. Escapada romántica" required>
-      </div>
-
-      <div class="field">
-        <label for="descripcion">Descripción</label>
-        <textarea id="descripcion" name="descripcion" placeholder="Describe que incluye el paquete."></textarea>
-      </div>
-
-      <div class="field-grid">
-        <div class="field">
-          <label for="precio">Precio</label>
-          <input type="number" id="precio" name="precio" min="0" step="0.01" placeholder="1800" required>
-        </div>
-        <div class="field">
-          <label for="estado">Estado</label>
-          <select id="estado" name="estado" required>
-            <option value="disponible">Disponible</option>
-            <option value="agotado">Agotado</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="primary" type="submit" id="submitButton">Guardar paquete</button>
-        <button class="secondary" type="button" id="btnCancelarEdicion">Cancelar</button>
-      </div>
-    </form>
-  </article>
-
-  <article class="panel">
-    <div class="toolbar">
-      <input class="search" type="search" id="buscador" placeholder="Buscar por nombre, descripción o estado">
-      <button class="secondary" type="button" id="btnListar">Listar paquetes</button>
-    </div>
-
-    <div id="paquetesContainer" class="cards">
-      <div class="empty">Cargando paquetes...</div>
-    </div>
-  </article>
-</section>
-
-<script>
-// API REST CONEXIÓN PARA PAQUETES
-class PaquetesAPI {
-  constructor() {
-    this.baseURL = 'http://localhost:3000/api';
-    // No auto-inicializar en constructor
-  }
-
-  inicializar() {
-    console.log('Inicializando módulo de paquetes con API...');
-    setTimeout(() => {
-      this.cargarPaquetes();
-      this.configurarEventos();
-    }, 500);
-  }
-
-  async cargarPaquetes() {
-    try {
-      const container = document.getElementById('paquetesContainer');
-      if (!container) {
-        console.error('Elemento paquetesContainer no encontrado');
-        return;
-      }
-      container.innerHTML = '<div class="loading">Cargando paquetes...</div>';
-
-      const response = await fetch(`${this.baseURL}/paquetes`);
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudieron cargar los paquetes`);
-      }
-      
-      const paquetes = await response.json();
-      this.renderPaquetes(paquetes);
-      
-    } catch (error) {
-      console.error('Error al cargar paquetes:', error);
-      this.mostrarMensaje('Error al cargar paquetes: ' + error.message, 'error');
-
-    }
-  }
-
-  renderPaquetes(paquetes) {
-    const container = document.getElementById('paquetesContainer');
-    if (!container) {
-      console.error('Elemento paquetesContainer no encontrado en renderPaquetes');
-      return;
-    }
-    
-    if (paquetes.length === 0) {
-      container.innerHTML = '<div class="empty">No hay paquetes configurados</div>';
-      return;
-    }
-
-    container.innerHTML = paquetes.map(paq => `
-      <div class="card">
-        <h4>${paq.NombrePaquete || paq.nombre}</h4>
-        <p>${paq.Descripcion || paq.descripcion || 'Sin descripción'}</p>
-        <div class="card-actions">
-          <span class="price">$${paq.Precio || paq.precio || 0}</span>
-          <span class="status ${paq.Estado === 'disponible' || paq.estado === 'disponible' ? 'active' : 'inactive'}">
-            ${paq.Estado || paq.estado}
-          </span>
-        </div>
-        <div class="card-buttons">
-          <button class="secondary" onclick="editarPaquete(${paq.IDPaquete || paq.id})">Editar</button>
-          <button class="ghost" onclick="eliminarPaquete(${paq.IDPaquete || paq.id})">Eliminar</button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  getDatosEjemplo() {
-    return [
-      {
-        IDPaquete: 1,
-        NombrePaquete: 'Escapada Romántica',
-        Descripcion: '2 noches + cena romántica + spa',
-        Precio: 850000,
-        Estado: 'disponible'
-      },
-      {
-        IDPaquete: 2,
-        NombrePaquete: 'Familiar Completo',
-        Descripcion: '3 noches + desayuno buffet + actividades',
-        Precio: 1200000,
-        Estado: 'disponible'
-      }
-    ];
-  }
-
-  mostrarMensaje(mensaje, tipo) {
-    const mensajeDiv = document.getElementById('mensaje');
-    if (mensajeDiv) {
-      mensajeDiv.className = tipo;
-      mensajeDiv.textContent = mensaje;
-      setTimeout(() => {
-        mensajeDiv.textContent = '';
-        mensajeDiv.className = '';
-      }, 3000);
-    }
-  }
-
-  configurarEventos() {
-    const form = document.getElementById('paqueteForm');
-    if (form) {
-      form.addEventListener('submit', (e) => this.guardarPaquete(e));
-    }
-  }
-
-  async guardarPaquete(e) {
-    e.preventDefault();
-    const id = document.getElementById('paqueteId').value;
-    const datos = {
-      NombrePaquete: document.getElementById('nombre').value,
-      Descripcion: document.getElementById('descripcion').value,
-      Precio: parseFloat(document.getElementById('precio').value),
-      Estado: document.getElementById('estado').value,
-      IDHabitacion: null,
-      IDServicio: null,
-      ImagenPaquete: null
-    };
-
-    try {
-      const url = id ? `${this.baseURL}/paquetes/${id}` : `${this.baseURL}/paquetes`;
-      const method = id ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
-      });
-
-      if (!response.ok) throw new Error('Error al guardar paquete');
-
-      this.mostrarMensaje(id ? 'Paquete actualizado' : 'Paquete creado', 'success');
-      document.getElementById('paqueteForm').reset();
-      document.getElementById('paqueteId').value = '';
-      this.cargarPaquetes();
-    } catch (error) {
-      console.error('Error al guardar paquete:', error);
-      this.mostrarMensaje('Error al guardar: ' + error.message, 'error');
-    }
-  }
-  async obtenerPaquete(id) {
-    try {
-      const response = await fetch(`${this.baseURL}/paquetes/${id}`);
-      if (!response.ok) throw new Error('Paquete no encontrado');
-      return await response.json();
-    } catch (error) {
-      this.mostrarMensaje('Error al obtener paquete: ' + error.message, 'error');
-      return null;
-    }
-  }
-
-  async eliminarPaquete(id) {
-    try {
-      const response = await fetch(`${this.baseURL}/paquetes/${id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error(`Error ${response.status}`);
-      this.mostrarMensaje('Paquete eliminado exitosamente', 'success');
-      this.cargarPaquetes();
-    } catch (error) {
-      this.mostrarMensaje('Error al eliminar paquete: ' + error.message, 'error');
-    }
-  }
-}
-
-// Funciones globales
-async function editarPaquete(id) {
-  if (window.paquetesApi) {
-    const paquete = await window.paquetesApi.obtenerPaquete(id);
-    if (paquete) {
-      document.getElementById('paqueteId').value = paquete.IDPaquete;
-      document.getElementById('nombre').value = paquete.NombrePaquete;
-      document.getElementById('descripcion').value = paquete.Descripcion || '';
-      document.getElementById('precio').value = paquete.Precio;
-      document.getElementById('estado').value = paquete.Estado || 'activo';
-      
-      document.getElementById('formTitle').textContent = `Editar Paquete #${paquete.IDPaquete}`;
-      window.scrollTo(0, 0);
-    }
-  }
-}
-
-function eliminarPaquete(id) {
-  if (confirm('¿Está seguro de eliminar este paquete?')) {
-    if (window.paquetesApi) {
-      window.paquetesApi.eliminarPaquete(id);
-    }
-  }
-}
-
-// Función de inicialización
-function inicializarPaquetesAPI() {
-  if (!window.paquetesApi) {
-    window.paquetesApi = new PaquetesAPI();
-    window.paquetesApi.inicializar();
-}
-}
-
-window.inicializarPaquetesAPI = inicializarPaquetesAPI;
-window.editarPaquete = editarPaquete;
-window.eliminarPaquete = eliminarPaquete;
-</script>
+    <script src="../js/shared/admin-layout.js"></script>
+    <script type="module" src="../js/paquetes.js"></script>
+</body>
+</html>

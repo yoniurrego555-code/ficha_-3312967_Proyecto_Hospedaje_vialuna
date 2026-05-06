@@ -1,766 +1,183 @@
-<div class="modulo-reservas">
-  <section class="hero">
-    <div>
-      <h2>Gestión de Reservas</h2>
-      <p>Administra las reservas del sistema con datos en tiempo real</p>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas | Via Luna</title>
+    <link rel="stylesheet" href="../css/admin-theme.css">
+</head>
+<body>
+    <div class="mobile-topbar">
+        <button class="secondary menu-toggle" id="menuToggle" type="button" aria-expanded="false" aria-controls="backendSidebar">
+            <span></span><span></span><span></span>
+        </button>
+        <strong>Reservas</strong>
     </div>
-    <div class="badge">API Conectada</div>
-  </section>
-
-  <section class="grid">
-    <article class="panel">
-      <div class="panel-header">
-        <h3>Nueva Reserva</h3>
-        <p>Completa el formulario para crear una nueva reserva</p>
-      </div>
-
-      <form id="formReserva" class="formulario-reserva">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="id_cliente">Cliente:</label>
-            <select id="id_cliente" name="id_cliente" required>
-              <option value="">Seleccione un cliente</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="nr_documento">Número Documento:</label>
-            <input type="text" id="nr_documento" name="nr_documento" placeholder="Número de documento" required>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="fecha_inicio">Fecha Inicio:</label>
-            <input type="date" id="fecha_inicio" name="fecha_inicio" required>
-          </div>
-
-          <div class="form-group">
-            <label for="fecha_fin">Fecha Fin:</label>
-            <input type="date" id="fecha_fin" name="fecha_fin" required>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="id_habitacion">Habitación:</label>
-            <select id="id_habitacion" name="id_habitacion" required>
-              <option value="">Seleccione una habitación</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="id_paquete">Paquete:</label>
-            <select id="id_paquete" name="id_paquete" required>
-              <option value="">Seleccione un paquete</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="id_servicio">Servicio:</label>
-            <select id="id_servicio" name="id_servicio" required>
-              <option value="">Seleccione un servicio</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="total">Total:</label>
-            <input type="number" id="total" name="total" step="0.01" min="0" placeholder="0.00" required>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="id_metodo_pago">Método Pago:</label>
-            <select id="id_metodo_pago" name="id_metodo_pago" required>
-              <option value="">Seleccione método de pago</option>
-            </select>
-          </div>
-
-
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="hora_entrada">Hora Entrada:</label>
-            <input type="time" id="hora_entrada" name="hora_entrada">
-          </div>
-
-          <div class="form-group">
-            <label for="hora_salida">Hora Salida:</label>
-            <input type="time" id="hora_salida" name="hora_salida">
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="primary">Guardar Reserva</button>
-          <button type="button" class="secondary" onclick="limpiarFormulario()">Limpiar</button>
-        </div>
-      </form>
-    </article>
-
-    <article class="panel">
-      <div class="panel-header">
-        <h3>Lista de Reservas</h3>
-        <p>Visualiza y gestiona todas las reservas existentes</p>
-      </div>
-
-      <div class="toolbar">
-        <input class="search" type="search" id="buscador" placeholder="Buscar por cliente o habitación">
-        <button class="secondary" type="button" onclick="obtenerReservas()">Actualizar</button>
-      </div>
-
-      <div class="table-container">
-        <table id="tablaReservas">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Cliente</th>
-              <th>Documento</th>
-              <th>Habitación</th>
-              <th>Paquete</th>
-              <th>Servicio</th>
-              <th>Fecha Inicio</th>
-              <th>Fecha Fin</th>
-              <th>Total</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="cuerpoTabla">
-            <tr>
-              <td colspan="10" class="loading">Cargando reservas...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </article>
-  </section>
-</div>
-
-
-<style>
-.modulo-reservas {
-  width: 100%;
-}
-
-.formulario-reserva {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-weight: 500;
-  color: #495057;
-}
-
-.form-group input,
-.form-group select {
-  padding: 10px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
-}
-
-.form-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
-.table-container {
-  overflow-x: auto;
-  margin-top: 20px;
-}
-
-#tablaReservas {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-}
-
-#tablaReservas th,
-#tablaReservas td {
-  padding: 12px;
-  text-align: left;
-  border-bottom: 1px solid #dee2e6;
-}
-
-#tablaReservas th {
-  background: #f8f9fa;
-  font-weight: 600;
-  color: #495057;
-}
-
-#tablaReservas tbody tr:hover {
-  background: #f8f9fa;
-}
-
-.loading {
-  text-align: center;
-  padding: 40px;
-  color: #6c757d;
-  font-style: italic;
-}
-
-.error {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 12px;
-  border-radius: 4px;
-  margin: 10px 0;
-  border: 1px solid #f5c6cb;
-}
-
-.success {
-  background: #d4edda;
-  color: #155724;
-  padding: 12px;
-  border-radius: 4px;
-  margin: 10px 0;
-  border: 1px solid #c3e6cb;
-}
-
-.toolbar {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.search {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-}
-
-@media (max-width: 768px) {
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-  
-  .toolbar {
-    flex-direction: column;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-}
-</style>
-
-<script>
-// API REST CONEXIÓN Y CRUD DE RESERVAS
-class ReservasAPI {
-  constructor() {
-    this.baseURL = 'http://localhost:3000/api';
-    // No auto-inicializar en constructor
-  }
-
-  inicializar() {
-    console.log('Inicializando módulo de reservas con API...');
-    setTimeout(() => {
-      this.cargarClientes();
-      this.cargarHabitaciones();
-      this.cargarPaquetes();
-      this.cargarServicios();
-      this.cargarMetodosPago();
-      this.obtenerReservas();
-      this.configurarEventos();
-    }, 500);
-  }
-
-  // CONEXIÓN CON API REST
-
-  // Obtener todos los clientes
-  async cargarClientes() {
-    try {
-      const select = document.getElementById('id_cliente');
-      if (!select) {
-        console.error('Elemento id_cliente no encontrado');
-        return;
-      }
-
-      const response = await fetch(`${this.baseURL}/clientes`);
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudieron cargar los clientes`);
-      }
-      
-      const clientes = await response.json();
-      this.llenarSelectClientes(clientes);
-      
-    } catch (error) {
-      console.error('Error al cargar clientes:', error);
-      this.mostrarMensaje('Error al cargar clientes: ' + error.message, 'error');
-    }
-  }
-
-  // Obtener todas las habitaciones
-  async cargarHabitaciones() {
-    try {
-      const select = document.getElementById('id_habitacion');
-      if (!select) {
-        console.error('Elemento id_habitacion no encontrado');
-        return;
-      }
-
-      const response = await fetch(`${this.baseURL}/habitacion`);
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudieron cargar las habitaciones`);
-      }
-      
-      const habitaciones = await response.json();
-      this.llenarSelectHabitaciones(habitaciones);
-      
-    } catch (error) {
-      console.error('Error al cargar habitaciones:', error);
-      this.mostrarMensaje('Error al cargar habitaciones: ' + error.message, 'error');
-    }
-  }
-
-  // Obtener todos los paquetes
-  async cargarPaquetes() {
-    try {
-      const select = document.getElementById('id_paquete');
-      if (!select) {
-        console.error('Elemento id_paquete no encontrado');
-        return;
-      }
-
-      const response = await fetch(`${this.baseURL}/paquetes`);
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudieron cargar los paquetes`);
-      }
-      
-      const paquetes = await response.json();
-      this.llenarSelectPaquetes(paquetes);
-      
-    } catch (error) {
-      console.error('Error al cargar paquetes:', error);
-      this.mostrarMensaje('Error al cargar paquetes: ' + error.message, 'error');
-    }
-  }
-
-  // Obtener todos los servicios
-  async cargarServicios() {
-    try {
-      const select = document.getElementById('id_servicio');
-      if (!select) {
-        console.error('Elemento id_servicio no encontrado');
-        return;
-      }
-
-      const response = await fetch(`${this.baseURL}/servicios`);
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudieron cargar los servicios`);
-      }
-      
-      const servicios = await response.json();
-      this.llenarSelectServicios(servicios);
-      
-    } catch (error) {
-      console.error('Error al cargar servicios:', error);
-      this.mostrarMensaje('Error al cargar servicios: ' + error.message, 'error');
-    }
-  }
-
-  // Obtener todos los métodos de pago
-  async cargarMetodosPago() {
-    try {
-      const select = document.getElementById('id_metodo_pago');
-      if (!select) {
-        console.error('Elemento id_metodo_pago no encontrado');
-        return;
-      }
-
-      const response = await fetch(`${this.baseURL}/metodopago`);
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudieron cargar los métodos de pago`);
-      }
-      
-      const metodosPago = await response.json();
-      this.llenarSelectMetodosPago(metodosPago);
-      
-    } catch (error) {
-      console.error('Error al cargar métodos de pago:', error);
-      this.mostrarMensaje('Error al cargar métodos de pago: ' + error.message, 'error');
-    }
-  }
-
-  // Obtener todas las reservas
-  async obtenerReservas() {
-    try {
-      const tbody = document.getElementById('cuerpoTabla');
-      if (!tbody) {
-        console.error('Elemento cuerpoTabla no encontrado');
-        return;
-      }
-      tbody.innerHTML = '<tr><td colspan="10" class="loading">Cargando reservas...</td></tr>';
-
-      const response = await fetch(`${this.baseURL}/reservas`);
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudieron cargar las reservas`);
-      }
-      
-      const reservas = await response.json();
-      this.mostrarReservas(reservas);
-      
-    } catch (error) {
-      console.error('Error al obtener reservas:', error);
-      const tbody = document.getElementById('cuerpoTabla');
-      if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="10" class="error">Error: ${error.message}</td></tr>`;
-      }
-    }
-  }
-
-  // Crear nueva reserva
-  async guardarReserva(datos) {
-    try {
-      const response = await fetch(`${this.baseURL}/reservas`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(datos)
-      });
-
-      if (!response.ok) {
-        let errorMsg = 'No se pudo crear la reserva';
-        try {
-          const errorData = await response.json();
-          errorMsg = errorData.error || errorMsg;
-        } catch (e) {}
-        throw new Error(errorMsg);
-      }
-
-      const reservaCreada = await response.json();
-      this.mostrarMensaje('Reserva creada exitosamente', 'success');
-      this.obtenerReservas(); // Actualizar tabla
-      limpiarFormulario();
-      
-      return reservaCreada;
-      
-    } catch (error) {
-      console.error('Error al guardar reserva:', error);
-      this.mostrarMensaje('Error al guardar reserva: ' + error.message, 'error');
-      throw error;
-    }
-  }
-
-  // Eliminar reserva
-  async eliminarReserva(id) {
-    try {
-      const response = await fetch(`${this.baseURL}/reservas/${id}`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudo eliminar la reserva`);
-      }
-
-      this.mostrarMensaje('Reserva eliminada exitosamente', 'success');
-      this.obtenerReservas(); // Actualizar tabla
-      
-    } catch (error) {
-      console.error('Error al eliminar reserva:', error);
-      this.mostrarMensaje('Error al eliminar reserva: ' + error.message, 'error');
-    }
-  }
-
-  // FUNCIONES DE UI
-
-  // Llenar select de clientes
-  llenarSelectClientes(clientes) {
-    const select = document.getElementById('id_cliente');
-    if (!select) {
-      console.error('Elemento id_cliente no encontrado en llenarSelectClientes');
-      return;
-    }
-    select.innerHTML = '<option value="">Seleccione un cliente</option>';
-    
-    clientes.forEach(cliente => {
-      const option = document.createElement('option');
-      option.value = cliente.NroDocumento;
-      option.textContent = `${cliente.Nombre} ${cliente.Apellido || ''}`.trim() || `Cliente ${cliente.NroDocumento}`;
-      select.appendChild(option);
-    });
-  }
-
-  // Llenar select de habitaciones
-  llenarSelectHabitaciones(habitaciones) {
-    const select = document.getElementById('id_habitacion');
-    if (!select) {
-      console.error('Elemento id_habitacion no encontrado en llenarSelectHabitaciones');
-      return;
-    }
-    select.innerHTML = '<option value="">Seleccione una habitación</option>';
-    
-    habitaciones.forEach(habitacion => {
-      const option = document.createElement('option');
-      option.value = habitacion.IDHabitacion;
-      option.textContent = habitacion.NombreHabitacion;
-      select.appendChild(option);
-    });
-  }
-
-  // Llenar select de paquetes
-  llenarSelectPaquetes(paquetes) {
-    const select = document.getElementById('id_paquete');
-    if (!select) {
-      console.error('Elemento id_paquete no encontrado en llenarSelectPaquetes');
-      return;
-    }
-    select.innerHTML = '<option value="">Seleccione un paquete</option>';
-    
-    paquetes.forEach(paquete => {
-      const option = document.createElement('option');
-      option.value = paquete.IDPaquete;
-      option.textContent = paquete.NombrePaquete;
-      select.appendChild(option);
-    });
-  }
-
-  // Llenar select de servicios
-  llenarSelectServicios(servicios) {
-    const select = document.getElementById('id_servicio');
-    if (!select) {
-      console.error('Elemento id_servicio no encontrado en llenarSelectServicios');
-      return;
-    }
-    select.innerHTML = '<option value="">Seleccione un servicio</option>';
-    
-    servicios.forEach(servicio => {
-      const option = document.createElement('option');
-      option.value = servicio.IDServicio;
-      option.textContent = servicio.NombreServicio;
-      select.appendChild(option);
-    });
-  }
-
-  // Llenar select de métodos de pago
-  llenarSelectMetodosPago(metodosPago) {
-    const select = document.getElementById('id_metodo_pago');
-    if (!select) {
-      console.error('Elemento id_metodo_pago no encontrado en llenarSelectMetodosPago');
-      return;
-    }
-    select.innerHTML = '<option value="">Seleccione método de pago</option>';
-    
-    metodosPago.forEach(metodo => {
-      const option = document.createElement('option');
-      option.value = metodo.IDMetodoPago;
-      option.textContent = metodo.NomMetodoPago;
-      select.appendChild(option);
-    });
-  }
-
-  // Crear nuevo cliente
-  async guardarCliente(datos) {
-    try {
-      const response = await fetch(`${this.baseURL}/clientes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(datos)
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error ${response.status}: No se pudo crear el cliente`);
-      }
-
-      const clienteCreado = await response.json();
-      this.mostrarMensaje('Cliente creado exitosamente', 'success');
-      this.cargarClientes(); // Recargar lista de clientes
-      ocultarFormularioCliente();
-      
-      return clienteCreado;
-      
-    } catch (error) {
-      console.error('Error al guardar cliente:', error);
-      this.mostrarMensaje('Error al guardar cliente: ' + error.message, 'error');
-      throw error;
-    }
-  }
-
-  // Mostrar reservas en la tabla
-  mostrarReservas(reservas) {
-    const tbody = document.getElementById('cuerpoTabla');
-    if (!tbody) {
-      console.error('Elemento cuerpoTabla no encontrado en mostrarReservas');
-      return;
-    }
-    
-    if (reservas.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="10" class="loading">No hay reservas registradas</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = reservas.map(reserva => `
-      <tr>
-        <td>${reserva.id_reserva}</td>
-        <td>${reserva.cliente_nombre || 'Cliente ' + reserva.id_cliente}</td>
-        <td>${reserva.nr_documento}</td>
-        <td>${reserva.habitacion || 'Habitación ' + reserva.id_habitacion}</td>
-        <td>${reserva.paquete || 'Paquete ' + reserva.id_paquete}</td>
-        <td>${reserva.servicio || 'Servicio ' + reserva.id_servicio}</td>
-        <td>${this.formatearFecha(reserva.fecha_inicio)}</td>
-        <td>${this.formatearFecha(reserva.fecha_fin)}</td>
-        <td>$${parseFloat(reserva.total || 0).toFixed(2)}</td>
-        <td>
-          <button class="ghost" onclick="reservasApi.confirmarEliminar(${reserva.id_reserva})">Eliminar</button>
-        </td>
-      </tr>
-    `).join('');
-  }
-
-  // Formatear fecha
-  formatearFecha(fecha) {
-    const date = new Date(fecha);
-    return date.toLocaleDateString('es-CO', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-  }
-
-  // Mostrar mensaje
-  mostrarMensaje(mensaje, tipo) {
-    // Crear elemento de mensaje
-    const mensajeDiv = document.createElement('div');
-    mensajeDiv.className = tipo;
-    mensajeDiv.textContent = mensaje;
-    
-    // Insertar al principio del formulario
-    const form = document.getElementById('formReserva');
-    form.parentNode.insertBefore(mensajeDiv, form);
-    
-    // Eliminar después de 3 segundos
-    setTimeout(() => {
-      mensajeDiv.remove();
-    }, 3000);
-  }
-
-  // Confirmar eliminación
-  confirmarEliminar(id) {
-    if (confirm('¿Está seguro de eliminar esta reserva? Esta acción no se puede deshacer.')) {
-      this.eliminarReserva(id);
-    }
-  }
-
-  // Configurar eventos
-  configurarEventos() {
-    // Formulario de reserva
-    document.getElementById('formReserva')?.addEventListener('submit', (e) => {
-      e.preventDefault();
-      
-      const formData = new FormData(e.target);
-      const datos = Object.fromEntries(formData.entries());
-      
-      // Validar fechas
-      if (new Date(datos.fecha_fin) <= new Date(datos.fecha_inicio)) {
-        this.mostrarMensaje('La fecha de fin debe ser posterior a la fecha de inicio', 'error');
-        return;
-      }
-      
-      // Formatear payload para el backend
-      datos.id_estado_reserva = 1;
-      
-      // El backend espera arreglos para paquetes y servicios
-      if (datos.id_paquete) {
-        datos.paquetes = [datos.id_paquete];
-        delete datos.id_paquete;
-      }
-      
-      if (datos.id_servicio) {
-        datos.servicios = [datos.id_servicio];
-        delete datos.id_servicio;
-      }
-
-      // Asegurar que id_cliente sea numérico, en caso de que sea string de un documento puramente numérico
-      if (datos.id_cliente) {
-        datos.id_cliente = Number(datos.id_cliente);
-      }
-      
-      // Parsear la cantidad de huespedes a numérico o 1 por defecto
-      datos.cantidad_huespedes = 1;
-      
-      this.guardarReserva(datos);
-    });
-
-    // Búsqueda
-    document.getElementById('buscador')?.addEventListener('input', (e) => {
-      this.buscarReservas(e.target.value);
-    });
-
-    // Auto-llenar fecha de reserva con fecha actual
-    const fechaReservaInput = document.getElementById('fecha_reserva');
-    if (fechaReservaInput && !fechaReservaInput.value) {
-      fechaReservaInput.value = new Date().toISOString().split('T')[0];
-    }
-  }
-
-  // Buscar reservas
-  buscarReservas(termino) {
-    const filas = document.querySelectorAll('#tablaReservas tbody tr');
-    
-    filas.forEach(fila => {
-      const texto = fila.textContent.toLowerCase();
-      fila.style.display = texto.includes(termino.toLowerCase()) ? '' : 'none';
-    });
-  }
-}
-
-// FUNCIONES GLOBALES
-
-// Limpiar formulario
-function limpiarFormulario() {
-  document.getElementById('formReserva').reset();
-}
-
-// Inicializar módulo cuando se carga
-let reservasApi;
-
-// Función de inicialización para el dashboard
-function inicializarReservasAPI() {
-  if (!reservasApi) {
-    reservasApi = new ReservasAPI();
-    reservasApi.inicializar();
-} else {
-    reservasApi.inicializar();
-  }
-}
-
-// Hacer accesible globalmente
-window.reservasApi = reservasApi;
-window.inicializarReservasAPI = inicializarReservasAPI;
-window.limpiarFormulario = limpiarFormulario;
-window.cargarClientes = () => reservasApi?.cargarClientes();
-window.cargarHabitaciones = () => reservasApi?.cargarHabitaciones();
-window.cargarMetodosPago = () => reservasApi?.cargarMetodosPago();
-window.obtenerReservas = () => reservasApi?.obtenerReservas();
-window.guardarReserva = (datos) => reservasApi?.guardarReserva(datos);
-window.eliminarReserva = (id) => reservasApi?.eliminarReserva(id);
-</script>
+    <div class="layout">
+        <aside class="sidebar" id="backendSidebar">
+            <div class="brand">
+                <h1>Via Luna</h1>
+                <p>Gestiona reservas, habitaciones, paquetes y servicios desde una vista unificada y consistente.</p>
+            </div>
+
+            <nav class="admin-nav" aria-label="Modulos del sistema">
+                <a class="admin-link icon-room" href="habitaciones.html">Habitaciones</a>
+                <a class="admin-link icon-package" href="paquetes.html">Paquetes</a>
+                <a class="admin-link icon-service" href="servicios.html">Servicios</a>
+                <a class="admin-link icon-user" href="usuarios.html">Usuarios</a>
+                <a class="admin-link icon-reservation active" href="reservas.html">Reservas</a>
+            </nav>
+
+            <div class="sidebar-actions">
+                <button class="primary icon-new" id="btnNuevaReserva" type="button">Nueva reserva</button>
+                <button class="secondary icon-reload" id="btnRecargar" type="button">Recargar listado</button>
+                <button class="ghost icon-clear" id="btnLimpiarBusqueda" type="button">Limpiar busqueda</button>
+            </div>
+
+            <div class="sidebar-stats">
+                <div class="stat-card">
+                    <span>Total de reservas</span>
+                    <strong id="totalReservas">0</strong>
+                </div>
+                <div class="stat-card">
+                    <span>Confirmadas</span>
+                    <strong id="totalConfirmadas">0</strong>
+                </div>
+                <div class="stat-card">
+                    <span>Pendientes</span>
+                    <strong id="totalPendientes">0</strong>
+                </div>
+            </div>
+
+            <div class="auth-card">
+                <h3>Acceso rapido</h3>
+                <p>La misma caja flotante conecta este modulo con las pantallas publicas de cuenta y autenticacion.</p>
+                <div class="auth-links">
+                    <a class="secondary icon-register" href="registro.html">Crear cuenta</a>
+                    <a class="primary icon-login" href="login.html">Iniciar sesion</a>
+                    <a class="ghost icon-recover" href="recuperar.html">Recuperar cuenta</a>
+                    <a class="ghost icon-delete-account" href="eliminar-cuenta.html">Eliminar cuenta</a>
+                </div>
+            </div>
+        </aside>
+
+        <main class="content">
+            <section class="hero">
+                <div>
+                    <h2>Modulo de reservas</h2>
+                    <p>Registra reservas, agrega habitaciones, paquetes y servicios, y mantén el seguimiento operativo desde un mismo lugar.</p>
+                </div>
+                <div class="badge">CRUD conectado</div>
+            </section>
+
+            <section class="grid">
+                <article class="panel">
+                    <div class="panel-header">
+                        <h3>Formulario</h3>
+                        <p id="formTitle">Registra una nueva reserva</p>
+                    </div>
+
+                    <div id="mensaje" class="message"></div>
+
+                    <form id="reservaForm">
+                        <input type="hidden" id="reservaId">
+
+                        <div class="field-grid">
+                            <div class="field">
+                                <label for="nombreCliente">Nombre del cliente</label>
+                                <input type="text" id="nombreCliente" required>
+                            </div>
+                            <div class="field">
+                                <label for="telefono">Telefono</label>
+                                <input type="tel" id="telefono" required>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="email">Correo electronico</label>
+                            <input type="email" id="email" required>
+                        </div>
+
+                        <div class="field-grid">
+                            <div class="field">
+                                <label for="fechaEntrada">Fecha de entrada</label>
+                                <input type="date" id="fechaEntrada" required>
+                            </div>
+                            <div class="field">
+                                <label for="fechaSalida">Fecha de salida</label>
+                                <input type="date" id="fechaSalida" required>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="estadoReserva">Estado</label>
+                            <select id="estadoReserva" required>
+                                <option value="pendiente">Pendiente</option>
+                                <option value="confirmada">Confirmada</option>
+                                <option value="cancelada">Cancelada</option>
+                            </select>
+                        </div>
+
+                        <div class="selection-box">
+                            <h4>Habitaciones</h4>
+                            <div class="picker-grid">
+                                <select id="habitacionSelect"></select>
+                                <button class="secondary" type="button" id="btnAgregarHabitacion">Agregar</button>
+                            </div>
+                            <div class="selection-list" id="habitacionesSeleccionadas"></div>
+                        </div>
+
+                        <div class="selection-box">
+                            <h4>Paquetes</h4>
+                            <div class="picker-grid">
+                                <select id="paqueteSelect"></select>
+                                <input type="number" id="cantidadPaquete" min="1" value="1">
+                            </div>
+                            <div class="actions">
+                                <button class="secondary" type="button" id="btnAgregarPaquete">Agregar paquete</button>
+                            </div>
+                            <div class="selection-list" id="paquetesSeleccionados"></div>
+                        </div>
+
+                        <div class="selection-box">
+                            <h4>Servicios</h4>
+                            <div class="picker-grid">
+                                <select id="servicioSelect"></select>
+                                <input type="number" id="cantidadServicio" min="1" value="1">
+                            </div>
+                            <div class="actions">
+                                <button class="secondary" type="button" id="btnAgregarServicio">Agregar servicio</button>
+                            </div>
+                            <div class="selection-list" id="serviciosSeleccionados"></div>
+                        </div>
+
+                        <div class="field">
+                            <label for="totalReserva">Total estimado</label>
+                            <input type="text" id="totalReserva" readonly value="$0.00">
+                        </div>
+
+                        <div class="actions">
+                            <button class="primary" type="submit" id="submitButton">Guardar reserva</button>
+                            <button class="secondary" type="button" id="btnCancelarEdicion">Cancelar</button>
+                        </div>
+                    </form>
+                </article>
+
+                <article class="panel">
+                    <div class="toolbar">
+                        <input class="search" type="search" id="buscador" placeholder="Buscar por cliente, correo o estado">
+                        <button class="secondary" type="button" id="btnListar">Listar reservas</button>
+                    </div>
+
+                    <div id="reservasContainer" class="cards">
+                        <div class="empty">Cargando reservas...</div>
+                    </div>
+                </article>
+            </section>
+        </main>
+    </div>
+
+    <script src="../js/shared/admin-layout.js"></script>
+    <script type="module" src="../js/reservas.js"></script>
+</body>
+</html>
