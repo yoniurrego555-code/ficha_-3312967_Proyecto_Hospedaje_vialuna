@@ -52,8 +52,16 @@ exports.crear = (req, res) => {
       resultado: result
     }))
     .catch(err => {
-      console.error(err);
-      res.status(err.status || 500).json({ error: err.message || "Error al crear" });
+      console.error("❌ ERROR:", err);
+      
+      // 🔐 MANEJO DE ERRORES DE DUPLICADOS
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({
+          error: "El correo ya está registrado"
+        });
+      }
+      
+      res.status(500).json({ error: "Error al crear" });
     });
 };
 

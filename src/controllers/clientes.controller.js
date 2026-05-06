@@ -20,17 +20,17 @@ exports.obtener = (req, res) => {
     });
 };
 
-// 🔹 LOGIN
+// 🔹 LOGIN MEJORADO - SOLO POR EMAIL
 exports.login = (req, res) => {
-  const { Email, NroDocumento } = req.body;
+  const { Email } = req.body;
 
-  if (!Email || !NroDocumento) {
+  if (!Email) {
     return res.status(400).json({
-      error: "Correo y documento son obligatorios"
+      error: "El correo es obligatorio"
     });
   }
 
-  service.login({ Email, NroDocumento })
+  service.login({ Email })
     .then(cliente => {
       if (!cliente) {
         return res.status(401).json({
@@ -45,7 +45,17 @@ exports.login = (req, res) => {
     })
     .catch(err => {
       console.error(err);
-      res.status(500).json({ error: "Error al iniciar sesion" });
+      
+      // 🔐 MANEJO DE ERRORES ESPECÍFICOS
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({
+          error: "El correo ya está registrado"
+        });
+      }
+      
+      res.status(500).json({ 
+        error: "Error al iniciar sesion" 
+      });
     });
 };
 
@@ -57,7 +67,15 @@ exports.crear = (req, res) => {
       resultado: result
     }))
     .catch(err => {
-      console.error(err);
+      console.error("❌ ERROR:", err);
+      
+      // 🔐 MANEJO DE ERRORES DE DUPLICADOS
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({
+          error: "El correo ya está registrado"
+        });
+      }
+      
       res.status(500).json({ error: "Error al crear" });
     });
 };

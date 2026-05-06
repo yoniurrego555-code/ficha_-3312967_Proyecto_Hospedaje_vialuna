@@ -166,7 +166,31 @@ const obtenerPorCredenciales = async (credenciales) => {
   ).then(([rows]) => rows[0]);
 };
 
+// 🔍 VALIDAR EMAIL DUPLICADO ANTES DE INSERTAR
+const validarEmailUnico = async (email) => {
+  const [clientesResult] = await db.query(
+    "SELECT Email FROM clientes WHERE LOWER(Email) = LOWER(?) LIMIT 1",
+    [email]
+  );
+  
+  const [usuariosResult] = await db.query(
+    "SELECT Email FROM usuarios WHERE LOWER(Email) = LOWER(?) LIMIT 1", 
+    [email]
+  );
+  
+  return clientesResult.length === 0 && usuariosResult.length === 0;
+};
+
 const crear = async (data) => {
+  // 🔐 VALIDAR EMAIL DUPLICADO
+  const emailUnico = await validarEmailUnico(data.Email);
+  if (!emailUnico) {
+    const error = new Error("El correo ya está registrado");
+    error.code = "ER_DUP_ENTRY";
+    error.status = 409;
+    throw error;
+  }
+
   const payload = await buildWritePayload(data);
   const query = buildInsertQuery("usuarios", payload);
   return db.query(query.sql, query.values).then(([result]) => result);
@@ -204,6 +228,7 @@ module.exports = {
   obtenerPorId,
   obtenerPorEmail,
   obtenerPorCredenciales,
+  validarEmailUnico,
   crear,
   actualizar,
   actualizarPassword,
