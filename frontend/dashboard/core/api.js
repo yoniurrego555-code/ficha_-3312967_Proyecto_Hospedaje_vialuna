@@ -149,16 +149,96 @@ export function getHabitaciones() {
   return request("/habitacion");
 }
 
+export function createHabitacion(payload) {
+  return request("/habitacion", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateHabitacion(id, payload) {
+  return request(`/habitacion/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteHabitacion(id) {
+  return request(`/habitacion/${id}`, {
+    method: "DELETE"
+  });
+}
+
 export function getServicios() {
   return request("/servicios");
+}
+
+export function createServicio(payload) {
+  return request("/servicios", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateServicio(id, payload) {
+  return request(`/servicios/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteServicio(id) {
+  return request(`/servicios/${id}`, {
+    method: "DELETE"
+  });
 }
 
 export function getPaquetes() {
   return request("/paquetes");
 }
 
+export function createPaquete(payload) {
+  return request("/paquetes", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updatePaquete(id, payload) {
+  return request(`/paquetes/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deletePaquete(id) {
+  return request(`/paquetes/${id}`, {
+    method: "DELETE"
+  });
+}
+
 export function getMetodosPago() {
   return request("/metodopago");
+}
+
+export function createMetodoPago(payload) {
+  return request("/metodopago", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateMetodoPago(id, payload) {
+  return request(`/metodopago/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteMetodoPago(id) {
+  return request(`/metodopago/${id}`, {
+    method: "DELETE"
+  });
 }
 
 export function getEstadosReserva() {

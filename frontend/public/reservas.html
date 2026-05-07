@@ -1,0 +1,187 @@
+<div class="dashboard-header">
+  <h1>Reservas</h1>
+  <p>Gestiona todas las reservas del hotel</p>
+</div>
+
+<!-- Metrics -->
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-icon">📊</div>
+    <div class="metric-content">
+      <h3>Total Reservas</h3>
+      <p class="metric-value" id="totalReservations">0</p>
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-icon">✅</div>
+    <div class="metric-content">
+      <h3>Reservas Activas</h3>
+      <p class="metric-value" id="activeReservations">0</p>
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-icon">📅</div>
+    <div class="metric-content">
+      <h3>Reservas Hoy</h3>
+      <p class="metric-value" id="todayReservations">0</p>
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-icon">💰</div>
+    <div class="metric-content">
+      <h3>Ingresos del Mes</h3>
+      <p class="metric-value" id="monthlyRevenue">$0</p>
+    </div>
+  </div>
+</div>
+
+<!-- Reservations List Section -->
+<div class="reservations-section" id="reservationsListSection">
+  <div class="section-header">
+    <h2>Lista de Reservas</h2>
+    <button class="btn-primary" id="showReservationFormBtn">
+      <span>➕</span> Crear Nueva Reserva
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-container">
+    <input type="text" class="search-input" id="searchReservations" placeholder="Buscar reservas...">
+    <select class="filter-select" id="filterStatus">
+      <option value="">Todos los estados</option>
+      <option value="1">Activa</option>
+      <option value="2">Completada</option>
+      <option value="3">Cancelada</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Cliente</th>
+          <th>Habitación</th>
+          <th>Fechas</th>
+          <th>Total</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="reservationsTableBody">
+        <tr><td colspan="7" class="empty-state">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Reservation Form Section -->
+<div class="reservation-form-section" id="reservationFormSection" style="display: none;">
+  <div class="section-header">
+    <h2>Nueva Reserva</h2>
+    <button class="btn-secondary" id="cancelNewReservationBtn">Cancelar</button>
+  </div>
+
+  <form class="reservation-form" id="reservationForm">
+    <!-- Basic Information -->
+    <div class="form-section">
+      <h3>Información Básica</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="clienteSelect">Cliente *</label>
+          <select id="clienteSelect" required>
+            <option value="">Seleccionar cliente...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="documentoInput">Documento</label>
+          <input type="text" id="documentoInput" readonly>
+        </div>
+        <div class="form-group">
+          <label for="fechaInicio">Fecha Inicio *</label>
+          <input type="date" id="fechaInicio" required min="">
+        </div>
+        <div class="form-group">
+          <label for="fechaFin">Fecha Fin *</label>
+          <input type="date" id="fechaFin" required min="">
+        </div>
+        <div class="form-group">
+          <label for="horaEntrada">Hora Entrada</label>
+          <input type="time" id="horaEntrada" value="14:00">
+        </div>
+        <div class="form-group">
+          <label for="horaSalida">Hora Salida</label>
+          <input type="time" id="horaSalida" value="12:00">
+        </div>
+      </div>
+    </div>
+
+    <!-- Room Selection -->
+    <div class="form-section">
+      <h3>Selección de Habitación *</h3>
+      <div class="room-selection" id="roomSelection">
+        <!-- Rooms will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Packages -->
+    <div class="form-section">
+      <h3>Paquetes Adicionales</h3>
+      <div class="packages-grid" id="packagesGrid">
+        <!-- Packages will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Services -->
+    <div class="form-section">
+      <h3>Servicios Adicionales</h3>
+      <div class="services-grid" id="servicesGrid">
+        <!-- Services will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Payment Information -->
+    <div class="form-section">
+      <h3>Información de Pago</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="metodoPago">Método de Pago *</label>
+          <select id="metodoPago" required>
+            <option value="">Seleccionar...</option>
+            <option value="1">Efectivo</option>
+            <option value="2">Tarjeta</option>
+            <option value="3">Transferencia</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="estadoReserva">Estado Reserva *</label>
+          <select id="estadoReserva" required>
+            <option value="1">Activa</option>
+            <option value="2">Pendiente</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total -->
+    <div class="form-section">
+      <div class="total-section">
+        <div class="total-row">
+          <span>Subtotal:</span>
+          <span id="subtotal">$0</span>
+        </div>
+        <div class="total-row">
+          <strong>Total:</strong>
+          <strong id="totalAmount">$0</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button type="button" class="btn-secondary" id="clearFormBtn">Limpiar Formulario</button>
+      <button type="submit" class="btn-primary">Crear Reserva</button>
+    </div>
+  </form>
+</div>

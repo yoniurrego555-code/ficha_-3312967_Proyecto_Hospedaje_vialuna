@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<<<<<<< HEAD
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Via Luna | Crear cuenta</title>
@@ -9,32 +8,56 @@
 </head>
 <body>
     <main class="auth-shell">
+        <div class="auth-header">
+            <a class="button back-btn" href="index.html">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Volver al inicio
+            </a>
+        </div>
+        
         <section class="split-card">
             <aside class="side-panel">
                 <div>
                     <div class="badge">Registro</div>
-                    <h1>Crea tu cuenta para reservar mas rapido</h1>
+                    <h1>Crea tu cuenta y comienza tu experiencia</h1>
                     <p>
-                        Una vez registrada tu cuenta, podras iniciar sesion y continuar directamente en la pagina
-                        unica de reserva.
+                        Únete a la comunidad de Via Luna para disfrutar de reservas rápidas, ofertas exclusivas y un servicio personalizado.
                     </p>
                 </div>
 
+                <div class="stats-grid">
+                    <div class="summary-card">
+                        <span>Beneficios</span>
+                        <strong>Premium</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span>Descuento</span>
+                        <strong>10%</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span>Reservas</span>
+                        <strong>Ilimitadas</strong>
+                    </div>
+                </div>
+
                 <ul>
-                    <li>Registro pensado para usuarios clientes.</li>
-                    <li>Diseno coherente con login, recuperacion y reserva.</li>
-                    <li>Al terminar, te enviamos a iniciar sesion.</li>
+                    <li>✓ Acceso prioritario a promociones</li>
+                    <li>✓ Historial de reservas personalizado</li>
+                    <li>✓ Check-in rápido en todas las propiedades</li>
+                    <li>✓ Soporte 24/7 exclusivo para miembros</li>
                 </ul>
 
                 <div class="side-actions">
                     <a class="button light" href="login.html">Ya tengo cuenta</a>
-                    <a class="button ghost" href="reservar.html">Quiero reservar</a>
+                    <a class="button ghost" href="reservar.html">Explorar habitaciones</a>
                 </div>
             </aside>
 
             <section class="form-panel">
-                <h2>Crear cuenta</h2>
-                <p>Completa tus datos para registrarte como cliente.</p>
+                <h2>Crear nueva cuenta</h2>
+                <p>Completa tus datos para registrarte como cliente de Via Luna.</p>
 
                 <div class="form-card">
                     <form id="registerForm">
@@ -44,34 +67,46 @@
                         </div>
 
                         <div class="field">
-                            <label for="email">Correo electronico</label>
-                            <input id="email" name="email" type="email" placeholder="tucorreo@ejemplo.com" required>
+                            <label for="email">Correo electrónico</label>
+                            <input id="email" name="email" type="email" placeholder="tu@ejemplo.com" required>
                         </div>
 
                         <div class="field-grid">
                             <div class="field">
-                                <label for="password">Contrasena</label>
-                                <input id="password" name="password" type="password" placeholder="Minimo 6 caracteres" required minlength="6">
+                                <label for="password">Contraseña</label>
+                                <input id="password" name="password" type="password" placeholder="Mínimo 6 caracteres" required minlength="6">
                             </div>
                             <div class="field">
-                                <label for="confirmPassword">Confirmar contrasena</label>
-                                <input id="confirmPassword" name="confirmPassword" type="password" placeholder="Repite la contrasena" required minlength="6">
+                                <label for="confirmPassword">Confirmar contraseña</label>
+                                <input id="confirmPassword" name="confirmPassword" type="password" placeholder="Repite la contraseña" required minlength="6">
                             </div>
                         </div>
 
-                        <p class="helper">Tu cuenta se registrara con rol `usuario` para el flujo publico de reserva.</p>
+                        <p class="helper">Tu cuenta se registrará con rol de usuario para el flujo público de reserva.</p>
 
-                        <button class="button primary" id="submitButton" type="submit">Crear cuenta</button>
+                        <button class="button primary" id="submitButton" type="submit">
+                            Crear cuenta
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="8.5" cy="7" r="4"/>
+                                <line x1="20" y1="8" x2="20" y2="14"/>
+                                <line x1="23" y1="11" x2="17" y2="11"/>
+                            </svg>
+                        </button>
                     </form>
 
                     <div id="message" class="message"></div>
 
                     <div class="support-links">
                         <a href="login.html">Ya tengo cuenta</a>
-                        <a href="recuperar.html">Olvide mi contrasena</a>
+                        <a href="recuperar.html">Olvidé mi contraseña</a>
                         <a href="eliminar-cuenta.html">Eliminar cuenta</a>
-                        <a href="index.html">Volver al inicio</a>
                     </div>
+                </div>
+
+                <div class="auth-banner">
+                    <strong>¿Por qué registrarte?</strong>
+                    <p>Como miembro de Via Luna, obtienes acceso a precios especiales, notificaciones anticipadas de promociones y un equipo de atención dedicado para hacer de cada estancia una experiencia inolvidable.</p>
                 </div>
             </section>
         </section>
@@ -225,7 +260,7 @@
 
         <div class="auth-actions">
           <button type="submit" class="btn btn-primary">Registrarse</button>
-          <a class="btn btn-secondary" href="../public/login.html">Volver al login</a>
+          <a class="btn btn-secondary" href="login.html">Volver al login</a>
         </div>
       </form>
     </section>

@@ -1,4 +1,4 @@
-import { getMetodosPago } from "../core/api.js";
+import { getMetodosPago, createMetodoPago, updateMetodoPago, deleteMetodoPago } from "../core/api.js";
 
 class PagosModule {
   constructor(container) {
@@ -63,125 +63,11 @@ class PagosModule {
   }
 
   render() {
-    this.container.innerHTML = this.getTemplate();
     this.updateMetrics();
     this.renderTable();
   }
 
-  getTemplate() {
-    return `
-      <!-- Pagos Header -->
-      <header class="module-header">
-        <div class="header-left">
-          <h1>Pagos</h1>
-          <p>Gestión de métodos de pago y transacciones</p>
-        </div>
-        <div class="header-right">
-          <button class="btn-primary" onclick="window.pagosModule.showNewPaymentModal()">
-            <span>➕</span> Nuevo Pago
-          </button>
-        </div>
-      </header>
 
-      <!-- Metrics Grid -->
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Total Métodos</div>
-            <div class="metric-icon blue">💳</div>
-          </div>
-          <div class="metric-value" id="totalPagos">0</div>
-          <div class="metric-change">
-            <span>📊</span> Total del sistema
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Pagos Mes</div>
-            <div class="metric-icon green">📅</div>
-          </div>
-          <div class="metric-value" id="pagosMes">$0</div>
-          <div class="metric-change positive">
-            <span>↑</span> Este mes
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Procesados</div>
-            <div class="metric-icon amber">✅</div>
-          </div>
-          <div class="metric-value" id="pagosProcesados">0</div>
-          <div class="metric-change">
-            <span>⚡</span> Completados
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Pendientes</div>
-            <div class="metric-icon purple">⏳</div>
-          </div>
-          <div class="metric-value" id="pagosPendientes">0</div>
-          <div class="metric-change negative">
-            <span>⏱️</span> En espera
-          </div>
-        </div>
-      </div>
-
-      <!-- Search and Filters -->
-      <div class="search-section">
-        <div class="search-container">
-          <input type="text" id="searchPagos" placeholder="Buscar método de pago..." class="search-input">
-          <button class="btn-secondary" onclick="window.pagosModule.search()">
-            <span>🔍</span> Buscar
-          </button>
-        </div>
-        <div class="filter-container">
-          <select id="filterEstado" class="filter-select">
-            <option value="">Todos los estados</option>
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
-          <select id="filterTipo" class="filter-select">
-            <option value="">Todos los tipos</option>
-            <option value="tarjeta">Tarjeta</option>
-            <option value="efectivo">Efectivo</option>
-            <option value="transferencia">Transferencia</option>
-            <option value="digital">Digital</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Pagos Table -->
-      <div class="table-card">
-        <div class="table-header">
-          <h3 class="table-title">Métodos de Pago</h3>
-          <div class="table-actions">
-            <button class="btn-secondary" onclick="window.pagosModule.exportData()">
-              <span>📥</span> Exportar
-            </button>
-          </div>
-        </div>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Tipo</th>
-                <th>Descripción</th>
-                <th>Comisión</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="pagosTableBody">
-              <tr><td colspan="8" class="text-center">Cargando...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
 
   updateMetrics() {
     const elements = {
@@ -355,22 +241,177 @@ class PagosModule {
   }
 
   showNewPaymentModal() {
-    console.log('Mostrar modal de nuevo pago');
-    // TODO: Implementar modal de creación de pago
-    alert('Función de nuevo pago en desarrollo');
+    this.container.innerHTML = `
+      <div class="pago-new-view">
+        <div class="new-header">
+          <button onclick="window.location.hash='pagos'" class="btn-back">
+            ← Volver a la lista
+          </button>
+          <h2>Nuevo Método de Pago</h2>
+        </div>
+        
+        <div class="new-content">
+          <form id="newPagoForm" class="pago-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="newNombre">Nombre:</label>
+                <input type="text" id="newNombre" required>
+              </div>
+              <div class="form-group">
+                <label for="newTipo">Tipo:</label>
+                <select id="newTipo" required>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Transferencia">Transferencia</option>
+                  <option value="Tarjeta">Tarjeta</option>
+                  <option value="Digital">Billetera Digital</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="newComision">Comisión (%):</label>
+                <input type="number" step="0.01" id="newComision" value="0.00" required>
+              </div>
+              <div class="form-group">
+                <label for="newEstado">Estado:</label>
+                <select id="newEstado" required>
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                </select>
+              </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="newDescripcion">Descripción:</label>
+                <textarea id="newDescripcion" rows="3" required></textarea>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" onclick="window.location.hash='pagos'" class="btn-secondary">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-primary">
+                💾 Guardar Método
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const form = this.container.querySelector('#newPagoForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = {
+        Nombre: this.container.querySelector('#newNombre').value,
+        Tipo: this.container.querySelector('#newTipo').value,
+        Comision: parseFloat(this.container.querySelector('#newComision').value),
+        Estado: this.container.querySelector('#newEstado').value,
+        Descripcion: this.container.querySelector('#newDescripcion').value
+      };
+
+      try {
+        await createMetodoPago(formData);
+        alert('Método de pago creado exitosamente');
+        window.location.hash='pagos';
+      } catch (error) {
+        alert('Error creando método de pago: ' + error.message);
+      }
+    });
   }
 
   edit(id) {
-    console.log('Editar método de pago:', id);
-    // TODO: Implementar modal de edición
-    alert('Función de edición en desarrollo');
+    const pago = this.pagos.find(p => p.id == id || p.ID == id);
+    if (!pago) {
+      alert('Método de pago no encontrado');
+      return;
+    }
+
+    this.container.innerHTML = `
+      <div class="pago-form-view">
+        <div class="new-header">
+          <button onclick="window.location.hash='pagos'" class="btn-back">
+            ← Volver a la lista
+          </button>
+          <h2>Editar Método de Pago</h2>
+        </div>
+        
+        <div class="new-content">
+          <form id="editPagoForm" class="pago-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="editNombre">Nombre:</label>
+                <input type="text" id="editNombre" value="${pago.nombre || pago.Nombre || ''}" required>
+              </div>
+              <div class="form-group">
+                <label for="editTipo">Tipo:</label>
+                <select id="editTipo" required>
+                  <option value="Efectivo" ${String(pago.tipo || pago.Tipo || '').toLowerCase() === 'efectivo' ? 'selected' : ''}>Efectivo</option>
+                  <option value="Transferencia" ${String(pago.tipo || pago.Tipo || '').toLowerCase() === 'transferencia' ? 'selected' : ''}>Transferencia</option>
+                  <option value="Tarjeta" ${String(pago.tipo || pago.Tipo || '').toLowerCase() === 'tarjeta' ? 'selected' : ''}>Tarjeta</option>
+                  <option value="Digital" ${String(pago.tipo || pago.Tipo || '').toLowerCase() === 'digital' ? 'selected' : ''}>Billetera Digital</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="editComision">Comisión (%):</label>
+                <input type="number" step="0.01" id="editComision" value="${pago.comision || pago.Comision || 0}" required>
+              </div>
+              <div class="form-group">
+                <label for="editEstado">Estado:</label>
+                <select id="editEstado" required>
+                  <option value="Activo" ${String(pago.estado || pago.EstadoNombre || '').toLowerCase() === 'activo' ? 'selected' : ''}>Activo</option>
+                  <option value="Inactivo" ${String(pago.estado || pago.EstadoNombre || '').toLowerCase() === 'inactivo' ? 'selected' : ''}>Inactivo</option>
+                </select>
+              </div>
+              <div class="form-group" style="grid-column: span 2;">
+                <label for="editDescripcion">Descripción:</label>
+                <textarea id="editDescripcion" rows="3" required>${pago.descripcion || pago.Descripcion || ''}</textarea>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" onclick="window.location.hash='pagos'" class="btn-secondary">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-primary">
+                💾 Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const form = this.container.querySelector('#editPagoForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = {
+        Nombre: this.container.querySelector('#editNombre').value,
+        Tipo: this.container.querySelector('#editTipo').value,
+        Comision: parseFloat(this.container.querySelector('#editComision').value),
+        Estado: this.container.querySelector('#editEstado').value,
+        Descripcion: this.container.querySelector('#editDescripcion').value
+      };
+
+      try {
+        await updateMetodoPago(id, formData);
+        alert('Método de pago actualizado exitosamente');
+        window.location.hash='pagos';
+      } catch (error) {
+        alert('Error actualizando método de pago: ' + error.message);
+      }
+    });
   }
 
-  delete(id) {
+  async delete(id) {
     if (confirm('¿Está seguro de que desea eliminar este método de pago?')) {
-      console.log('Eliminar método de pago:', id);
-      // TODO: Implementar eliminación via API
-      alert('Función de eliminación en desarrollo');
+      try {
+        await deleteMetodoPago(id);
+        alert('Método de pago eliminado exitosamente');
+        await this.loadData();
+        this.render();
+      } catch (error) {
+        alert('Error eliminando método de pago: ' + error.message);
+      }
     }
   }
 

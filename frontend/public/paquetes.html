@@ -1,0 +1,110 @@
+<!-- Paquetes Header -->
+<header class="module-header">
+  <div class="header-left">
+    <h1>Paquetes</h1>
+    <p>Gestión de paquetes del hotel</p>
+  </div>
+  <div class="header-right">
+    <button class="btn-primary" onclick="window.paquetesModule.showNewPackageModal()">
+      <span>➕</span> Nuevo Paquete
+    </button>
+  </div>
+</header>
+
+<!-- Metrics Grid -->
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Total Paquetes</div>
+      <div class="metric-icon blue">📦</div>
+    </div>
+    <div class="metric-value" id="totalPaquetes">0</div>
+    <div class="metric-change">
+      <span>📊</span> Total del hotel
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Paquetes Activos</div>
+      <div class="metric-icon green">✅</div>
+    </div>
+    <div class="metric-value" id="paquetesActivos">0</div>
+    <div class="metric-change positive">
+      <span>↑</span> Disponibles
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Paquetes Inactivos</div>
+      <div class="metric-icon amber">⏸️</div>
+    </div>
+    <div class="metric-value" id="paquetesInactivos">0</div>
+    <div class="metric-change negative">
+      <span>↓</span> No disponibles
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Precio Promedio</div>
+      <div class="metric-icon purple">💰</div>
+    </div>
+    <div class="metric-value" id="precioPromedio">$0</div>
+    <div class="metric-change">
+      <span>📈</span> Promedio general
+    </div>
+  </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="search-section">
+  <div class="search-container">
+    <input type="text" id="searchPaquetes" placeholder="Buscar paquete..." class="search-input">
+    <button class="btn-secondary" onclick="window.paquetesModule.search()">
+      <span>🔍</span> Buscar
+    </button>
+  </div>
+  <div class="filter-container">
+    <select id="filterEstado" class="filter-select">
+      <option value="">Todos los estados</option>
+      <option value="activo">Activo</option>
+      <option value="inactivo">Inactivo</option>
+    </select>
+    <select id="filterRangoPrecio" class="filter-select">
+      <option value="">Todos los precios</option>
+      <option value="0-50">$0 - $50</option>
+      <option value="50-100">$50 - $100</option>
+      <option value="100-200">$100 - $200</option>
+      <option value="200+">$200+</option>
+    </select>
+  </div>
+</div>
+
+<!-- Paquetes Table -->
+<div class="table-card">
+  <div class="table-header">
+    <h3 class="table-title">Lista de Paquetes</h3>
+    <div class="table-actions">
+      <button class="btn-secondary" onclick="window.paquetesModule.exportData()">
+        <span>📥</span> Exportar
+      </button>
+    </div>
+  </div>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Precio</th>
+          <th>Duración</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="paquetesTableBody">
+        <tr><td colspan="8" class="text-center">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

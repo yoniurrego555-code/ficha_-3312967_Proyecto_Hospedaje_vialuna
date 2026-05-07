@@ -1,0 +1,71 @@
+<!-- Header Ultra Compacto -->
+<header class="module-header" style="margin-bottom: 8px;">
+  <div class="header-left">
+    <h1 style="margin: 0; font-size: 1.5rem; color: #1f2937;">Roles y Permisos</h1>
+    <p style="margin: 2px 0 0 0; color: #6b7280; font-size: 0.8rem;">Gestión de roles y permisos del sistema</p>
+  </div>
+</header>
+
+<!-- Two Column Layout Ultra Compacto -->
+<div class="roles-permisos-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 100%; height: calc(100vh - 120px); overflow: hidden;">
+
+<!-- SECCIÓN IZQUIERDA: ROLES -->
+<div class="roles-section" style="display: flex; flex-direction: column;">
+  <div class="section-card" style="background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); padding: 12px; border: 1px solid #e5e7eb; flex: 1; display: flex; flex-direction: column;">
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;">
+      <div style="min-width: 0; flex: 1;">
+        <h2 style="margin: 0; color: #1f2937; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+          👥 Roles
+          <span id="rolesCount" style="background: #3b82f6; color: white; padding: 1px 6px; border-radius: 10px; font-size: 0.65rem; font-weight: 500;">
+            0
+          </span>
+        </h2>
+      </div>
+      <button class="btn-primary-modern" onclick="window.rolesPermisosModule.showNuevoRol()" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; padding: 6px 10px; border-radius: 4px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 3px; font-size: 0.8rem; white-space: nowrap;">
+        <span style="font-size: 0.8rem;">➕</span>
+        Nuevo
+      </button>
+    </div>
+    <div class="table-container" style="overflow-y: auto; flex: 1;">
+      <table class="data-table-modern" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+        <thead style="position: sticky; top: 0; background: white; z-index: 10;">
+          <tr>
+            <th style="padding: 6px 8px; text-align: left; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Nombre</th>
+            <th style="padding: 6px 8px; text-align: left; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Estado</th>
+            <th style="padding: 6px 8px; text-align: center; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="rolesTable">
+          <tr><td colspan="3" class="text-center">Cargando roles...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SECCIÓN DERECHA: PERMISOS -->
+<div class="permisos-section" style="display: flex; flex-direction: column;">
+  <div class="section-card" style="background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); padding: 12px; border: 1px solid #e5e7eb; flex: 1; display: flex; flex-direction: column;">
+    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;">
+      <div style="min-width: 0; flex: 1;">
+        <h2 style="margin: 0; color: #1f2937; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+          🔐 Permisos
+          <span id="permisosCount" style="background: #10b981; color: white; padding: 1px 6px; border-radius: 10px; font-size: 0.65rem; font-weight: 500;">
+            0
+          </span>
+        </h2>
+      </div>
+      <div style="margin-right: 6px;">
+        <button class="btn-primary-modern" onclick="window.rolesPermisosModule.showNuevoPermiso()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 6px 10px; border-radius: 4px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 3px; font-size: 0.8rem; white-space: nowrap;">
+          <span style="font-size: 0.8rem;">➕</span>
+          Nuevo
+        </button>
+      </div>
+    </div>
+    <div class="permisos-list" id="permisosList" style="overflow-y: auto; flex: 1;">
+      <div class="text-center">Cargando permisos...</div>
+    </div>
+  </div>
+</div>
+
+</div>

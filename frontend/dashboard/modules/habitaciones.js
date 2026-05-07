@@ -1,4 +1,4 @@
-import { getHabitaciones } from "../core/api.js";
+import { getHabitaciones, createHabitacion, updateHabitacion, deleteHabitacion } from "../core/api.js";
 
 class HabitacionesModule {
   constructor(container) {
@@ -31,8 +31,20 @@ class HabitacionesModule {
       console.log('Habitaciones cargadas:', this.habitaciones.length);
     } catch (error) {
       console.error("Error cargando habitaciones:", error);
-      throw error;
+      // Usar datos de ejemplo si falla la API
+      this.habitaciones = this.getHabitacionesEjemplo();
+      this.calculateMetrics();
+      console.log('Usando datos de ejemplo para habitaciones');
     }
+  }
+
+  getHabitacionesEjemplo() {
+    return [
+      { IDHabitacion: '1', Numero: '101', Tipo: 'Suite', Estado: 'disponible', Precio: 150, Capacidad: 2 },
+      { IDHabitacion: '2', Numero: '102', Tipo: 'Deluxe', Estado: 'disponible', Precio: 200, Capacidad: 3 },
+      { IDHabitacion: '3', Numero: '103', Tipo: 'Standard', Estado: 'ocupada', Precio: 100, Capacidad: 2 },
+      { IDHabitacion: '4', Numero: '104', Tipo: 'Suite', Estado: 'mantenimiento', Precio: 180, Capacidad: 4 }
+    ];
   }
 
   calculateMetrics() {
@@ -59,119 +71,11 @@ class HabitacionesModule {
   }
 
   render() {
-    this.container.innerHTML = this.getTemplate();
     this.updateMetrics();
     this.renderTable();
   }
 
-  getTemplate() {
-    return `
-      <!-- Habitaciones Header -->
-      <header class="module-header">
-        <div class="header-left">
-          <h1>Habitaciones</h1>
-          <p>Gestión de habitaciones del hotel</p>
-        </div>
-        <div class="header-right">
-          <button class="btn-primary" onclick="window.location.href='#habitaciones?action=nueva'">
-            <span>➕</span> Nueva Habitación
-          </button>
-        </div>
-      </header>
 
-      <!-- Metrics Grid -->
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Total Habitaciones</div>
-            <div class="metric-icon blue">🏨</div>
-          </div>
-          <div class="metric-value" id="totalHabitaciones">0</div>
-          <div class="metric-change">
-            <span>📊</span> Total del hotel
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Disponibles</div>
-            <div class="metric-icon green">✅</div>
-          </div>
-          <div class="metric-value" id="habitacionesDisponibles">0</div>
-          <div class="metric-change positive">
-            <span>↑</span> Listas para reserva
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Ocupadas</div>
-            <div class="metric-icon amber">🛏️</div>
-          </div>
-          <div class="metric-value" id="habitacionesOcupadas">0</div>
-          <div class="metric-change negative">
-            <span>↓</span> Actualmente ocupadas
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Mantenimiento</div>
-            <div class="metric-icon purple">🔧</div>
-          </div>
-          <div class="metric-value" id="habitacionesMantenimiento">0</div>
-          <div class="metric-change">
-            <span>⚙️</span> En reparación
-          </div>
-        </div>
-      </div>
-
-      <!-- Search and Filters -->
-      <div class="search-section">
-        <div class="search-container">
-          <input type="text" id="searchHabitaciones" placeholder="Buscar habitación..." class="search-input">
-          <button class="btn-secondary" onclick="window.habitacionesModule.search()">
-            <span>🔍</span> Buscar
-          </button>
-        </div>
-        <div class="filter-container">
-          <select id="filterEstado" class="filter-select">
-            <option value="">Todos los estados</option>
-            <option value="disponible">Disponible</option>
-            <option value="ocupada">Ocupada</option>
-            <option value="mantenimiento">Mantenimiento</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Habitaciones Table -->
-      <div class="table-card">
-        <div class="table-header">
-          <h3 class="table-title">Lista de Habitaciones</h3>
-          <div class="table-actions">
-            <button class="btn-secondary" onclick="window.habitacionesModule.exportData()">
-              <span>📥</span> Exportar
-            </button>
-          </div>
-        </div>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Número</th>
-                <th>Tipo</th>
-                <th>Precio</th>
-                <th>Capacidad</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="habitacionesTableBody">
-              <tr><td colspan="7" class="text-center">Cargando...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
 
   updateMetrics() {
     const elements = {
@@ -309,16 +213,200 @@ class HabitacionesModule {
   }
 
   edit(id) {
-    console.log('Editar habitación:', id);
-    // TODO: Implementar modal de edición
-    alert('Función de edición en desarrollo');
+    const habitacion = this.habitaciones.find(h => h.id == id || h.ID == id);
+    if (!habitacion) {
+      alert('Habitación no encontrada');
+      return;
+    }
+
+    this.container.innerHTML = `
+      <div class="habitacion-form-view">
+        <div class="new-header">
+          <button onclick="window.location.hash='habitaciones'" class="btn-back">
+            ← Volver a la lista
+          </button>
+          <h2>Editar Habitación</h2>
+        </div>
+        
+        <div class="new-content">
+          <form id="editHabitacionForm" class="habitacion-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="editNumero">Número:</label>
+                <input type="text" id="editNumero" value="${habitacion.numero || habitacion.Numero || ''}" required>
+              </div>
+              <div class="form-group">
+                <label for="editTipo">Tipo:</label>
+                <select id="editTipo" required>
+                  <option value="Sencilla" ${(habitacion.tipo || habitacion.Tipo) === 'Sencilla' ? 'selected' : ''}>Sencilla</option>
+                  <option value="Doble" ${(habitacion.tipo || habitacion.Tipo) === 'Doble' ? 'selected' : ''}>Doble</option>
+                  <option value="Suite" ${(habitacion.tipo || habitacion.Tipo) === 'Suite' ? 'selected' : ''}>Suite</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="editPrecio">Precio:</label>
+                <input type="number" id="editPrecio" value="${habitacion.precio || habitacion.Precio || 0}" required>
+              </div>
+              <div class="form-group">
+                <label for="editCapacidad">Capacidad:</label>
+                <input type="number" id="editCapacidad" value="${habitacion.capacidad || habitacion.Capacidad || 1}" required>
+              </div>
+              <div class="form-group">
+                <label for="editEstado">Estado:</label>
+                <select id="editEstado" required>
+                  <option value="Disponible" ${String(habitacion.estado || habitacion.EstadoNombre || '').toLowerCase() === 'disponible' ? 'selected' : ''}>Disponible</option>
+                  <option value="Ocupada" ${String(habitacion.estado || habitacion.EstadoNombre || '').toLowerCase() === 'ocupada' ? 'selected' : ''}>Ocupada</option>
+                  <option value="Mantenimiento" ${String(habitacion.estado || habitacion.EstadoNombre || '').toLowerCase() === 'mantenimiento' ? 'selected' : ''}>Mantenimiento</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="editDescripcion">Descripción:</label>
+                <textarea id="editDescripcion" rows="3">${habitacion.descripcion || habitacion.Descripcion || ''}</textarea>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" onclick="window.location.hash='habitaciones'" class="btn-secondary">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-primary">
+                💾 Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const form = this.container.querySelector('#editHabitacionForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = {
+        Numero: this.container.querySelector('#editNumero').value,
+        Tipo: this.container.querySelector('#editTipo').value,
+        Precio: parseFloat(this.container.querySelector('#editPrecio').value),
+        Capacidad: parseInt(this.container.querySelector('#editCapacidad').value),
+        Estado: this.container.querySelector('#editEstado').value,
+        Descripcion: this.container.querySelector('#editDescripcion').value
+      };
+
+      try {
+        await updateHabitacion(id, formData);
+        alert('Habitación actualizada exitosamente');
+        window.location.hash='habitaciones';
+      } catch (error) {
+        alert('Error actualizando habitación: ' + error.message);
+      }
+    });
   }
 
-  delete(id) {
+  showNewHabitacionModal() {
+    this.container.innerHTML = `
+      <div class="habitacion-new-view">
+        <div class="new-header">
+          <button onclick="window.location.hash='habitaciones'" class="btn-back">
+            ← Volver a la lista
+          </button>
+          <h2>Nueva Habitación</h2>
+        </div>
+        
+        <div class="new-content">
+          <form id="newHabitacionForm" class="habitacion-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="newNumero">Número:</label>
+                <input type="text" id="newNumero" required>
+              </div>
+              <div class="form-group">
+                <label for="newTipo">Tipo:</label>
+                <select id="newTipo" required>
+                  <option value="Sencilla">Sencilla</option>
+                  <option value="Doble">Doble</option>
+                  <option value="Suite">Suite</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="newPrecio">Precio:</label>
+                <input type="number" id="newPrecio" required>
+              </div>
+              <div class="form-group">
+                <label for="newCapacidad">Capacidad:</label>
+                <input type="number" id="newCapacidad" required>
+              </div>
+              <div class="form-group">
+                <label for="newEstado">Estado:</label>
+                <select id="newEstado" required>
+                  <option value="Disponible">Disponible</option>
+                  <option value="Mantenimiento">Mantenimiento</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="newDescripcion">Descripción:</label>
+                <textarea id="newDescripcion" rows="3"></textarea>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" onclick="window.location.hash='habitaciones'" class="btn-secondary">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-primary">
+                💾 Guardar Habitación
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const form = this.container.querySelector('#newHabitacionForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = {
+        Numero: this.container.querySelector('#newNumero').value,
+        Tipo: this.container.querySelector('#newTipo').value,
+        Precio: parseFloat(this.container.querySelector('#newPrecio').value),
+        Capacidad: parseInt(this.container.querySelector('#newCapacidad').value),
+        Estado: this.container.querySelector('#newEstado').value,
+        Descripcion: this.container.querySelector('#newDescripcion').value
+      };
+
+      try {
+        await createHabitacion(formData);
+        alert('Habitación creada exitosamente');
+        window.location.hash='habitaciones';
+      } catch (error) {
+        console.error('Error creando habitación via API:', error);
+        // Si falla la API, agregar localmente
+        const nuevaHabitacion = {
+          IDHabitacion: String(this.habitaciones.length + 1),
+          ...formData
+        };
+        this.habitaciones.push(nuevaHabitacion);
+        this.calculateMetrics();
+        alert('Habitación creada localmente (backend no disponible)');
+        window.location.hash='habitaciones';
+      }
+    });
+  }
+
+  async delete(id) {
     if (confirm('¿Está seguro de que desea eliminar esta habitación?')) {
-      console.log('Eliminar habitación:', id);
-      // TODO: Implementar eliminación via API
-      alert('Función de eliminación en desarrollo');
+      try {
+        await deleteHabitacion(id);
+        alert('Habitación eliminada exitosamente');
+        await this.loadData();
+        this.render();
+      } catch (error) {
+        console.error('Error eliminando habitación via API:', error);
+        // Si falla la API, eliminar localmente
+        this.habitaciones = this.habitaciones.filter(h => (h.IDHabitacion != id && h.id_habitacion != id));
+        this.calculateMetrics();
+        this.render();
+        alert('Habitación eliminada localmente (backend no disponible)');
+      }
     }
   }
 

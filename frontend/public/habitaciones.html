@@ -1,0 +1,104 @@
+<!-- Habitaciones Header -->
+<header class="module-header">
+  <div class="header-left">
+    <h1>Habitaciones</h1>
+    <p>Gestión de habitaciones del hotel</p>
+  </div>
+  <div class="header-right">
+    <button class="btn-primary" onclick="window.habitacionesModule.showNewHabitacionModal()">
+      <span>➕</span> Nueva Habitación
+    </button>
+  </div>
+</header>
+
+<!-- Metrics Grid -->
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Total Habitaciones</div>
+      <div class="metric-icon blue">🏨</div>
+    </div>
+    <div class="metric-value" id="totalHabitaciones">0</div>
+    <div class="metric-change">
+      <span>📊</span> Total del hotel
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Disponibles</div>
+      <div class="metric-icon green">✅</div>
+    </div>
+    <div class="metric-value" id="habitacionesDisponibles">0</div>
+    <div class="metric-change positive">
+      <span>↑</span> Listas para reserva
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Ocupadas</div>
+      <div class="metric-icon amber">🛏️</div>
+    </div>
+    <div class="metric-value" id="habitacionesOcupadas">0</div>
+    <div class="metric-change negative">
+      <span>↓</span> Actualmente ocupadas
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Mantenimiento</div>
+      <div class="metric-icon purple">🔧</div>
+    </div>
+    <div class="metric-value" id="habitacionesMantenimiento">0</div>
+    <div class="metric-change">
+      <span>⚙️</span> En reparación
+    </div>
+  </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="search-section">
+  <div class="search-container">
+    <input type="text" id="searchHabitaciones" placeholder="Buscar habitación..." class="search-input">
+    <button class="btn-secondary" onclick="window.habitacionesModule.search()">
+      <span>🔍</span> Buscar
+    </button>
+  </div>
+  <div class="filter-container">
+    <select id="filterEstado" class="filter-select">
+      <option value="">Todos los estados</option>
+      <option value="disponible">Disponible</option>
+      <option value="ocupada">Ocupada</option>
+      <option value="mantenimiento">Mantenimiento</option>
+    </select>
+  </div>
+</div>
+
+<!-- Habitaciones Table -->
+<div class="table-card">
+  <div class="table-header">
+    <h3 class="table-title">Lista de Habitaciones</h3>
+    <div class="table-actions">
+      <button class="btn-secondary" onclick="window.habitacionesModule.exportData()">
+        <span>📥</span> Exportar
+      </button>
+    </div>
+  </div>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Número</th>
+          <th>Tipo</th>
+          <th>Precio</th>
+          <th>Capacidad</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="habitacionesTableBody">
+        <tr><td colspan="7" class="text-center">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

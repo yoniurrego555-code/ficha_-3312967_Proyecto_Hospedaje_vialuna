@@ -1,8 +1,6 @@
 import { authLogin, authRecover, authRegister, getSession, saveSession } from "./api.js";
-import { redirectToDashboardByRole } from "./authGuard.js";
+import { redirectToDashboardByRole, LOGIN_URL } from "./authGuard.js";
 import authValidation from "../modules/auth-validation.js";
-
-const LOGIN_URL = "../public/login.html";
 
 function togglePasswordVisibility(input, button) {
   if (!input || !button) {

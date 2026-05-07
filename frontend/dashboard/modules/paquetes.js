@@ -1,4 +1,4 @@
-import { getPaquetes } from "../core/api.js";
+import { getPaquetes, createPaquete, updatePaquete, deletePaquete } from "../core/api.js";
 
 class PaquetesModule {
   constructor(container) {
@@ -31,8 +31,19 @@ class PaquetesModule {
       console.log('Paquetes cargados:', this.paquetes.length);
     } catch (error) {
       console.error("Error cargando paquetes:", error);
-      throw error;
+      // Usar datos de ejemplo si falla la API
+      this.paquetes = this.getPaquetesEjemplo();
+      this.calculateMetrics();
+      console.log('Usando datos de ejemplo para paquetes');
     }
+  }
+
+  getPaquetesEjemplo() {
+    return [
+      { IDPaquete: '1', Nombre: 'Romántico', Descripcion: 'Cena y desayuno', Estado: 'activo', Precio: 250, Duracion: 2 },
+      { IDPaquete: '2', Nombre: 'Familiar', Descripcion: 'Actividades para niños', Estado: 'activo', Precio: 400, Duracion: 3 },
+      { IDPaquete: '3', Nombre: 'Aventura', Descripcion: 'Senderismo y spa', Estado: 'inactivo', Precio: 300, Duracion: 2 }
+    ];
   }
 
   calculateMetrics() {
@@ -63,125 +74,11 @@ class PaquetesModule {
   }
 
   render() {
-    this.container.innerHTML = this.getTemplate();
     this.updateMetrics();
     this.renderTable();
   }
 
-  getTemplate() {
-    return `
-      <!-- Paquetes Header -->
-      <header class="module-header">
-        <div class="header-left">
-          <h1>Paquetes</h1>
-          <p>Gestión de paquetes del hotel</p>
-        </div>
-        <div class="header-right">
-          <button class="btn-primary" onclick="window.paquetesModule.showNewPackageModal()">
-            <span>➕</span> Nuevo Paquete
-          </button>
-        </div>
-      </header>
 
-      <!-- Metrics Grid -->
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Total Paquetes</div>
-            <div class="metric-icon blue">📦</div>
-          </div>
-          <div class="metric-value" id="totalPaquetes">0</div>
-          <div class="metric-change">
-            <span>📊</span> Total del hotel
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Paquetes Activos</div>
-            <div class="metric-icon green">✅</div>
-          </div>
-          <div class="metric-value" id="paquetesActivos">0</div>
-          <div class="metric-change positive">
-            <span>↑</span> Disponibles
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Paquetes Inactivos</div>
-            <div class="metric-icon amber">⏸️</div>
-          </div>
-          <div class="metric-value" id="paquetesInactivos">0</div>
-          <div class="metric-change negative">
-            <span>↓</span> No disponibles
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Precio Promedio</div>
-            <div class="metric-icon purple">💰</div>
-          </div>
-          <div class="metric-value" id="precioPromedio">$0</div>
-          <div class="metric-change">
-            <span>📈</span> Promedio general
-          </div>
-        </div>
-      </div>
-
-      <!-- Search and Filters -->
-      <div class="search-section">
-        <div class="search-container">
-          <input type="text" id="searchPaquetes" placeholder="Buscar paquete..." class="search-input">
-          <button class="btn-secondary" onclick="window.paquetesModule.search()">
-            <span>🔍</span> Buscar
-          </button>
-        </div>
-        <div class="filter-container">
-          <select id="filterEstado" class="filter-select">
-            <option value="">Todos los estados</option>
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
-          <select id="filterRangoPrecio" class="filter-select">
-            <option value="">Todos los precios</option>
-            <option value="0-50">$0 - $50</option>
-            <option value="50-100">$50 - $100</option>
-            <option value="100-200">$100 - $200</option>
-            <option value="200+">$200+</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Paquetes Table -->
-      <div class="table-card">
-        <div class="table-header">
-          <h3 class="table-title">Lista de Paquetes</h3>
-          <div class="table-actions">
-            <button class="btn-secondary" onclick="window.paquetesModule.exportData()">
-              <span>📥</span> Exportar
-            </button>
-          </div>
-        </div>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Precio</th>
-                <th>Duración</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="paquetesTableBody">
-              <tr><td colspan="8" class="text-center">Cargando...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    `;
-  }
 
   updateMetrics() {
     const elements = {
@@ -342,22 +239,181 @@ class PaquetesModule {
   }
 
   showNewPackageModal() {
-    console.log('Mostrar modal de nuevo paquete');
-    // TODO: Implementar modal de creación de paquete
-    alert('Función de nuevo paquete en desarrollo');
+    this.container.innerHTML = `
+      <div class="paquete-new-view">
+        <div class="new-header">
+          <button onclick="window.location.hash='paquetes'" class="btn-back">
+            ← Volver a la lista
+          </button>
+          <h2>Nuevo Paquete</h2>
+        </div>
+        
+        <div class="new-content">
+          <form id="newPaqueteForm" class="paquete-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="newNombre">Nombre:</label>
+                <input type="text" id="newNombre" required>
+              </div>
+              <div class="form-group">
+                <label for="newPrecio">Precio:</label>
+                <input type="number" id="newPrecio" required>
+              </div>
+              <div class="form-group">
+                <label for="newDuracion">Duración:</label>
+                <input type="text" id="newDuracion" placeholder="Ej: 3 días / 2 noches" required>
+              </div>
+              <div class="form-group">
+                <label for="newEstado">Estado:</label>
+                <select id="newEstado" required>
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="newDescripcion">Descripción:</label>
+                <textarea id="newDescripcion" rows="3" required></textarea>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" onclick="window.location.hash='paquetes'" class="btn-secondary">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-primary">
+                💾 Guardar Paquete
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const form = this.container.querySelector('#newPaqueteForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = {
+        Nombre: this.container.querySelector('#newNombre').value,
+        Precio: parseFloat(this.container.querySelector('#newPrecio').value),
+        Duracion: this.container.querySelector('#newDuracion').value,
+        Estado: this.container.querySelector('#newEstado').value,
+        Descripcion: this.container.querySelector('#newDescripcion').value
+      };
+
+      try {
+        await createPaquete(formData);
+        alert('Paquete creado exitosamente');
+        window.location.hash='paquetes';
+      } catch (error) {
+        console.error('Error creando paquete via API:', error);
+        // Si falla la API, agregar localmente
+        const nuevoPaquete = {
+          IDPaquete: String(this.paquetes.length + 1),
+          ...formData
+        };
+        this.paquetes.push(nuevoPaquete);
+        this.calculateMetrics();
+        alert('Paquete creado localmente (backend no disponible)');
+        window.location.hash='paquetes';
+      }
+    });
   }
 
   edit(id) {
-    console.log('Editar paquete:', id);
-    // TODO: Implementar modal de edición
-    alert('Función de edición en desarrollo');
+    const paquete = this.paquetes.find(p => p.id == id || p.ID == id);
+    if (!paquete) {
+      alert('Paquete no encontrado');
+      return;
+    }
+
+    this.container.innerHTML = `
+      <div class="paquete-form-view">
+        <div class="new-header">
+          <button onclick="window.location.hash='paquetes'" class="btn-back">
+            ← Volver a la lista
+          </button>
+          <h2>Editar Paquete</h2>
+        </div>
+        
+        <div class="new-content">
+          <form id="editPaqueteForm" class="paquete-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="editNombre">Nombre:</label>
+                <input type="text" id="editNombre" value="${paquete.nombre || paquete.Nombre || ''}" required>
+              </div>
+              <div class="form-group">
+                <label for="editPrecio">Precio:</label>
+                <input type="number" id="editPrecio" value="${paquete.precio || paquete.Precio || 0}" required>
+              </div>
+              <div class="form-group">
+                <label for="editDuracion">Duración:</label>
+                <input type="text" id="editDuracion" value="${paquete.duracion || paquete.Duracion || ''}" required>
+              </div>
+              <div class="form-group">
+                <label for="editEstado">Estado:</label>
+                <select id="editEstado" required>
+                  <option value="Activo" ${String(paquete.estado || paquete.EstadoNombre || '').toLowerCase() === 'activo' ? 'selected' : ''}>Activo</option>
+                  <option value="Inactivo" ${String(paquete.estado || paquete.EstadoNombre || '').toLowerCase() === 'inactivo' ? 'selected' : ''}>Inactivo</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="editDescripcion">Descripción:</label>
+                <textarea id="editDescripcion" rows="3" required>${paquete.descripcion || paquete.Descripcion || ''}</textarea>
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" onclick="window.location.hash='paquetes'" class="btn-secondary">
+                Cancelar
+              </button>
+              <button type="submit" class="btn-primary">
+                💾 Guardar Cambios
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const form = this.container.querySelector('#editPaqueteForm');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = {
+        Nombre: this.container.querySelector('#editNombre').value,
+        Precio: parseFloat(this.container.querySelector('#editPrecio').value),
+        Duracion: this.container.querySelector('#editDuracion').value,
+        Estado: this.container.querySelector('#editEstado').value,
+        Descripcion: this.container.querySelector('#editDescripcion').value
+      };
+
+      try {
+        await updatePaquete(id, formData);
+        alert('Paquete actualizado exitosamente');
+        window.location.hash='paquetes';
+      } catch (error) {
+        alert('Error actualizando paquete: ' + error.message);
+      }
+    });
   }
 
-  delete(id) {
+  async delete(id) {
     if (confirm('¿Está seguro de que desea eliminar este paquete?')) {
-      console.log('Eliminar paquete:', id);
-      // TODO: Implementar eliminación via API
-      alert('Función de eliminación en desarrollo');
+      try {
+        await deletePaquete(id);
+        alert('Paquete eliminado exitosamente');
+        await this.loadData();
+        this.render();
+      } catch (error) {
+        console.error('Error eliminando paquete via API:', error);
+        // Si falla la API, eliminar localmente
+        this.paquetes = this.paquetes.filter(p => (p.IDPaquete != id && p.id_paquete != id));
+        this.calculateMetrics();
+        this.render();
+        alert('Paquete eliminado localmente (backend no disponible)');
+      }
     }
   }
 

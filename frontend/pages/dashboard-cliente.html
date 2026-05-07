@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es" data-auth-pending>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Cliente | ViaLuna</title>
+  <link rel="stylesheet" href="../styles/app.css">
+  <script type="module">
+    import { protectPage } from "../dashboard/core/authGuard.js";
+    protectPage({ requiredRole: "cliente" });
+  </script>
+</head>
+<body>
+  <div class="page-shell">
+    <div class="dashboard-shell">
+      <aside class="sidebar">
+        <a class="brand sidebar__brand" href="#dashboard" data-view="dashboard">
+          <span class="brand__mark">VL</span>
+          <span class="brand__text">
+            <h1>ViaLuna</h1>
+            <p>Portal cliente</p>
+          </span>
+        </a>
+
+        <nav class="sidebar__nav" aria-label="Menu cliente">
+          <a class="active" href="#dashboard" data-view="dashboard">Dashboard</a>
+          <a href="#reservas" data-view="reservas">Mis reservas</a>
+        </nav>
+
+        <div class="sidebar__footer">
+          <span class="user-chip" id="userName">Cliente</span>
+          <button type="button" class="btn-ghost" id="logoutBtn">Cerrar sesión</button>
+        </div>
+      </aside>
+
+      <main class="page-content dashboard-content">
+        <div id="contenido">
+          <!-- Content will be loaded dynamically here -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script type="module" src="../js/dashboard-cliente.js"></script>
+</body>
+</html>

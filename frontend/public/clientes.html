@@ -1,0 +1,94 @@
+<header class="module-header">
+  <div class="header-left">
+    <h1>Clientes</h1>
+    <p>Gestión de clientes del hotel</p>
+  </div>
+  <div class="header-right">
+    <button class="btn-primary" onclick="window.clientesModule.showNewClientModal()">
+      <span>➕</span> Nuevo Cliente
+    </button>
+  </div>
+</header>
+
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Total Clientes</div>
+      <div class="metric-icon blue">👥</div>
+    </div>
+    <div class="metric-value" id="totalClientes">0</div>
+    <div class="metric-change">
+      <span>📊</span> Total registrados
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Clientes Activos</div>
+      <div class="metric-icon green">✅</div>
+    </div>
+    <div class="metric-value" id="clientesActivos">0</div>
+    <div class="metric-change positive">
+      <span>↑</span> Cuentas activas
+    </div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Clientes Premium</div>
+      <div class="metric-icon purple">⭐</div>
+    </div>
+    <div class="metric-value" id="clientesPremium">0</div>
+    <div class="metric-change">
+      <span>👑</span> Membresía premium
+    </div>
+  </div>
+</div>
+
+<div class="search-section">
+  <div class="search-container">
+    <input type="text" id="searchClientes" placeholder="Buscar cliente..." class="search-input">
+    <button class="btn-secondary" onclick="window.clientesModule.search()">
+      <span>🔍</span> Buscar
+    </button>
+  </div>
+  <div class="filter-container">
+    <select id="filterEstado" class="filter-select">
+      <option value="">Todos los estados</option>
+      <option value="activo">Activo</option>
+      <option value="inactivo">Inactivo</option>
+    </select>
+    <select id="filterTipo" class="filter-select">
+      <option value="">Todos los tipos</option>
+      <option value="regular">Regular</option>
+      <option value="premium">Premium</option>
+    </select>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="table-header">
+    <h3 class="table-title">Lista de Clientes</h3>
+    <div class="table-actions">
+      <button class="btn-secondary" onclick="window.clientesModule.exportData()">
+        <span>📥</span> Exportar
+      </button>
+    </div>
+  </div>
+  <div class="table-container">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Email</th>
+          <th>Teléfono</th>
+          <th>Tipo</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="clientesTableBody">
+        <tr><td colspan="7" class="text-center">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -3,63 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Via Luna | Iniciar sesion</title>
+    <title>Via Luna | Iniciar sesión</title>
     <link rel="stylesheet" href="../css/public-theme.css">
 </head>
 <body>
     <main class="auth-shell">
+        <div class="auth-header">
+            <a class="button back-btn" href="index.html">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Volver al inicio
+            </a>
+        </div>
+        
         <section class="split-card">
             <aside class="side-panel">
                 <div>
                     <div class="badge">Acceso</div>
-                    <h1>Inicia sesion y continua tu reserva</h1>
+                    <h1>Inicia sesión y continua tu experiencia</h1>
                     <p>
-                        Este acceso ya forma parte del flujo publico. Si vienes desde habitaciones o servicios,
-                        despues del login te enviaremos a la pestaña unica de reserva.
+                        Accede a tu cuenta para gestionar tus reservas, ver tu historial y disfrutar de todos los servicios de Via Luna.
                     </p>
                 </div>
 
+                <div class="stats-grid">
+                    <div class="summary-card">
+                        <span>Reservas Activas</span>
+                        <strong>0</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span>Próxima Estancia</span>
+                        <strong>—</strong>
+                    </div>
+                    <div class="summary-card">
+                        <span>Puntos Lealtad</span>
+                        <strong>0</strong>
+                    </div>
+                </div>
+
                 <ul>
-                    <li>Diseno alineado con la landing y el proceso de reserva.</li>
-                    <li>Enlaces visibles para crear cuenta y recuperar acceso.</li>
-                    <li>Redireccion automatica a `reservar.html` para usuarios normales.</li>
+                    <li>✓ Diseño moderno y intuitivo</li>
+                    <li>✓ Acceso rápido a tus reservas</li>
+                    <li>✓ Historial completo de estancias</li>
+                    <li>✓ Ofertas exclusivas para miembros</li>
                 </ul>
 
                 <div class="side-actions">
-                    <a class="button light" href="index.html">Volver al inicio</a>
-                    <a class="button ghost" href="reservar.html">Ir a reservar</a>
+                    <a class="button light" href="registro.html">Crear cuenta nueva</a>
+                    <a class="button ghost" href="recuperar.html">¿Olvidaste tu contraseña?</a>
                 </div>
             </aside>
 
             <section class="form-panel">
-                <h2>Iniciar sesion</h2>
-                <p>Ingresa tus credenciales para continuar.</p>
+                <h2>Bienvenido de nuevo</h2>
+                <p>Ingresa tus credenciales para acceder a tu cuenta.</p>
 
                 <div class="form-card">
                     <form id="loginForm">
                         <div class="field">
-                            <label for="email">Correo electronico</label>
-                            <input id="email" name="email" type="email" placeholder="tucorreo@ejemplo.com" required>
+                            <label for="email">Correo electrónico</label>
+                            <input id="email" name="email" type="email" placeholder="tu@ejemplo.com" required>
                         </div>
 
                         <div class="field">
-                            <label for="password">Contrasena</label>
-                            <input id="password" name="password" type="password" placeholder="Ingresa tu contrasena" required>
+                            <label for="password">Contraseña</label>
+                            <input id="password" name="password" type="password" placeholder="••••••••" required>
                         </div>
 
-                        <p class="helper">Si tu cuenta es de cliente te llevaremos a `reservar.html`. Si es admin, mantendremos el acceso interno.</p>
+                        <p class="helper">Si eres cliente, te llevaremos a tu dashboard personal. Si eres administrador, accederás al panel de control.</p>
 
-                        <button class="button primary" id="submitButton" type="submit">Entrar</button>
+                        <button class="button primary" id="submitButton" type="submit">
+                            Iniciar sesión
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </button>
                     </form>
 
                     <div id="message" class="message"></div>
 
                     <div class="support-links">
                         <a href="registro.html">Crear cuenta</a>
-                        <a href="recuperar.html">Recuperar cuenta</a>
+                        <a href="recuperar.html">Recuperar contraseña</a>
                         <a href="eliminar-cuenta.html">Eliminar cuenta</a>
-                        <a href="reservar.html">Reservar sin perder el flujo</a>
                     </div>
+                </div>
+
+                <div class="auth-banner">
+                    <strong>¿Primera vez en Via Luna?</strong>
+                    <p>Descubre nuestras habitaciones exclusivas, paquetes románticos y servicios de spa. Regístrate hoy y obtén un 10% de descuento en tu primera reserva.</p>
+                    <a class="button secondary" href="registro.html">Explorar habitaciones</a>
                 </div>
             </section>
         </section>

@@ -8,58 +8,101 @@
 </head>
 <body>
     <main class="auth-shell">
+        <div class="auth-header">
+            <a class="button back-btn" href="index.html">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Volver al inicio
+            </a>
+        </div>
+        
         <section class="split-card">
             <aside class="side-panel">
                 <div>
-                    <div class="badge">Cuenta</div>
-                    <h1>Elimina tu cuenta de forma clara y segura</h1>
+                    <div class="badge" style="background: rgba(159, 71, 60, 0.2); color: var(--danger);">Cuenta</div>
+                    <h1>Elimina tu cuenta de forma segura</h1>
                     <p>
-                        Esta opcion es parte del mismo flujo publico. Primero validamos tus datos
-                        y despues te pedimos una confirmacion final antes de eliminar la cuenta.
+                        Si decides eliminar tu cuenta, todos tus datos personales, historial de reservas y preferencias serán eliminados permanentemente.
                     </p>
                 </div>
 
+                <div class="stats-grid">
+                    <div class="summary-card" style="border-color: rgba(159, 71, 60, 0.2);">
+                        <span>Datos</span>
+                        <strong style="color: var(--danger);">Eliminados</strong>
+                    </div>
+                    <div class="summary-card" style="border-color: rgba(159, 71, 60, 0.2);">
+                        <span>Reservas</span>
+                        <strong style="color: var(--danger);">Archivadas</strong>
+                    </div>
+                    <div class="summary-card" style="border-color: rgba(159, 71, 60, 0.2);">
+                        <span>Recuperable</span>
+                        <strong style="color: var(--danger);">No</strong>
+                    </div>
+                </div>
+
                 <ul>
-                    <li>Mantiene el mismo diseno de la portada, login y reserva.</li>
-                    <li>Verifica correo y contrasena antes de eliminar.</li>
-                    <li>Al terminar, se cierra la sesion local del navegador.</li>
+                    <li>⚠ Esta acción no se puede deshacer</li>
+                    <li>⚠ Se eliminará todo tu historial</li>
+                    <li>⚠ Las reservas activas serán canceladas</li>
+                    <li>⚠ Perderás puntos y beneficios</li>
                 </ul>
 
                 <div class="side-actions">
                     <a class="button light" href="login.html">Volver a login</a>
-                    <a class="button ghost" href="index.html">Ir al inicio</a>
+                    <a class="button ghost" href="registro.html">Crear cuenta nueva</a>
                 </div>
             </aside>
 
             <section class="form-panel">
                 <h2>Eliminar cuenta</h2>
-                <p>Confirma tus credenciales para solicitar la eliminacion definitiva.</p>
+                <p>Confirma tus credenciales para proceder con la eliminación definitiva de tu cuenta.</p>
 
-                <div class="form-card">
+                <div class="form-card" style="border-color: rgba(159, 71, 60, 0.3);">
                     <form id="deleteAccountForm">
                         <div class="field">
-                            <label for="email">Correo electronico</label>
-                            <input id="email" name="email" type="email" placeholder="tucorreo@ejemplo.com" required>
+                            <label for="email">Correo electrónico</label>
+                            <input id="email" name="email" type="email" placeholder="tu@ejemplo.com" required>
                         </div>
 
                         <div class="field">
-                            <label for="password">Contrasena</label>
-                            <input id="password" name="password" type="password" placeholder="Ingresa tu contrasena actual" required>
+                            <label for="password">Contraseña</label>
+                            <input id="password" name="password" type="password" placeholder="Ingresa tu contraseña actual" required>
                         </div>
 
-                        <p class="helper">Solo elimina tu cuenta si ya no deseas conservar reservas ni historial asociado en este sistema.</p>
+                        <div class="checkbox-list">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="confirmDelete" required>
+                                <div>
+                                    <strong>Entiendo que esta acción es irreversible</strong>
+                                    <small class="tiny">Todos mis datos serán eliminados permanentemente</small>
+                                </div>
+                            </label>
+                        </div>
 
-                        <button class="button primary" id="submitButton" type="submit">Eliminar cuenta</button>
+                        <p class="helper">Por seguridad, requerimos confirmación de contraseña antes de eliminar cualquier cuenta.</p>
+
+                        <button class="button primary" id="submitButton" type="submit" style="background: linear-gradient(135deg, var(--danger), #7a352c);">
+                            Eliminar cuenta permanentemente
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
                     </form>
 
                     <div id="message" class="message"></div>
 
                     <div class="support-links">
-                        <a href="login.html">Iniciar sesion</a>
+                        <a href="login.html">Iniciar sesión</a>
                         <a href="registro.html">Crear cuenta</a>
-                        <a href="recuperar.html">Recuperar cuenta</a>
-                        <a href="index.html">Volver al inicio</a>
+                        <a href="recuperar.html">Recuperar contraseña</a>
                     </div>
+                </div>
+
+                <div class="auth-banner" style="background: rgba(159, 71, 60, 0.1); border-color: rgba(159, 71, 60, 0.2);">
+                    <strong>¿Tienes dudas?</strong>
+                    <p>Si estás considerando eliminar tu cuenta por algún problema específico, contáctanos primero. Es posible que podamos resolver tu situación sin necesidad de eliminar tu cuenta.</p>
                 </div>
             </section>
         </section>

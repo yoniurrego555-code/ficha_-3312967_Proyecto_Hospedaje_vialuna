@@ -8,9 +8,9 @@ export function getAppUrl(path = "") {
   return new URL(path, getFrontendBaseUrl()).toString();
 }
 
-export const LOGIN_URL = getAppUrl("public/login.html");
-export const ADMIN_DASHBOARD_URL = getAppUrl("pages/admin/dashboard.html");
-export const CLIENT_DASHBOARD_URL = getAppUrl("pages/cliente/dashboard.html");
+export const LOGIN_URL = getAppUrl("pages/login.html");
+export const ADMIN_DASHBOARD_URL = getAppUrl("pages/dashboard-admin.html");
+export const CLIENT_DASHBOARD_URL = getAppUrl("pages/dashboard-cliente.html");
 export const ACCESS_DENIED_MESSAGE_KEY = "vialuna_access_denied_message";
 
 let redirecting = false;

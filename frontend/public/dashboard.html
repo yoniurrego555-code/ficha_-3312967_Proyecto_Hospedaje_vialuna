@@ -1,0 +1,133 @@
+      <!-- Dashboard Header -->
+      <header class="module-header">
+        <div class="header-left">
+          <h1>Dashboard</h1>
+          <p>Panel de control del hotel</p>
+        </div>
+        <div class="header-right">
+          <span id="currentDate" class="current-date"></span>
+        </div>
+      </header>
+
+      <!-- Metrics Grid -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-header">
+            <div class="metric-title">Total Reservas</div>
+            <div class="metric-icon blue">📋</div>
+          </div>
+          <div class="metric-value" id="totalReservations">0</div>
+          <div class="metric-change">
+            <span>📊</span> Total del sistema
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-header">
+            <div class="metric-title">Reservas Activas</div>
+            <div class="metric-icon green">✅</div>
+          </div>
+          <div class="metric-value" id="activeReservations">0</div>
+          <div class="metric-change positive">
+            <span>↑</span> En curso
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-header">
+            <div class="metric-title">Habitaciones Ocupadas</div>
+            <div class="metric-icon amber">🛏️</div>
+          </div>
+          <div class="metric-value" id="occupiedRooms">0</div>
+          <div class="metric-change">
+            <span>🏨</span> Ocupación actual
+          </div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-header">
+            <div class="metric-title">Ingresos Mensuales</div>
+            <div class="metric-icon purple">💰</div>
+          </div>
+          <div class="metric-value" id="monthlyRevenue">$0</div>
+          <div class="metric-change positive">
+            <span>📈</span> Este mes
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="charts-section">
+        <div class="chart-container">
+          <div class="chart-placeholder">
+            <div class="chart-placeholder-icon">📊</div>
+            <h3>Ingresos Mensuales</h3>
+            <p>Gráfico de ingresos de los últimos 6 meses</p>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-placeholder">
+            <div class="chart-placeholder-icon">📈</div>
+            <h3>Tendencia de Reservas</h3>
+            <p>Gráfico de reservas por semana</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Reservations -->
+      <div class="recent-reservations">
+        <div class="table-card">
+          <div class="table-header">
+            <h3 class="table-title">Reservas Recientes</h3>
+            <div class="table-actions">
+              <button class="btn-secondary" onclick="window.location.hash='reservas'">
+                <span>📋</span> Ver Todas
+              </button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Cliente</th>
+                  <th>Habitación</th>
+                  <th>Check-in</th>
+                  <th>Check-out</th>
+                  <th>Estado</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody id="recentReservationsTable">
+                <tr><td colspan="7" class="text-center">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <div class="section-header">
+          <h3>Accesos Rápidos</h3>
+        </div>
+        <div class="actions-grid">
+          <div class="action-card" onclick="window.location.hash='reservas'">
+            <div class="action-icon">📋</div>
+            <div class="action-title">Ver Reservas</div>
+            <div class="action-description">Gestionar todas las reservas</div>
+          </div>
+          <div class="action-card" onclick="window.location.hash='habitaciones'">
+            <div class="action-icon">🏨</div>
+            <div class="action-title">Habitaciones</div>
+            <div class="action-description">Gestionar habitaciones</div>
+          </div>
+          <div class="action-card" onclick="window.location.hash='clientes'">
+            <div class="action-icon">👥</div>
+            <div class="action-title">Clientes</div>
+            <div class="action-description">Ver lista de clientes</div>
+          </div>
+          <div class="action-card" onclick="window.location.hash='servicios'">
+            <div class="action-icon">🔧</div>
+            <div class="action-title">Servicios</div>
+            <div class="action-description">Administrar servicios</div>
+          </div>
+        </div>
+      </div>

@@ -34,21 +34,32 @@ export class RolesPermisosModule {
     try {
       console.log('🔄 Iniciando carga de datos desde API...');
       
-      // Cargar datos desde la API real
-      const [rolesResponse, permisosResponse, asignacionesResponse] = await Promise.all([
-        getRoles().catch(err => {
-          console.error('❌ Error en getRoles():', err);
-          return { data: [] };
-        }),
-        getPermisos().catch(err => {
-          console.error('❌ Error en getPermisos():', err);
-          return { data: [] };
-        }),
-        getRolesPermisos().catch(err => {
-          console.error('❌ Error en getRolesPermisos():', err);
-          return { data: [] };
-        })
-      ]);
+      let rolesResponse, permisosResponse, asignacionesResponse;
+
+      try {
+        // Cargar datos desde la API real
+        [rolesResponse, permisosResponse, asignacionesResponse] = await Promise.all([
+          getRoles().catch(err => {
+            console.error('❌ Error en getRoles():', err);
+            return { data: [] };
+          }),
+          getPermisos().catch(err => {
+            console.error('❌ Error en getPermisos():', err);
+            return { data: [] };
+          }),
+          getRolesPermisos().catch(err => {
+            console.error('❌ Error en getRolesPermisos():', err);
+            return { data: [] };
+          })
+        ]);
+      } catch (apiError) {
+        console.error('Error general en carga de API:', apiError);
+        // Usar datos de ejemplo si falla la API
+        rolesResponse = { data: this.getRolesEjemplo() };
+        permisosResponse = { data: this.getPermisosEjemplo() };
+        asignacionesResponse = { data: [] };
+        console.log('Usando datos de ejemplo para roles-permisos');
+      }
 
       console.log('📥 Respuesta API - Roles:', rolesResponse);
       console.log('📥 Respuesta API - Permisos:', permisosResponse);
@@ -198,81 +209,18 @@ export class RolesPermisosModule {
     }
   }
 
-  // Render main view - ultra compacto para visibilidad completa
   renderMain() {
-    this.container.innerHTML = `
-      <!-- Header Ultra Compacto -->
-      <header class="module-header" style="margin-bottom: 8px;">
-        <div class="header-left">
-          <h1 style="margin: 0; font-size: 1.5rem; color: #1f2937;">Roles y Permisos</h1>
-          <p style="margin: 2px 0 0 0; color: #6b7280; font-size: 0.8rem;">Gestión de roles y permisos del sistema</p>
-        </div>
-      </header>
-
-      <!-- Two Column Layout Ultra Compacto -->
-      <div class="roles-permisos-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 100%; height: calc(100vh - 120px); overflow: hidden;">
-      
-      <!-- SECCIÓN IZQUIERDA: ROLES -->
-      <div class="roles-section" style="display: flex; flex-direction: column;">
-        <div class="section-card" style="background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); padding: 12px; border: 1px solid #e5e7eb; flex: 1; display: flex; flex-direction: column;">
-          <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;">
-            <div style="min-width: 0; flex: 1;">
-              <h2 style="margin: 0; color: #1f2937; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                👥 Roles
-                <span style="background: #3b82f6; color: white; padding: 1px 6px; border-radius: 10px; font-size: 0.65rem; font-weight: 500;">
-                  ${this.currentData.roles?.length || 0}
-                </span>
-              </h2>
-            </div>
-            <button class="btn-primary-modern" onclick="window.rolesPermisosModule.showNuevoRol()" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; padding: 6px 10px; border-radius: 4px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 3px; font-size: 0.8rem; white-space: nowrap;">
-              <span style="font-size: 0.8rem;">➕</span>
-              Nuevo
-            </button>
-          </div>
-          <div class="table-container" style="overflow-y: auto; flex: 1;">
-            <table class="data-table-modern" style="width: 100%; border-collapse: separate; border-spacing: 0;">
-              <thead style="position: sticky; top: 0; background: white; z-index: 10;">
-                <tr>
-                  <th style="padding: 6px 8px; text-align: left; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Nombre</th>
-                  <th style="padding: 6px 8px; text-align: left; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Estado</th>
-                  <th style="padding: 6px 8px; text-align: center; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="rolesTable">
-                ${this.renderRolesTable()}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- SECCIÓN DERECHA: PERMISOS -->
-      <div class="permisos-section" style="display: flex; flex-direction: column;">
-        <div class="section-card" style="background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); padding: 12px; border: 1px solid #e5e7eb; flex: 1; display: flex; flex-direction: column;">
-          <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;">
-            <div style="min-width: 0; flex: 1;">
-              <h2 style="margin: 0; color: #1f2937; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-                🔐 Permisos
-                <span style="background: #10b981; color: white; padding: 1px 6px; border-radius: 10px; font-size: 0.65rem; font-weight: 500;">
-                  ${this.currentData.permisos?.length || 0}
-                </span>
-              </h2>
-            </div>
-            <div style="margin-right: 6px;">
-              <button class="btn-primary-modern" onclick="window.rolesPermisosModule.showNuevoPermiso()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 6px 10px; border-radius: 4px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 3px; font-size: 0.8rem; white-space: nowrap;">
-                <span style="font-size: 0.8rem;">➕</span>
-                Nuevo
-              </button>
-            </div>
-          </div>
-          <div class="permisos-list" style="overflow-y: auto; flex: 1;">
-            ${this.renderPermisosList()}
-          </div>
-        </div>
-      </div>
-
-    </div>
-  `;
+    const rolesTable = this.container.querySelector('#rolesTable');
+    if (rolesTable) rolesTable.innerHTML = this.renderRolesTable();
+    
+    const permisosList = this.container.querySelector('#permisosList');
+    if (permisosList) permisosList.innerHTML = this.renderPermisosList();
+    
+    const rolesCount = this.container.querySelector('#rolesCount');
+    if (rolesCount) rolesCount.textContent = this.currentData.roles?.length || 0;
+    
+    const permisosCount = this.container.querySelector('#permisosCount');
+    if (permisosCount) permisosCount.textContent = this.currentData.permisos?.length || 0;
   }
 
   // Render roles table - ultra compacto
@@ -1071,6 +1019,24 @@ export class RolesPermisosModule {
         </div>
       </div>
     `;
+  }
+
+  // Datos de ejemplo para fallback
+  getRolesEjemplo() {
+    return [
+      { IDRol: 1, Nombre: 'Administrador', Descripcion: 'Acceso total al sistema', Estado: 1 },
+      { IDRol: 2, Nombre: 'Cliente', Descripcion: 'Usuario estándar', Estado: 1 },
+      { IDRol: 3, Nombre: 'Recepcionista', Descripcion: 'Gestión de reservas', Estado: 1 }
+    ];
+  }
+
+  getPermisosEjemplo() {
+    return [
+      { IDPermiso: 1, NombrePermisos: 'Ver Dashboard', Descripcion: 'Acceso al panel principal', IsActive: 1, Modulo: 'dashboard' },
+      { IDPermiso: 2, NombrePermisos: 'Gestionar Usuarios', Descripcion: 'Crear, editar usuarios', IsActive: 1, Modulo: 'usuarios' },
+      { IDPermiso: 3, NombrePermisos: 'Gestionar Reservas', Descripcion: 'Crear, editar reservas', IsActive: 1, Modulo: 'reservas' },
+      { IDPermiso: 4, NombrePermisos: 'Gestionar Habitaciones', Descripcion: 'Administrar habitaciones', IsActive: 1, Modulo: 'habitaciones' }
+    ];
   }
 }
 

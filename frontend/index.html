@@ -29,18 +29,18 @@
 
       // 🔐 ADMIN
       if (role === "admin") {
-        window.location.replace("./pages/admin/dashboard.html");
+        window.location.replace("./pages/dashboard-admin.html");
         return;
       }
 
       // 👤 CLIENTE
       if (role === "cliente") {
-        window.location.replace("./pages/cliente/dashboard.html");
+        window.location.replace("./pages/dashboard-cliente.html");
         return;
       }
 
-      // 🚫 Sin sesión válida
-      window.location.replace(LOGIN_URL);
+      // 🚫 Sin sesión válida, redirigir a la landing page
+      window.location.replace("./pages/index.html");
     }
 
     /**
@@ -50,7 +50,7 @@
       const session = getSession();
 
       if (!session) {
-        window.location.replace(LOGIN_URL);
+        window.location.replace("./pages/index.html");
         return;
       }
 
