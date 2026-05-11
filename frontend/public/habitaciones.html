@@ -1,104 +1,84 @@
-<!-- Habitaciones Header -->
-<header class="module-header">
-  <div class="header-left">
-    <h1>Habitaciones</h1>
-    <p>Gestión de habitaciones del hotel</p>
-  </div>
-  <div class="header-right">
-    <button class="btn-primary" onclick="window.habitacionesModule.showNewHabitacionModal()">
-      <span>➕</span> Nueva Habitación
-    </button>
-  </div>
-</header>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habitaciones | Via Luna</title>
+    <link rel="stylesheet" href="../css/admin-theme.css">
+</head>
+<body>
+    <main class="content">
+        <section class="hero">
+            <div>
+                <h2>Modulo de habitaciones</h2>
+                <p>Crea, consulta, edita y elimina</p>
+            </div>
+            <div class="badge">CRUD conectado</div>
+        </section>
 
-<!-- Metrics Grid -->
-<div class="metrics-grid">
-  <div class="metric-card">
-    <div class="metric-header">
-      <div class="metric-title">Total Habitaciones</div>
-      <div class="metric-icon blue">🏨</div>
-    </div>
-    <div class="metric-value" id="totalHabitaciones">0</div>
-    <div class="metric-change">
-      <span>📊</span> Total del hotel
-    </div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-header">
-      <div class="metric-title">Disponibles</div>
-      <div class="metric-icon green">✅</div>
-    </div>
-    <div class="metric-value" id="habitacionesDisponibles">0</div>
-    <div class="metric-change positive">
-      <span>↑</span> Listas para reserva
-    </div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-header">
-      <div class="metric-title">Ocupadas</div>
-      <div class="metric-icon amber">🛏️</div>
-    </div>
-    <div class="metric-value" id="habitacionesOcupadas">0</div>
-    <div class="metric-change negative">
-      <span>↓</span> Actualmente ocupadas
-    </div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-header">
-      <div class="metric-title">Mantenimiento</div>
-      <div class="metric-icon purple">🔧</div>
-    </div>
-    <div class="metric-value" id="habitacionesMantenimiento">0</div>
-    <div class="metric-change">
-      <span>⚙️</span> En reparación
-    </div>
-  </div>
-</div>
+        <section class="grid">
+            <article class="panel">
+                <div class="panel-header">
+                    <h3>Formulario</h3>
+                    <p id="formTitle">Registra una nueva habitacion</p>
+                </div>
 
-<!-- Search and Filters -->
-<div class="search-section">
-  <div class="search-container">
-    <input type="text" id="searchHabitaciones" placeholder="Buscar habitación..." class="search-input">
-    <button class="btn-secondary" onclick="window.habitacionesModule.search()">
-      <span>🔍</span> Buscar
-    </button>
-  </div>
-  <div class="filter-container">
-    <select id="filterEstado" class="filter-select">
-      <option value="">Todos los estados</option>
-      <option value="disponible">Disponible</option>
-      <option value="ocupada">Ocupada</option>
-      <option value="mantenimiento">Mantenimiento</option>
-    </select>
-  </div>
-</div>
+                <div id="mensaje" class="message"></div>
 
-<!-- Habitaciones Table -->
-<div class="table-card">
-  <div class="table-header">
-    <h3 class="table-title">Lista de Habitaciones</h3>
-    <div class="table-actions">
-      <button class="btn-secondary" onclick="window.habitacionesModule.exportData()">
-        <span>📥</span> Exportar
-      </button>
-    </div>
-  </div>
-  <div class="table-container">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Número</th>
-          <th>Tipo</th>
-          <th>Precio</th>
-          <th>Capacidad</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="habitacionesTableBody">
-        <tr><td colspan="7" class="text-center">Cargando...</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+                <form id="habitacionForm">
+                    <input type="hidden" id="habitacionId">
+
+                    <div class="field">
+                        <label for="nombre">Nombre</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="Ej. Suite Luna 101" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="descripcion">Descripcion</label>
+                        <textarea id="descripcion" name="descripcion" placeholder="Describe amenidades, vista, cama, etc."></textarea>
+                    </div>
+
+                    <div class="field-grid">
+                        <div class="field">
+                            <label for="precio">Precio por noche</label>
+                            <input type="number" id="precio" name="precio" min="1" step="0.01" placeholder="1200" required>
+                        </div>
+                        <div class="field">
+                            <label for="capacidad">Capacidad</label>
+                            <input type="number" id="capacidad" name="capacidad" min="1" step="1" placeholder="2" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="estado">Estado</label>
+                        <select id="estado" name="estado" required>
+                            <option value="disponible">Disponible</option>
+                            <option value="reservada">Reservada</option>
+                            <option value="ocupada">Ocupada</option>
+                            <option value="mantenimiento">Mantenimiento</option>
+                        </select>
+                    </div>
+
+                    <div class="actions">
+                        <button class="primary" type="submit" id="submitButton">Guardar habitacion</button>
+                        <button class="secondary" type="button" id="btnCancelarEdicion">Cancelar</button>
+                    </div>
+                </form>
+            </article>
+
+            <article class="panel">
+                <div class="toolbar">
+                    <input class="search" type="search" id="buscador" placeholder="Buscar por nombre, descripcion o estado">
+                    <button class="secondary" type="button" id="btnListar">Listar habitaciones</button>
+                </div>
+
+                <div id="habitacionesContainer" class="cards">
+                    <div class="empty">Cargando habitaciones...</div>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <script type="module" src="../js/habitaciones.js"></script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis Reservas | ViaLuna</title>
+  <link rel="stylesheet" href="../css/admin-theme.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <h1>🏨 VIA LUNA</h1>
+        <p class="sidebar-description">Portal del Cliente. Gestiona tus reservas y perfil de forma sencilla.</p>
+      </div>
+
+      <nav class="admin-nav" aria-label="Menú cliente">
+        <a class="admin-link" href="dashboard.html" data-view="dashboard">• Dashboard</a>
+        <a class="admin-link active" href="reservas.html" data-view="reservas">• Mis Reservas</a>
+        <a class="admin-link" href="nueva-reserva.html" data-view="nueva-reserva">• Nueva Reserva</a>
+        <a class="admin-link" href="perfil.html" data-view="perfil">• Mi Perfil</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-info" id="userInfo">
+          <span class="user-name" id="userNameDisplay">Cargando...</span>
+          <span class="user-role">Cliente</span>
+        </div>
+        <button class="logout-btn" id="logoutBtn">
+          🚪 Cerrar sesión
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+      <header class="module-header">
+        <div class="header-left">
+          <h1>Mis Reservas</h1>
+          <p>Consulta el historial y estado de todas tus estancias.</p>
+        </div>
+        <div class="header-right">
+          <a href="nueva-reserva.html" class="btn-primary">
+            <span>➕</span> Nueva Reserva
+          </a>
+        </div>
+      </header>
+
+      <div class="search-section">
+        <div class="search-container">
+          <input type="text" id="searchReservas" placeholder="Buscar por código o habitación..." class="search-input">
+        </div>
+        <div class="filter-container">
+          <select id="filterEstado" class="filter-select">
+            <option value="">Todos los estados</option>
+            <option value="1">Activa</option>
+            <option value="2">Finalizada</option>
+            <option value="3">Cancelada</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Habitación</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Estado</th>
+                <th>Total</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="reservasTableBody">
+              <tr><td colspan="7" class="text-center">Cargando tus reservas...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="js/reservasCliente.js"></script>
+</body>
+</html>

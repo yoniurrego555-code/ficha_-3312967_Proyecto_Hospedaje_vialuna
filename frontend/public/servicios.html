@@ -1,111 +1,78 @@
-<!-- Servicios Header -->
-<header class="module-header">
-  <div class="header-left">
-    <h1>Servicios</h1>
-    <p>Gestión de servicios del hotel</p>
-  </div>
-  <div class="header-right">
-    <button class="btn-primary" onclick="window.serviciosModule.showNewServiceModal()">
-      <span>➕</span> Nuevo Servicio
-    </button>
-  </div>
-</header>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicios | Via Luna</title>
+    <link rel="stylesheet" href="../css/admin-theme.css">
+</head>
+<body>
+    <main class="content">
+        <section class="hero">
+            <div>
+                <h2>Modulo de servicios</h2>
+                <p>Crea, consulta, edita y elimina servicios adicionales. Tambien puedes cambiar su estado para controlar su disponibilidad comercial.</p>
+            </div>
+            <div class="badge">CRUD conectado</div>
+        </section>
 
-<!-- Metrics Grid -->
-<div class="metrics-grid">
-  <div class="metric-card">
-    <div class="metric-header">
-      <div class="metric-title">Total Servicios</div>
-      <div class="metric-icon blue">🔧</div>
-    </div>
-    <div class="metric-value" id="totalServicios">0</div>
-    <div class="metric-change">
-      <span>📊</span> Total del hotel
-    </div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-header">
-      <div class="metric-title">Servicios Activos</div>
-      <div class="metric-icon green">✅</div>
-    </div>
-    <div class="metric-value" id="serviciosActivos">0</div>
-    <div class="metric-change positive">
-      <span>↑</span> Disponibles
-    </div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-header">
-      <div class="metric-title">Servicios Inactivos</div>
-      <div class="metric-icon amber">⏸️</div>
-    </div>
-    <div class="metric-value" id="serviciosInactivos">0</div>
-    <div class="metric-change negative">
-      <span>↓</span> No disponibles
-    </div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-header">
-      <div class="metric-title">Categorías</div>
-      <div class="metric-icon purple">📁</div>
-    </div>
-    <div class="metric-value" id="serviciosCategorias">0</div>
-    <div class="metric-change">
-      <span>🏷️</span> Tipos de servicios
-    </div>
-  </div>
-</div>
+        <section class="grid">
+            <article class="panel">
+                <div class="panel-header">
+                    <h3>Formulario</h3>
+                    <p id="formTitle">Registra un nuevo servicio</p>
+                </div>
 
-<!-- Search and Filters -->
-<div class="search-section">
-  <div class="search-container">
-    <input type="text" id="searchServicios" placeholder="Buscar servicio..." class="search-input">
-    <button class="btn-secondary" onclick="window.serviciosModule.search()">
-      <span>🔍</span> Buscar
-    </button>
-  </div>
-  <div class="filter-container">
-    <select id="filterEstado" class="filter-select">
-      <option value="">Todos los estados</option>
-      <option value="activo">Activo</option>
-      <option value="inactivo">Inactivo</option>
-    </select>
-    <select id="filterCategoria" class="filter-select">
-      <option value="">Todas las categorías</option>
-      <option value="habitacion">Habitación</option>
-      <option value="restaurante">Restaurante</option>
-      <option value="spa">Spa</option>
-      <option value="lavanderia">Lavandería</option>
-      <option value="transporte">Transporte</option>
-    </select>
-  </div>
-</div>
+                <div id="mensaje" class="message"></div>
 
-<!-- Servicios Table -->
-<div class="table-card">
-  <div class="table-header">
-    <h3 class="table-title">Lista de Servicios</h3>
-    <div class="table-actions">
-      <button class="btn-secondary" onclick="window.serviciosModule.exportData()">
-        <span>📥</span> Exportar
-      </button>
-    </div>
-  </div>
-  <div class="table-container">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Categoría</th>
-          <th>Precio</th>
-          <th>Descripción</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="serviciosTableBody">
-        <tr><td colspan="7" class="text-center">Cargando...</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+                <form id="servicioForm">
+                    <input type="hidden" id="servicioId">
+
+                    <div class="field">
+                        <label for="nombre">Nombre</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="Ej. Spa, desayuno premium" required>
+                    </div>
+
+                    <div class="field">
+                        <label for="descripcion">Descripcion</label>
+                        <textarea id="descripcion" name="descripcion" placeholder="Describe que incluye el servicio."></textarea>
+                    </div>
+
+                    <div class="field-grid">
+                        <div class="field">
+                            <label for="precio">Precio</label>
+                            <input type="number" id="precio" name="precio" min="0" step="0.01" placeholder="450" required>
+                        </div>
+                        <div class="field">
+                            <label for="estado">Estado</label>
+                            <select id="estado" name="estado" required>
+                                <option value="disponible">Disponible</option>
+                                <option value="no_disponible">No disponible</option>
+                                <option value="inactivo">Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button class="primary" type="submit" id="submitButton">Guardar servicio</button>
+                        <button class="secondary" type="button" id="btnCancelarEdicion">Cancelar</button>
+                    </div>
+                </form>
+            </article>
+
+            <article class="panel">
+                <div class="toolbar">
+                    <input class="search" type="search" id="buscador" placeholder="Buscar por nombre, descripcion o estado">
+                    <button class="secondary" type="button" id="btnListar">Listar servicios</button>
+                </div>
+
+                <div id="serviciosContainer" class="cards">
+                    <div class="empty">Cargando servicios...</div>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <script type="module" src="../js/servicios.js"></script>
+</body>
+</html>

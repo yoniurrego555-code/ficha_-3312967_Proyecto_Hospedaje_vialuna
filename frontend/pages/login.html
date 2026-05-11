@@ -1,29 +1,33 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Via Luna | Iniciar sesión</title>
     <link rel="stylesheet" href="../css/public-theme.css">
 </head>
+
 <body>
     <main class="auth-shell">
         <div class="auth-header">
             <a class="button back-btn" href="index.html">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
                 Volver al inicio
             </a>
         </div>
-        
+
         <section class="split-card">
             <aside class="side-panel">
                 <div>
                     <div class="badge">Acceso</div>
                     <h1>Inicia sesión y continua tu experiencia</h1>
                     <p>
-                        Accede a tu cuenta para gestionar tus reservas, ver tu historial y disfrutar de todos los servicios de Via Luna.
+                        Accede a tu cuenta para gestionar tus reservas, ver tu historial y disfrutar de todos los
+                        servicios de Via Luna.
                     </p>
                 </div>
 
@@ -71,12 +75,14 @@
                             <input id="password" name="password" type="password" placeholder="••••••••" required>
                         </div>
 
-                        <p class="helper">Si eres cliente, te llevaremos a tu dashboard personal. Si eres administrador, accederás al panel de control.</p>
+                        <p class="helper">Si eres cliente, te llevaremos a tu dashboard personal. Si eres administrador,
+                            accederás al panel de control.</p>
 
                         <button class="button primary" id="submitButton" type="submit">
                             Iniciar sesión
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
                         </button>
                     </form>
@@ -92,7 +98,8 @@
 
                 <div class="auth-banner">
                     <strong>¿Primera vez en Via Luna?</strong>
-                    <p>Descubre nuestras habitaciones exclusivas, paquetes románticos y servicios de spa. Regístrate hoy y obtén un 10% de descuento en tu primera reserva.</p>
+                    <p>Descubre nuestras habitaciones exclusivas, paquetes románticos y servicios de spa. Regístrate hoy
+                        y obtén un 10% de descuento en tu primera reserva.</p>
                     <a class="button secondary" href="registro.html">Explorar habitaciones</a>
                 </div>
             </section>
@@ -125,31 +132,35 @@
                     password: form.password.value
                 });
 
-                if (!response.token) {
-                    throw new Error(response.mensaje || response.error || 'No fue posible iniciar sesion');
+                // Guardar token y usuario en localStorage usando las claves correctas
+                localStorage.setItem('vialuna_token', response.token);
+                localStorage.setItem('vialuna_usuario', JSON.stringify(response.user));
+                if (response.user?.rol) {
+                    localStorage.setItem('vialuna_rol', response.user.rol);
                 }
 
-                localStorage.setItem('token', response.token);
-                if (response.user) {
-                    localStorage.setItem('usuario', JSON.stringify(response.user));
+                // Mostrar si está en modo offline
+                if (response.offline) {
+                    showMessage('Inicio de sesión exitoso (Modo Offline - Backend no disponible)', 'success');
+                } else {
+                    showMessage('Inicio de sesión exitoso. Redirigiendo...', 'success');
                 }
 
-                showMessage('Inicio de sesion exitoso. Redirigiendo...', 'success');
-
+                // Determinar destino según el rol
                 const destino = response.user && response.user.rol === 'admin'
-                    ? 'usuarios.html'
-                    : (redirectParam || 'reservar.html');
+                    ? 'dashboard-admin.html'
+                    : (redirectParam || '../cliente/dashboard.html');
 
                 window.setTimeout(() => {
-                    window.location.href = destino;
-                }, 900);
+                    window.location.replace(destino);
+                }, 1500);
             } catch (error) {
-                showMessage(error.message || 'Ocurrio un error al iniciar sesion.', 'error');
-            } finally {
+                showMessage(error.message || 'Ocurrió un error al iniciar sesión.', 'error');
                 submitButton.disabled = false;
-                submitButton.textContent = 'Entrar';
+                submitButton.textContent = 'Iniciar sesión';
             }
         });
     </script>
 </body>
+
 </html>

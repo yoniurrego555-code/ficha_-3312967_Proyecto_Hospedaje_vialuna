@@ -65,6 +65,13 @@ class PagosModule {
   render() {
     this.updateMetrics();
     this.renderTable();
+    // Ensure module is always available globally after render
+    window.pagosModule = this;
+  }
+
+  showList() {
+    this.render();
+    this.setupEventListeners();
   }
 
 
@@ -244,7 +251,7 @@ class PagosModule {
     this.container.innerHTML = `
       <div class="pago-new-view">
         <div class="new-header">
-          <button onclick="window.location.hash='pagos'" class="btn-back">
+          <button onclick="window.pagosModule.showList()" class="btn-back">
             ← Volver a la lista
           </button>
           <h2>Nuevo Método de Pago</h2>
@@ -284,7 +291,7 @@ class PagosModule {
             </div>
             
             <div class="form-actions">
-              <button type="button" onclick="window.location.hash='pagos'" class="btn-secondary">
+              <button type="button" onclick="window.pagosModule.showList()" class="btn-secondary">
                 Cancelar
               </button>
               <button type="submit" class="btn-primary">
@@ -301,21 +308,20 @@ class PagosModule {
       e.preventDefault();
       
       const formData = {
-        Nombre: this.container.querySelector('#newNombre').value,
-        Tipo: this.container.querySelector('#newTipo').value,
-        Comision: parseFloat(this.container.querySelector('#newComision').value),
-        Estado: this.container.querySelector('#newEstado').value,
-        Descripcion: this.container.querySelector('#newDescripcion').value
+        NomMetodoPago: this.container.querySelector('#newNombre').value
       };
 
       try {
         await createMetodoPago(formData);
         alert('Método de pago creado exitosamente');
-        window.location.hash='pagos';
+        this.showList();
       } catch (error) {
         alert('Error creando método de pago: ' + error.message);
       }
     });
+    
+    // Ensure module is globally available for onclick handlers
+    window.pagosModule = this;
   }
 
   edit(id) {
@@ -328,7 +334,7 @@ class PagosModule {
     this.container.innerHTML = `
       <div class="pago-form-view">
         <div class="new-header">
-          <button onclick="window.location.hash='pagos'" class="btn-back">
+          <button onclick="window.pagosModule.showList()" class="btn-back">
             ← Volver a la lista
           </button>
           <h2>Editar Método de Pago</h2>
@@ -368,7 +374,7 @@ class PagosModule {
             </div>
             
             <div class="form-actions">
-              <button type="button" onclick="window.location.hash='pagos'" class="btn-secondary">
+              <button type="button" onclick="window.pagosModule.showList()" class="btn-secondary">
                 Cancelar
               </button>
               <button type="submit" class="btn-primary">
@@ -384,22 +390,25 @@ class PagosModule {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const formData = {
-        Nombre: this.container.querySelector('#editNombre').value,
-        Tipo: this.container.querySelector('#editTipo').value,
-        Comision: parseFloat(this.container.querySelector('#editComision').value),
-        Estado: this.container.querySelector('#editEstado').value,
-        Descripcion: this.container.querySelector('#editDescripcion').value
-      };
-
       try {
+        const formData = {
+          NomMetodoPago: this.container.querySelector('#editNombre').value,
+          Tipo: this.container.querySelector('#editTipo').value,
+          Comision: this.container.querySelector('#editComision').value,
+          EstadoNombre: this.container.querySelector('#editEstado').value,
+          Descripcion: this.container.querySelector('#editDescripcion').value
+        };
+
         await updateMetodoPago(id, formData);
         alert('Método de pago actualizado exitosamente');
-        window.location.hash='pagos';
+        this.showList();
       } catch (error) {
         alert('Error actualizando método de pago: ' + error.message);
       }
     });
+    
+    // Ensure module is globally available for onclick handlers
+    window.pagosModule = this;
   }
 
   async delete(id) {

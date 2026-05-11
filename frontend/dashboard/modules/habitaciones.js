@@ -1,454 +1,314 @@
-import { getHabitaciones, createHabitacion, updateHabitacion, deleteHabitacion } from "../core/api.js";
+import { apiUrl, getConnectionErrorMessage } from './shared/api-config.js';
 
-class HabitacionesModule {
-  constructor(container) {
-    this.container = container;
-    this.habitaciones = [];
-    this.currentData = {
-      total: 0,
-      disponibles: 0,
-      ocupadas: 0,
-      mantenimiento: 0
+const BASE_URL = apiUrl('habitaciones');
+
+const state = {
+    habitaciones: [],
+    filtro: '',
+    editandoId: null
+};
+
+const elements = {
+    form: document.getElementById('habitacionForm'),
+    formTitle: document.getElementById('formTitle'),
+    submitButton: document.getElementById('submitButton'),
+    mensaje: document.getElementById('mensaje'),
+    habitacionesContainer: document.getElementById('habitacionesContainer'),
+    buscador: document.getElementById('buscador'),
+    totalHabitaciones: document.getElementById('totalHabitaciones'),
+    totalDisponibles: document.getElementById('totalDisponibles'),
+    totalReservadas: document.getElementById('totalReservadas'),
+    btnCancelarEdicion: document.getElementById('btnCancelarEdicion'),
+    btnNuevaHabitacion: document.getElementById('btnNuevaHabitacion'),
+    btnRecargar: document.getElementById('btnRecargar'),
+    btnLimpiarBusqueda: document.getElementById('btnLimpiarBusqueda'),
+    btnListar: document.getElementById('btnListar')
+};
+
+function mostrarMensaje(texto, tipo = 'success') {
+    elements.mensaje.textContent = texto;
+    elements.mensaje.className = `message show ${tipo}`;
+}
+
+function limpiarMensaje() {
+    elements.mensaje.textContent = '';
+    elements.mensaje.className = 'message';
+}
+
+function obtenerPayloadDesdeFormulario() {
+    const formData = new FormData(elements.form);
+
+    return {
+        NombreHabitacion: String(formData.get('nombre') || '').trim(),
+        Descripcion: String(formData.get('descripcion') || '').trim(),
+        Costo: Number(formData.get('precio')),
+        Estado: String(formData.get('estado') || 'disponible').trim().toLowerCase(),
+        ImagenHabitacion: null
     };
-  }
+}
 
-  async initialize() {
+async function request(url, options = {}) {
+    let response;
+
     try {
-      await this.loadData();
-      this.render();
-      this.setupEventListeners();
+        response = await fetch(url, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...(options.headers || {})
+            },
+            ...options
+        });
     } catch (error) {
-      console.error("Error inicializando módulo de habitaciones:", error);
-      this.showError("Error al cargar habitaciones", "No se pudieron cargar los datos. Por favor, recargue la página.");
+        if (error instanceof TypeError) {
+            throw new Error(getConnectionErrorMessage('la API de habitaciones'));
+        }
+        throw error;
     }
-  }
 
-  async loadData() {
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok || !data.ok) {
+        throw new Error(data.mensaje || data.error || 'No se pudo completar la operacion');
+    }
+
+    return data;
+}
+
+async function listarHabitaciones() {
+    const data = await request(BASE_URL);
+    state.habitaciones = Array.isArray(data.data) ? data.data : [];
+    renderHabitaciones();
+    renderResumen();
+}
+
+function renderResumen() {
+    const total = state.habitaciones.length;
+    const disponibles = state.habitaciones.filter((habitacion) => habitacion.estado === 'disponible').length;
+    const reservadas = state.habitaciones.filter((habitacion) => habitacion.estado === 'reservada').length;
+
+    elements.totalHabitaciones.textContent = total;
+    elements.totalDisponibles.textContent = disponibles;
+    elements.totalReservadas.textContent = reservadas;
+}
+
+function obtenerHabitacionesFiltradas() {
+    const termino = state.filtro.trim().toLowerCase();
+
+    if (!termino) {
+        return state.habitaciones;
+    }
+
+    return state.habitaciones.filter((habitacion) => {
+        const texto = [habitacion.nombre, habitacion.descripcion, habitacion.estado]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+
+        return texto.includes(termino);
+    });
+}
+
+function renderHabitaciones() {
+    const habitaciones = obtenerHabitacionesFiltradas();
+
+    if (!habitaciones.length) {
+        elements.habitacionesContainer.innerHTML = '<div class="empty">No hay habitaciones para mostrar.</div>';
+        return;
+    }
+
+    elements.habitacionesContainer.innerHTML = habitaciones.map((habitacion) => `
+        <article class="room-card">
+            <span class="status ${habitacion.estado}">${habitacion.estado}</span>
+            <div>
+                <h4>${habitacion.nombre}</h4>
+                <p>${habitacion.descripcion || 'Sin descripcion registrada.'}</p>
+            </div>
+            <div class="room-meta">
+                <span><strong>Precio:</strong> $${Number(habitacion.precio).toFixed(2)}</span>
+                <span><strong>Capacidad:</strong> ${habitacion.capacidad} persona(s)</span>
+                <span><strong>ID:</strong> ${habitacion.id}</span>
+            </div>
+            <div class="room-actions">
+                <button class="secondary" type="button" data-action="editar" data-id="${habitacion.id}">Editar</button>
+                <button class="primary" type="button" data-action="reservar" data-id="${habitacion.id}" ${habitacion.estado === 'reservada' ? 'disabled' : ''}>Reservar</button>
+                <button class="danger" type="button" data-action="eliminar" data-id="${habitacion.id}">Eliminar</button>
+            </div>
+        </article>
+    `).join('');
+}
+
+function limpiarFormulario() {
+    state.editandoId = null;
+    elements.form.reset();
+    document.getElementById('habitacionId').value = '';
+    document.getElementById('estado').value = 'disponible';
+    elements.formTitle.textContent = 'Registra una nueva habitacion';
+    elements.submitButton.textContent = 'Guardar habitacion';
+}
+
+function cargarFormulario(habitacion) {
+    state.editandoId = habitacion.id;
+    document.getElementById('habitacionId').value = habitacion.id;
+    document.getElementById('nombre').value = habitacion.nombre || '';
+    document.getElementById('descripcion').value = habitacion.descripcion || '';
+    document.getElementById('precio').value = habitacion.precio || '';
+    document.getElementById('capacidad').value = habitacion.capacidad || 1;
+    document.getElementById('estado').value = habitacion.estado || 'disponible';
+    elements.formTitle.textContent = `Editando habitacion #${habitacion.id}`;
+    elements.submitButton.textContent = 'Actualizar habitacion';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function crearHabitacion(payload) {
+    return request(BASE_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    });
+}
+
+async function actualizarHabitacion(id, payload) {
+    return request(`${BASE_URL}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+    });
+}
+
+async function eliminarHabitacion(id) {
+    return request(`${BASE_URL}/${id}`, {
+        method: 'DELETE'
+    });
+}
+
+async function reservarHabitacion(id) {
+    return request(`${BASE_URL}/reservar/${id}`, {
+        method: 'POST'
+    });
+}
+
+async function manejarSubmit(event) {
+    event.preventDefault();
+    limpiarMensaje();
+
     try {
-      const response = await getHabitaciones();
-      this.habitaciones = response.data || [];
-      this.calculateMetrics();
-      console.log('Habitaciones cargadas:', this.habitaciones.length);
+        const payload = obtenerPayloadDesdeFormulario();
+
+        if (state.editandoId) {
+            await actualizarHabitacion(state.editandoId, payload);
+            mostrarMensaje('Habitacion actualizada correctamente.');
+        } else {
+            await crearHabitacion(payload);
+            mostrarMensaje('Habitacion creada correctamente.');
+        }
+
+        limpiarFormulario();
+        await listarHabitaciones();
     } catch (error) {
-      console.error("Error cargando habitaciones:", error);
-      // Usar datos de ejemplo si falla la API
-      this.habitaciones = this.getHabitacionesEjemplo();
-      this.calculateMetrics();
-      console.log('Usando datos de ejemplo para habitaciones');
+        mostrarMensaje(error.message, 'error');
     }
-  }
+}
 
-  getHabitacionesEjemplo() {
-    return [
-      { IDHabitacion: '1', Numero: '101', Tipo: 'Suite', Estado: 'disponible', Precio: 150, Capacidad: 2 },
-      { IDHabitacion: '2', Numero: '102', Tipo: 'Deluxe', Estado: 'disponible', Precio: 200, Capacidad: 3 },
-      { IDHabitacion: '3', Numero: '103', Tipo: 'Standard', Estado: 'ocupada', Precio: 100, Capacidad: 2 },
-      { IDHabitacion: '4', Numero: '104', Tipo: 'Suite', Estado: 'mantenimiento', Precio: 180, Capacidad: 4 }
-    ];
-  }
-
-  calculateMetrics() {
-    const total = this.habitaciones.length;
-    const disponibles = this.habitaciones.filter(h => 
-      String(h.estado || '').toLowerCase() === 'disponible' || 
-      String(h.EstadoNombre || '').toLowerCase() === 'disponible'
-    ).length;
-    const ocupadas = this.habitaciones.filter(h => 
-      String(h.estado || '').toLowerCase() === 'ocupada' || 
-      String(h.EstadoNombre || '').toLowerCase() === 'ocupada'
-    ).length;
-    const mantenimiento = this.habitaciones.filter(h => 
-      String(h.estado || '').toLowerCase() === 'mantenimiento' || 
-      String(h.EstadoNombre || '').toLowerCase() === 'mantenimiento'
-    ).length;
-
-    this.currentData = {
-      total,
-      disponibles,
-      ocupadas,
-      mantenimiento
-    };
-  }
-
-  render() {
-    this.updateMetrics();
-    this.renderTable();
-  }
-
-
-
-  updateMetrics() {
-    const elements = {
-      total: this.container.querySelector("#totalHabitaciones"),
-      disponibles: this.container.querySelector("#habitacionesDisponibles"),
-      ocupadas: this.container.querySelector("#habitacionesOcupadas"),
-      mantenimiento: this.container.querySelector("#habitacionesMantenimiento")
-    };
-
-    if (elements.total) elements.total.textContent = this.currentData.total;
-    if (elements.disponibles) elements.disponibles.textContent = this.currentData.disponibles;
-    if (elements.ocupadas) elements.ocupadas.textContent = this.currentData.ocupadas;
-    if (elements.mantenimiento) elements.mantenimiento.textContent = this.currentData.mantenimiento;
-  }
-
-  renderTable() {
-    const tbody = this.container.querySelector("#habitacionesTableBody");
-    if (!tbody) return;
-
-    if (this.habitaciones.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay habitaciones registradas</td></tr>';
-      return;
+async function manejarClickEnTarjeta(event) {
+    const button = event.target.closest('button[data-action]');
+    if (!button) {
+        return;
     }
 
-    tbody.innerHTML = this.habitaciones.map(habitacion => `
-      <tr>
-        <td>${habitacion.id || habitacion.ID}</td>
-        <td>${habitacion.numero || habitacion.Numero || '-'}</td>
-        <td>${habitacion.tipo || habitacion.Tipo || '-'}</td>
-        <td>$${Number(habitacion.precio || habitacion.Precio || 0).toFixed(2)}</td>
-        <td>${habitacion.capacidad || habitacion.Capacidad || '-'}</td>
-        <td>
-          <span class="status-badge ${this.getStatusClass(habitacion.estado || habitacion.EstadoNombre)}">
-            ${habitacion.estado || habitacion.EstadoNombre || 'Sin estado'}
-          </span>
-        </td>
-        <td>
-          <div class="action-buttons">
-            <button class="btn-icon btn-edit" onclick="window.habitacionesModule.edit(${habitacion.id || habitacion.ID})" title="Editar">
-              ✏️
-            </button>
-            <button class="btn-icon btn-delete" onclick="window.habitacionesModule.delete(${habitacion.id || habitacion.ID})" title="Eliminar">
-              🗑️
-            </button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-  }
+    const id = Number(button.dataset.id);
+    const action = button.dataset.action;
+    const habitacion = state.habitaciones.find((item) => Number(item.id) === id);
 
-  getStatusClass(estado) {
-    const status = String(estado || '').toLowerCase();
-    switch (status) {
-      case 'disponible':
-        return 'status-available';
-      case 'ocupada':
-        return 'status-occupied';
-      case 'mantenimiento':
-        return 'status-maintenance';
-      default:
-        return 'status-unknown';
-    }
-  }
-
-  setupEventListeners() {
-    // Search
-    const searchInput = this.container.querySelector("#searchHabitaciones");
-    if (searchInput) {
-      searchInput.addEventListener('input', () => this.search());
-    }
-
-    // Filter
-    const filterSelect = this.container.querySelector("#filterEstado");
-    if (filterSelect) {
-      filterSelect.addEventListener('change', () => this.filter());
-    }
-  }
-
-  search() {
-    const searchTerm = this.container.querySelector("#searchHabitaciones").value.toLowerCase();
-    const filtered = this.habitaciones.filter(h => 
-      String(h.numero || h.Numero || '').toLowerCase().includes(searchTerm) ||
-      String(h.tipo || h.Tipo || '').toLowerCase().includes(searchTerm) ||
-      String(h.id || h.ID || '').toString().includes(searchTerm)
-    );
-    this.renderFilteredTable(filtered);
-  }
-
-  filter() {
-    const filterValue = this.container.querySelector("#filterEstado").value;
-    if (!filterValue) {
-      this.renderTable();
-      return;
-    }
-
-    const filtered = this.habitaciones.filter(h => 
-      String(h.estado || h.EstadoNombre || '').toLowerCase() === filterValue.toLowerCase()
-    );
-    this.renderFilteredTable(filtered);
-  }
-
-  renderFilteredTable(filtered) {
-    const tbody = this.container.querySelector("#habitacionesTableBody");
-    if (!tbody) return;
-
-    if (filtered.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron habitaciones</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = filtered.map(habitacion => `
-      <tr>
-        <td>${habitacion.id || habitacion.ID}</td>
-        <td>${habitacion.numero || habitacion.Numero || '-'}</td>
-        <td>${habitacion.tipo || habitacion.Tipo || '-'}</td>
-        <td>$${Number(habitacion.precio || habitacion.Precio || 0).toFixed(2)}</td>
-        <td>${habitacion.capacidad || habitacion.Capacidad || '-'}</td>
-        <td>
-          <span class="status-badge ${this.getStatusClass(habitacion.estado || habitacion.EstadoNombre)}">
-            ${habitacion.estado || habitacion.EstadoNombre || 'Sin estado'}
-          </span>
-        </td>
-        <td>
-          <div class="action-buttons">
-            <button class="btn-icon btn-edit" onclick="window.habitacionesModule.edit(${habitacion.id || habitacion.ID})" title="Editar">
-              ✏️
-            </button>
-            <button class="btn-icon btn-delete" onclick="window.habitacionesModule.delete(${habitacion.id || habitacion.ID})" title="Eliminar">
-              🗑️
-            </button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
-  }
-
-  edit(id) {
-    const habitacion = this.habitaciones.find(h => h.id == id || h.ID == id);
     if (!habitacion) {
-      alert('Habitación no encontrada');
-      return;
+        mostrarMensaje('No se encontro la habitacion seleccionada.', 'error');
+        return;
     }
 
-    this.container.innerHTML = `
-      <div class="habitacion-form-view">
-        <div class="new-header">
-          <button onclick="window.location.hash='habitaciones'" class="btn-back">
-            ← Volver a la lista
-          </button>
-          <h2>Editar Habitación</h2>
-        </div>
-        
-        <div class="new-content">
-          <form id="editHabitacionForm" class="habitacion-form">
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="editNumero">Número:</label>
-                <input type="text" id="editNumero" value="${habitacion.numero || habitacion.Numero || ''}" required>
-              </div>
-              <div class="form-group">
-                <label for="editTipo">Tipo:</label>
-                <select id="editTipo" required>
-                  <option value="Sencilla" ${(habitacion.tipo || habitacion.Tipo) === 'Sencilla' ? 'selected' : ''}>Sencilla</option>
-                  <option value="Doble" ${(habitacion.tipo || habitacion.Tipo) === 'Doble' ? 'selected' : ''}>Doble</option>
-                  <option value="Suite" ${(habitacion.tipo || habitacion.Tipo) === 'Suite' ? 'selected' : ''}>Suite</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="editPrecio">Precio:</label>
-                <input type="number" id="editPrecio" value="${habitacion.precio || habitacion.Precio || 0}" required>
-              </div>
-              <div class="form-group">
-                <label for="editCapacidad">Capacidad:</label>
-                <input type="number" id="editCapacidad" value="${habitacion.capacidad || habitacion.Capacidad || 1}" required>
-              </div>
-              <div class="form-group">
-                <label for="editEstado">Estado:</label>
-                <select id="editEstado" required>
-                  <option value="Disponible" ${String(habitacion.estado || habitacion.EstadoNombre || '').toLowerCase() === 'disponible' ? 'selected' : ''}>Disponible</option>
-                  <option value="Ocupada" ${String(habitacion.estado || habitacion.EstadoNombre || '').toLowerCase() === 'ocupada' ? 'selected' : ''}>Ocupada</option>
-                  <option value="Mantenimiento" ${String(habitacion.estado || habitacion.EstadoNombre || '').toLowerCase() === 'mantenimiento' ? 'selected' : ''}>Mantenimiento</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="editDescripcion">Descripción:</label>
-                <textarea id="editDescripcion" rows="3">${habitacion.descripcion || habitacion.Descripcion || ''}</textarea>
-              </div>
-            </div>
-            
-            <div class="form-actions">
-              <button type="button" onclick="window.location.hash='habitaciones'" class="btn-secondary">
-                Cancelar
-              </button>
-              <button type="submit" class="btn-primary">
-                💾 Guardar Cambios
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    `;
+    try {
+        if (action === 'editar') {
+            limpiarMensaje();
+            cargarFormulario(habitacion);
+            return;
+        }
 
-    const form = this.container.querySelector('#editHabitacionForm');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = {
-        Numero: this.container.querySelector('#editNumero').value,
-        Tipo: this.container.querySelector('#editTipo').value,
-        Precio: parseFloat(this.container.querySelector('#editPrecio').value),
-        Capacidad: parseInt(this.container.querySelector('#editCapacidad').value),
-        Estado: this.container.querySelector('#editEstado').value,
-        Descripcion: this.container.querySelector('#editDescripcion').value
-      };
+        if (action === 'eliminar') {
+            const confirmar = window.confirm(`Deseas eliminar la habitacion ${habitacion.nombre}?`);
+            if (!confirmar) {
+                return;
+            }
 
-      try {
-        await updateHabitacion(id, formData);
-        alert('Habitación actualizada exitosamente');
-        window.location.hash='habitaciones';
-      } catch (error) {
-        alert('Error actualizando habitación: ' + error.message);
-      }
-    });
-  }
+            await eliminarHabitacion(id);
+            mostrarMensaje('Habitacion eliminada correctamente.');
+        }
 
-  showNewHabitacionModal() {
-    this.container.innerHTML = `
-      <div class="habitacion-new-view">
-        <div class="new-header">
-          <button onclick="window.location.hash='habitaciones'" class="btn-back">
-            ← Volver a la lista
-          </button>
-          <h2>Nueva Habitación</h2>
-        </div>
-        
-        <div class="new-content">
-          <form id="newHabitacionForm" class="habitacion-form">
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="newNumero">Número:</label>
-                <input type="text" id="newNumero" required>
-              </div>
-              <div class="form-group">
-                <label for="newTipo">Tipo:</label>
-                <select id="newTipo" required>
-                  <option value="Sencilla">Sencilla</option>
-                  <option value="Doble">Doble</option>
-                  <option value="Suite">Suite</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="newPrecio">Precio:</label>
-                <input type="number" id="newPrecio" required>
-              </div>
-              <div class="form-group">
-                <label for="newCapacidad">Capacidad:</label>
-                <input type="number" id="newCapacidad" required>
-              </div>
-              <div class="form-group">
-                <label for="newEstado">Estado:</label>
-                <select id="newEstado" required>
-                  <option value="Disponible">Disponible</option>
-                  <option value="Mantenimiento">Mantenimiento</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="newDescripcion">Descripción:</label>
-                <textarea id="newDescripcion" rows="3"></textarea>
-              </div>
-            </div>
-            
-            <div class="form-actions">
-              <button type="button" onclick="window.location.hash='habitaciones'" class="btn-secondary">
-                Cancelar
-              </button>
-              <button type="submit" class="btn-primary">
-                💾 Guardar Habitación
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    `;
+        if (action === 'reservar') {
+            await reservarHabitacion(id);
+            mostrarMensaje('Habitacion marcada como reservada.');
+        }
 
-    const form = this.container.querySelector('#newHabitacionForm');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = {
-        Numero: this.container.querySelector('#newNumero').value,
-        Tipo: this.container.querySelector('#newTipo').value,
-        Precio: parseFloat(this.container.querySelector('#newPrecio').value),
-        Capacidad: parseInt(this.container.querySelector('#newCapacidad').value),
-        Estado: this.container.querySelector('#newEstado').value,
-        Descripcion: this.container.querySelector('#newDescripcion').value
-      };
-
-      try {
-        await createHabitacion(formData);
-        alert('Habitación creada exitosamente');
-        window.location.hash='habitaciones';
-      } catch (error) {
-        console.error('Error creando habitación via API:', error);
-        // Si falla la API, agregar localmente
-        const nuevaHabitacion = {
-          IDHabitacion: String(this.habitaciones.length + 1),
-          ...formData
-        };
-        this.habitaciones.push(nuevaHabitacion);
-        this.calculateMetrics();
-        alert('Habitación creada localmente (backend no disponible)');
-        window.location.hash='habitaciones';
-      }
-    });
-  }
-
-  async delete(id) {
-    if (confirm('¿Está seguro de que desea eliminar esta habitación?')) {
-      try {
-        await deleteHabitacion(id);
-        alert('Habitación eliminada exitosamente');
-        await this.loadData();
-        this.render();
-      } catch (error) {
-        console.error('Error eliminando habitación via API:', error);
-        // Si falla la API, eliminar localmente
-        this.habitaciones = this.habitaciones.filter(h => (h.IDHabitacion != id && h.id_habitacion != id));
-        this.calculateMetrics();
-        this.render();
-        alert('Habitación eliminada localmente (backend no disponible)');
-      }
+        if (action === 'eliminar' || action === 'reservar') {
+            if (state.editandoId === id) {
+                limpiarFormulario();
+            }
+            await listarHabitaciones();
+        }
+    } catch (error) {
+        mostrarMensaje(error.message, 'error');
     }
-  }
-
-  exportData() {
-    const csvContent = [
-      ['ID', 'Número', 'Tipo', 'Precio', 'Capacidad', 'Estado'],
-      ...this.habitaciones.map(h => [
-        h.id || h.ID,
-        h.numero || h.Numero,
-        h.tipo || h.Tipo,
-        h.precio || h.Precio,
-        h.capacidad || h.Capacidad,
-        h.estado || h.EstadoNombre
-      ])
-    ].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'habitaciones.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
-  }
-
-  showError(title, message) {
-    this.container.innerHTML = `
-      <div class="error-container">
-        <div class="error-card">
-          <h2>${title}</h2>
-          <p>${message}</p>
-          <button onclick="location.reload()" class="btn-primary">
-            Recargar página
-          </button>
-        </div>
-      </div>
-    `;
-  }
 }
 
-// Export function for SPA integration
-export function renderHabitaciones(container) {
-  window.habitacionesModule = new HabitacionesModule(container);
-  window.habitacionesModule.initialize();
+function registrarEventos() {
+    elements.form.addEventListener('submit', manejarSubmit);
+    elements.habitacionesContainer.addEventListener('click', manejarClickEnTarjeta);
+
+    elements.buscador.addEventListener('input', (event) => {
+        state.filtro = event.target.value;
+        renderHabitaciones();
+    });
+
+    elements.btnCancelarEdicion.addEventListener('click', () => {
+        limpiarFormulario();
+        limpiarMensaje();
+    });
+
+    elements.btnNuevaHabitacion.addEventListener('click', () => {
+        limpiarFormulario();
+        limpiarMensaje();
+    });
+
+    elements.btnRecargar.addEventListener('click', async () => {
+        limpiarMensaje();
+        try {
+            await listarHabitaciones();
+            mostrarMensaje('Listado actualizado desde la base de datos.');
+        } catch (error) {
+            mostrarMensaje(error.message, 'error');
+        }
+    });
+
+    elements.btnLimpiarBusqueda.addEventListener('click', () => {
+        state.filtro = '';
+        elements.buscador.value = '';
+        renderHabitaciones();
+    });
+
+    elements.btnListar.addEventListener('click', async () => {
+        try {
+            await listarHabitaciones();
+        } catch (error) {
+            mostrarMensaje(error.message, 'error');
+        }
+    });
 }
+
+async function init() {
+    registrarEventos();
+    limpiarFormulario();
+
+    try {
+        await listarHabitaciones();
+    } catch (error) {
+        mostrarMensaje(error.message, 'error');
+        elements.habitacionesContainer.innerHTML = '<div class="empty">No fue posible cargar las habitaciones.</div>';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', init);

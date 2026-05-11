@@ -207,6 +207,9 @@ export class RolesPermisosModule {
         this.renderDetallePermiso();
         break;
     }
+    
+    // Ensure module is always available globally after render
+    window.rolesPermisosModule = this;
   }
 
   renderMain() {
@@ -597,9 +600,9 @@ export class RolesPermisosModule {
     const formData = new FormData(form);
     const nuevoRol = {
       id: Math.max(...this.currentData.roles.map(r => r.id)) + 1,
-      nombre: formData.get('nombre'),
-      descripcion: formData.get('descripcion'),
-      estado: formData.get('estado'),
+      Nombre: formData.get('nombre'),
+      Descripcion: formData.get('descripcion'),
+      Estado: formData.get('estado') === 'activo' ? 1 : 0,
       usuarios_count: 0
     };
 
@@ -618,9 +621,9 @@ export class RolesPermisosModule {
     if (rolIndex !== -1) {
       this.currentData.roles[rolIndex] = {
         ...this.currentData.roles[rolIndex],
-        nombre: formData.get('nombre'),
-        descripcion: formData.get('descripcion'),
-        estado: formData.get('estado')
+        Nombre: formData.get('nombre'),
+        Descripcion: formData.get('descripcion'),
+        Estado: formData.get('estado') === 'activo' ? 1 : 0
       };
     }
     
@@ -793,9 +796,11 @@ export class RolesPermisosModule {
     const formData = new FormData(form);
     const nuevoPermiso = {
       id: Math.max(...this.currentData.permisos.map(p => p.id)) + 1,
-      nombre: formData.get('nombre'),
-      descripcion: formData.get('descripcion'),
-      modulo: formData.get('modulo')
+      NombrePermisos: formData.get('nombre'),
+      Descripcion: formData.get('descripcion'),
+      EstadoPermisos: 'Activo',
+      IsActive: 1,
+      Modulo: formData.get('modulo')
     };
 
     this.currentData.permisos.push(nuevoPermiso);
@@ -812,9 +817,9 @@ export class RolesPermisosModule {
     if (permisoIndex !== -1) {
       this.currentData.permisos[permisoIndex] = {
         ...this.currentData.permisos[permisoIndex],
-        nombre: formData.get('nombre'),
-        descripcion: formData.get('descripcion'),
-        modulo: formData.get('modulo')
+        NombrePermisos: formData.get('nombre'),
+        Descripcion: formData.get('descripcion'),
+        Modulo: formData.get('modulo')
       };
     }
     
@@ -965,6 +970,8 @@ export class RolesPermisosModule {
     const rol = this.currentData.roles.find(r => r.id === id);
     if (rol) {
       rol.estado = estado ? 'activo' : 'inactivo';
+      this.render(); // Re-renderizar para actualizar el estado visual
+      this.setupEventListeners(); // Re-attach event listeners
       this.showSuccess(`Rol ${estado ? 'activado' : 'desactivado'} exitosamente`);
     }
   }
@@ -973,6 +980,8 @@ export class RolesPermisosModule {
     const permiso = this.currentData.permisos.find(p => p.id === id);
     if (permiso) {
       permiso.estado = estado ? 'activo' : 'inactivo';
+      this.render(); // Re-renderizar para actualizar el estado visual
+      this.setupEventListeners(); // Re-attach event listeners
       this.showSuccess(`Permiso ${estado ? 'activado' : 'desactivado'} exitosamente`);
     }
   }

@@ -534,12 +534,16 @@ export class ReservasAdminModule {
     if (this.refs.reservationsListSection) this.refs.reservationsListSection.style.display = 'none';
     if (this.refs.reservationFormSection) this.refs.reservationFormSection.style.display = 'block';
     this.clearForm();
+    // Ensure module is globally available for onclick handlers
+    window.reservasModule = this;
   }
 
   // Show reservations list
   showReservationsList() {
     if (this.refs.reservationFormSection) this.refs.reservationFormSection.style.display = 'none';
     if (this.refs.reservationsListSection) this.refs.reservationsListSection.style.display = 'block';
+    // Ensure module is globally available for onclick handlers
+    window.reservasModule = this;
   }
 
   // Setup event listeners
@@ -827,6 +831,9 @@ if (this.refs.reservationForm) {
       e.preventDefault();
       await this.saveReserva(reserva.id_reserva);
     });
+    
+    // Ensure module is globally available for onclick handlers
+    window.reservasModule = this;
   }
   
   // Save edited reservation
@@ -838,8 +845,8 @@ if (this.refs.reservationForm) {
       fecha_fin: this.container.querySelector('#editFechaFin').value,
       hora_entrada: this.container.querySelector('#editHoraEntrada').value || '14:00',
       hora_salida: this.container.querySelector('#editHoraSalida').value || '12:00',
-      metodo_pago: this.container.querySelector('#editMetodoPago').value,
-      estado: parseInt(this.container.querySelector('#editEstadoReserva').value),
+      id_metodo_pago: parseInt(this.container.querySelector('#editMetodoPago').value),
+      id_estado_reserva: parseInt(this.container.querySelector('#editEstadoReserva').value),
       total: parseFloat(this.container.querySelector('#editTotalAmount').value)
     };
     
@@ -982,6 +989,9 @@ export async function renderReservas(container) {
     // Create and initialize module
     const reservasModule = new ReservasAdminModule(container);
     await reservasModule.initialize();
+    
+    // Make module globally accessible for onclick handlers
+    window.reservasModule = reservasModule;
     
     return reservasModule;
   } catch (error) {

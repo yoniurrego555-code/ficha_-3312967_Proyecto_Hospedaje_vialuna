@@ -19,12 +19,16 @@ class ClientesModule {
   }
 
   async initialize() {
+    console.log('🔄 Inicializando ClientesModule...');
     try {
       await this.loadData();
+      console.log('✅ Datos cargados');
       this.render();
+      console.log('✅ Render completado');
       this.setupEventListeners();
+      console.log('✅ Event listeners configurados');
     } catch (error) {
-      console.error(error);
+      console.error('❌ Error en initialize:', error);
       this.showError("Error al cargar clientes", "Recarga la página");
     }
   }
@@ -68,6 +72,13 @@ class ClientesModule {
     // La vista HTML base ahora se carga dinámicamente desde /public/
     this.updateMetrics();
     this.renderTable(data);
+    // Ensure module is always available globally after render
+    window.clientesModule = this;
+  }
+
+  showList() {
+    this.render();
+    this.setupEventListeners();
   }
 
 
@@ -100,7 +111,14 @@ class ClientesModule {
   }
 
   renderTable(data = this.clientes) {
+    console.log('📊 renderTable llamado con data:', data.length, 'clientes');
     const tbody = this.container.querySelector("#clientesTableBody");
+    console.log('🔍 tbody encontrado:', tbody);
+
+    if (!tbody) {
+      console.error('❌ tbody #clientesTableBody no encontrado en container');
+      return;
+    }
 
     if (!data.length) {
       tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay clientes registrados</td></tr>';
@@ -236,7 +254,7 @@ class ClientesModule {
     this.container.innerHTML = `
       <div class="client-detail-view">
         <div class="detail-header">
-          <button onclick="window.location.hash='clientes'" class="btn-back">
+          <button onclick="window.clientesModule.showList()" class="btn-back">
             ← Volver a la lista
           </button>
           <h2>Detalle del Cliente</h2>
@@ -288,6 +306,9 @@ class ClientesModule {
         </div>
       </div>
     `;
+    
+    // Ensure module is globally available for onclick handlers
+    window.clientesModule = this;
   }
 
   edit(id) {
@@ -308,7 +329,7 @@ class ClientesModule {
     this.container.innerHTML = `
       <div class="client-edit-view">
         <div class="edit-header">
-          <button onclick="window.location.hash='clientes'" class="btn-back">
+          <button onclick="window.clientesModule.showList()" class="btn-back">
             ← Volver a la lista
           </button>
           <h2>Editar Cliente</h2>
@@ -358,9 +379,7 @@ class ClientesModule {
             </div>
             
             <div class="form-actions">
-              <button type="button" onclick="window.location.hash='clientes'" class="btn-secondary">
-                Cancelar
-              </button>
+              <button type="button" onclick="window.clientesModule.showList()" class="btn-secondary">Cancelar</button>
               <button type="submit" class="btn-primary">
                 💾 Guardar Cambios
               </button>
@@ -375,6 +394,9 @@ class ClientesModule {
       e.preventDefault();
       this.saveClient(id);
     });
+    
+    // Ensure module is globally available for onclick handlers
+    window.clientesModule = this;
   }
 
   async saveClient(id) {
@@ -456,7 +478,7 @@ class ClientesModule {
     this.container.innerHTML = `
       <div class="client-new-view">
         <div class="new-header">
-          <button onclick="window.location.hash='clientes'" class="btn-back">
+          <button onclick="window.clientesModule.showList()" class="btn-back">
             ← Volver a la lista
           </button>
           <h2>Nuevo Cliente</h2>
@@ -506,9 +528,7 @@ class ClientesModule {
             </div>
             
             <div class="form-actions">
-              <button type="button" onclick="window.location.hash='clientes'" class="btn-secondary">
-                Cancelar
-              </button>
+              <button type="button" onclick="window.clientesModule.showList()" class="btn-secondary">Cancelar</button>
               <button type="submit" class="btn-primary">
                 ➕ Crear Cliente
               </button>
@@ -523,6 +543,9 @@ class ClientesModule {
       e.preventDefault();
       this.createClient();
     });
+    
+    // Ensure module is globally available for onclick handlers
+    window.clientesModule = this;
   }
 
   async createClient() {
@@ -573,6 +596,9 @@ class ClientesModule {
 }
 
 export function renderClientes(container) {
+  console.log('🎯 renderClientes llamado con container:', container);
   window.clientesModule = new ClientesModule(container);
+  console.log('📦 ClientesModule creado');
   window.clientesModule.initialize();
+  console.log('🚀 initialize() llamado');
 }

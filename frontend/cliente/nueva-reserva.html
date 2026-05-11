@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nueva Reserva | ViaLuna</title>
+  <link rel="stylesheet" href="../css/admin-theme.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <h1>🏨 VIA LUNA</h1>
+        <p class="sidebar-description">Portal del Cliente. Gestiona tus reservas y perfil de forma sencilla.</p>
+      </div>
+
+      <nav class="admin-nav" aria-label="Menú cliente">
+        <a class="admin-link" href="dashboard.html" data-view="dashboard">• Dashboard</a>
+        <a class="admin-link" href="reservas.html" data-view="reservas">• Mis Reservas</a>
+        <a class="admin-link active" href="nueva-reserva.html" data-view="nueva-reserva">• Nueva Reserva</a>
+        <a class="admin-link" href="perfil.html" data-view="perfil">• Mi Perfil</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-info" id="userInfo">
+          <span class="user-name" id="userNameDisplay">Cargando...</span>
+          <span class="user-role">Cliente</span>
+        </div>
+        <button class="logout-btn" id="logoutBtn">
+          🚪 Cerrar sesión
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+      <header class="module-header">
+        <div class="header-left">
+          <h1 id="formTitle">Nueva Reserva</h1>
+          <p>Completa el formulario para programar tu estancia con nosotros.</p>
+        </div>
+        <div class="header-right">
+          <button class="btn-secondary" onclick="history.back()">Regresar</button>
+        </div>
+      </header>
+
+      <div class="panel">
+        <form id="reservaForm" class="reservation-form">
+          <div class="grid">
+            <div class="form-column">
+              <div class="field">
+                <label for="fechaInicio">Fecha de Entrada *</label>
+                <input type="date" id="fechaInicio" name="fecha_inicio" required>
+              </div>
+              <div class="field">
+                <label for="fechaFin">Fecha de Salida *</label>
+                <input type="date" id="fechaFin" name="fecha_fin" required>
+              </div>
+              <div class="field">
+                <label for="id_habitacion">Habitación *</label>
+                <select id="id_habitacion" name="id_habitacion" required>
+                  <option value="">Cargando habitaciones disponibles...</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-column">
+              <div class="field">
+                <label for="cantPersonas">Cantidad de Personas *</label>
+                <input type="number" id="cantPersonas" name="cant_personas" min="1" max="10" value="1" required>
+              </div>
+              <div class="field">
+                <label for="observaciones">Observaciones</label>
+                <textarea id="observaciones" name="observaciones" placeholder="Ej: Cama adicional, preferencia de piso..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions" style="margin-top: 30px;">
+            <button type="button" class="btn-secondary" onclick="location.href='reservas.html'">Cancelar</button>
+            <button type="submit" class="btn-primary" id="submitBtn">Confirmar Reserva</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="js/nuevaReserva.js"></script>
+</body>
+</html>

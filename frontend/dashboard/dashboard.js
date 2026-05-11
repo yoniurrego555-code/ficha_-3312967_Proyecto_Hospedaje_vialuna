@@ -25,7 +25,9 @@ export class DashboardModule {
 
   // Initialize dashboard
   async initialize() {
+    console.log('📊 Inicializando DashboardModule...');
     try {
+      console.log('🔄 Cargando datos desde API...');
       const [clientes, habitaciones, paquetes, servicios, reservas] = await Promise.all([
         getClientes(),
         getHabitaciones(),
@@ -34,7 +36,7 @@ export class DashboardModule {
         getReservas()
       ]);
 
-      console.log('Dashboard - Datos cargados:', {
+      console.log('✅ Datos cargados:', {
         clientes: clientes.length,
         habitaciones: habitaciones.length,
         paquetes: paquetes.length,

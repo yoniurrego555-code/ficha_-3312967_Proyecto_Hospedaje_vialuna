@@ -18,24 +18,22 @@
   </main>
 
   <script type="module">
-    import { getSession } from "./dashboard/core/api.js";
+    import { getSession, isAdminSession, isClientSession } from "./dashboard/core/api.js";
     import { LOGIN_URL } from "./dashboard/core/authGuard.js";
 
     /**
      * Redirección segura por rol
      */
     function redirectByRole(session) {
-      const role = session?.tipoAcceso;
-
       // 🔐 ADMIN
-      if (role === "admin") {
+      if (isAdminSession(session)) {
         window.location.replace("./pages/dashboard-admin.html");
         return;
       }
 
       // 👤 CLIENTE
-      if (role === "cliente") {
-        window.location.replace("./pages/dashboard-cliente.html");
+      if (isClientSession(session)) {
+        window.location.replace("./cliente/dashboard.html");
         return;
       }
 

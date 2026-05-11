@@ -8,14 +8,20 @@ function getToken() {
 }
 
 async function request(path, options = {}) {
+  const token = getToken();
+  console.log(`🌐 API Request: ${options.method || 'GET'} ${API_URL}${path}`);
+  console.log('🔑 Token presente:', !!token);
+
   const response = await fetch(`${API_URL}${path}`, {
     headers: {
       "Content-Type": "application/json",
-      ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {})
     },
     ...options
   });
+
+  console.log('📡 Response status:', response.status);
 
   const text = await response.text();
   let data = null;
@@ -60,11 +66,19 @@ export function clearSession() {
 }
 
 export function isAdminSession(session = getSession()) {
-  return String(session?.rol || "").toLowerCase() === "admin" || Number(session?.IDRol) === 1;
+  // Priorizar el rol sobre el IDRol para evitar inconsistencias
+  const rol = String(session?.rol || "").toLowerCase();
+  const isAdmin = rol === "admin" || (rol !== "cliente" && rol !== "client" && Number(session?.IDRol) === 1);
+  console.log('isAdminSession check:', { rol: session?.rol, IDRol: session?.IDRol, isAdmin });
+  return isAdmin;
 }
 
 export function isClientSession(session = getSession()) {
-  return String(session?.rol || "").toLowerCase() === "cliente" || Number(session?.IDRol) === 2;
+  // Priorizar el rol sobre el IDRol para evitar inconsistencias
+  const rol = String(session?.rol || "").toLowerCase();
+  const isClient = rol === "cliente" || rol === "client" || Number(session?.IDRol) === 2;
+  console.log('isClientSession check:', { rol: session?.rol, IDRol: session?.IDRol, isClient });
+  return isClient;
 }
 
 function normalize(value) {

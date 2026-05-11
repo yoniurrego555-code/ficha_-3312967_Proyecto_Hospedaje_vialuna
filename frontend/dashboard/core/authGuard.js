@@ -1,5 +1,8 @@
 import { clearSession, getSession, isAdminSession, isClientSession } from "./api.js";
 
+// Re-exportar funciones de api.js para facilitar importaciones
+export { getSession, isAdminSession, isClientSession } from "./api.js";
+
 function getFrontendBaseUrl() {
   return new URL("../../", import.meta.url);
 }
@@ -10,7 +13,7 @@ export function getAppUrl(path = "") {
 
 export const LOGIN_URL = getAppUrl("pages/login.html");
 export const ADMIN_DASHBOARD_URL = getAppUrl("pages/dashboard-admin.html");
-export const CLIENT_DASHBOARD_URL = getAppUrl("pages/dashboard-cliente.html");
+export const CLIENT_DASHBOARD_URL = getAppUrl("cliente/dashboard.html");
 export const ACCESS_DENIED_MESSAGE_KEY = "vialuna_access_denied_message";
 
 let redirecting = false;
@@ -86,14 +89,28 @@ export function redirectToDashboardByRole(session = getSession(), options = {}) 
 }
 
 export function protectPage({ requiredRole = null, deniedMessage = "" } = {}) {
-  const session = getSession();
+  console.log('🔐 protectPage llamado con requiredRole:', requiredRole);
 
-  if (!session || !session.token) {
+  const session = getSession();
+  const token = localStorage.getItem('vialuna_token');
+
+  console.log('📋 Sesión obtenida:', session);
+  console.log('🔑 Token obtenido:', token ? 'Presente' : 'Ausente');
+
+  if (!session) {
+    console.log('❌ No hay sesión guardada, redirigiendo a login');
+    safeRedirect(LOGIN_URL);
+    return null;
+  }
+
+  if (!token) {
+    console.log('❌ No hay token guardado, redirigiendo a login');
     safeRedirect(LOGIN_URL);
     return null;
   }
 
   if (!matchesRole(session, requiredRole)) {
+    console.log('❌ Rol no coincide. Session rol:', session.rol, 'Required:', requiredRole);
     const message = deniedMessage
       || (requiredRole === "admin"
         ? "No tienes permisos para entrar al panel administrativo."
@@ -104,6 +121,7 @@ export function protectPage({ requiredRole = null, deniedMessage = "" } = {}) {
     return null;
   }
 
+  console.log('✅ Autenticación exitosa, revelando página');
   window.__VIALUNA_SESSION__ = session;
   revealPage();
   return session;
