@@ -75,7 +75,7 @@ async function findClienteByEmail(email) {
   }
 
   const [rows] = await db.query(
-    `SELECT NroDocumento, Nombre, Apellido, Email, Telefono, Direccion, Contrasena, Estado, IDRol
+    `SELECT NroDocumento, TipoDocumento, Nombre, Apellido, Email, Telefono, Direccion, Contrasena, Estado, IDRol
      FROM clientes
      WHERE LOWER(Email) = ?
      LIMIT 1`,
@@ -182,6 +182,7 @@ async function findAccountByEmail(email) {
 async function createCliente(data) {
   const payload = {
     NroDocumento: String(data.NroDocumento || "").trim(),
+    TipoDocumento: String(data.TipoDocumento || "CC").trim(),
     Nombre: String(data.Nombre || "").trim(),
     Apellido: String(data.Apellido || "").trim(),
     Direccion: String(data.Direccion || "").trim(),
@@ -194,10 +195,11 @@ async function createCliente(data) {
 
   const [result] = await db.query(
     `INSERT INTO clientes
-      (NroDocumento, Nombre, Apellido, Direccion, Email, Telefono, Contrasena, Estado, IDRol)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (NroDocumento, TipoDocumento, Nombre, Apellido, Direccion, Email, Telefono, Contrasena, Estado, IDRol)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       payload.NroDocumento,
+      payload.TipoDocumento,
       payload.Nombre,
       payload.Apellido,
       payload.Direccion,

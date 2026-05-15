@@ -19,6 +19,7 @@ app.use("/api/permisos", require("./routes/permisos.routes"));
 app.use("/api/rolespermisos", require("./routes/rolespermisos.routes"));
 
 app.use("/api/habitacion", require("./routes/habitacion.routes"));
+app.use("/api/habitaciones", require("./routes/habitacion.routes"));
 app.use("/api/servicios", require("./routes/servicios.routes"));
 app.use("/api/paquetes", require("./routes/paquetes.routes"));
 

@@ -146,6 +146,7 @@ exports.register = async (req, res) => {
   try {
     const payload = {
       NroDocumento: String(req.body?.NroDocumento || req.body?.documento || "").trim(),
+      TipoDocumento: String(req.body?.TipoDocumento || req.body?.tipo_documento || "CC").trim(),
       Nombre: String(req.body?.Nombre || req.body?.nombre || "").trim(),
       Apellido: String(req.body?.Apellido || req.body?.apellido || "").trim(),
       Direccion: String(req.body?.Direccion || req.body?.direccion || "").trim(),
