@@ -9,6 +9,13 @@
 <body>
   <div class="page-shell">
     <div class="dashboard-shell">
+      <!-- Sidebar Toggle Button -->
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <span class="hamburger"></span>
+        <span class="hamburger"></span>
+        <span class="hamburger"></span>
+      </button>
+      
       <aside class="sidebar">
         <a class="brand sidebar__brand" href="#dashboard" data-view="dashboard">
           <span class="brand__mark">VL</span>
@@ -35,6 +42,9 @@
           <!-- Content will be loaded dynamically here -->
         </div>
       </main>
+      
+      <!-- Sidebar Overlay -->
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
     </div>
   </div>
 

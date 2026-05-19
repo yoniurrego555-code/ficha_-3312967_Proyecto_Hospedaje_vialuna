@@ -16,7 +16,10 @@ const serviciosRoutes = require('./routes/servicios.routes');
 const reservasRoutes = require('./routes/reservas.routes');
 const detalleReservasRoutes = require('./routes/detalle_reservas.routes');
 
-app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/usuarios', require('../backend/src/routes/usuarios.routes'));
+app.use('/api/roles', require('../backend/src/routes/roles.routes'));
+app.use('/api/permisos', require('../backend/src/routes/permisos.routes'));
+app.use('/api/rolespermisos', require('../backend/src/routes/rolespermisos.routes'));
 app.use('/api/habitaciones', habitacionesRoutes);
 app.use('/api/paquetes', paquetesRoutes);
 app.use('/api/servicios', serviciosRoutes);

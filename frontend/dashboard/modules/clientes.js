@@ -13,8 +13,7 @@ class ClientesModule {
     this.currentData = {
       total: 0,
       activos: 0,
-      nuevos: 0,
-      premium: 0
+      inactivos: 0
     };
   }
 
@@ -54,48 +53,58 @@ class ClientesModule {
 
   getClientesEjemplo() {
     return [
-      { IDCliente: '1', Nombre: 'Juan Pérez', Email: 'juan@example.com', Telefono: '1234567890', Estado: '1', IDRol: '2' },
-      { IDCliente: '2', Nombre: 'María García', Email: 'maria@example.com', Telefono: '0987654321', Estado: '1', IDRol: '2' },
-      { IDCliente: '3', Nombre: 'Carlos López', Email: 'carlos@example.com', Telefono: '5555555555', Estado: '1', IDRol: '2' }
+      { IDCliente: '1', Nombre: 'Juan', Apellido: 'Pérez', Email: 'juan@example.com', Telefono: '3124567890', Estado: '1', NroDocumento: '1234567890', TipoDocumento: 'CC' },
+      { IDCliente: '2', Nombre: 'María', Apellido: 'García', Email: 'maria@example.com', Telefono: '3107654321', Estado: '1', NroDocumento: '0987654321', TipoDocumento: 'CC' },
+      { IDCliente: '3', Nombre: 'Carlos', Apellido: 'López', Email: 'carlos@example.com', Telefono: '3155555555', Estado: '0', NroDocumento: '5555555555', TipoDocumento: 'CE' }
     ];
   }
 
   calculateMetrics() {
     const total = this.clientes.length;
     const activos = this.clientes.filter(c => c.Estado === '1').length;
-    const premium = this.clientes.filter(c => c.IDRol === '2').length;
+    const inactivos = this.clientes.filter(c => c.Estado === '0').length;
 
-    this.currentData = { total, activos, nuevos: 0, premium };
+    this.currentData = { total, activos, inactivos };
   }
 
   render(data = this.clientes) {
-    // La vista HTML base ahora se carga dinámicamente desde /public/
     this.updateMetrics();
     this.renderTable(data);
     // Ensure module is always available globally after render
     window.clientesModule = this;
   }
 
-  showList() {
-    this.render();
-    this.setupEventListeners();
+  async showList() {
+    try {
+      // Recargar el HTML de clientes desde el servidor
+      const response = await fetch('../public/clientes.html');
+      const html = await response.text();
+      this.container.innerHTML = html;
+      
+      // Ahora renderizar la tabla con el HTML correcto
+      this.render();
+      this.setupEventListeners();
+    } catch (error) {
+      console.error('Error recargando HTML de clientes:', error);
+      // Si falla la recarga, intentar renderizar con el contenido actual
+      this.render();
+      this.setupEventListeners();
+    }
   }
-
 
   updateMetrics() {
     const totalElement = this.container.querySelector("#totalClientes");
     const activosElement = this.container.querySelector("#clientesActivos");
-    const premiumElement = this.container.querySelector("#clientesPremium");
+    const inactivosElement = this.container.querySelector("#clientesInactivos");
 
     if (totalElement) totalElement.textContent = this.currentData.total;
     if (activosElement) activosElement.textContent = this.currentData.activos;
-    if (premiumElement) premiumElement.textContent = this.currentData.premium;
+    if (inactivosElement) inactivosElement.textContent = this.currentData.inactivos;
   }
 
   setupEventListeners() {
     const searchElement = this.container.querySelector("#searchClientes");
     const filterEstadoElement = this.container.querySelector("#filterEstado");
-    const filterTipoElement = this.container.querySelector("#filterTipo");
 
     if (searchElement) {
       searchElement.addEventListener("input", () => this.search());
@@ -104,59 +113,67 @@ class ClientesModule {
     if (filterEstadoElement) {
       filterEstadoElement.addEventListener("change", () => this.filter());
     }
-
-    if (filterTipoElement) {
-      filterTipoElement.addEventListener("change", () => this.filter());
-    }
   }
 
   renderTable(data = this.clientes) {
-    console.log('📊 renderTable llamado con data:', data.length, 'clientes');
-    const tbody = this.container.querySelector("#clientesTableBody");
-    console.log('🔍 tbody encontrado:', tbody);
+    // Esperar un ciclo de renderizado para asegurar que el DOM esté actualizado
+    setTimeout(() => {
+      const tbody = this.container.querySelector("#clientesTableBody");
+      const table = this.container.querySelector("table");
+      const tableWrapper = table ? table.closest('.table-container') : null;
+      
+      if (table) table.className = "w-full border-collapse text-left text-sm text-gray-500";
+      if (tableWrapper) tableWrapper.className = "bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden";
 
-    if (!tbody) {
-      console.error('❌ tbody #clientesTableBody no encontrado en container');
-      return;
-    }
+      if (!tbody) {
+        console.error('❌ tbody #clientesTableBody no encontrado en container');
+        return;
+      }
+      
+      this._renderTableContent(data, tbody);
+    }, 50);
+  }
 
+  _renderTableContent(data, tbody) {
     if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay clientes registrados</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-muted font-semibold">No hay huéspedes registrados</td></tr>';
       return;
     }
 
     const tableHTML = data.map((cliente, index) => {
-      const nombreCompleto = `${cliente.Nombre || ''} ${cliente.Apellido || ''}`.trim() || 'Sin nombre';
+      const nombreCompleto = `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || 'Sin nombre';
+      const docType = cliente.TipoDocumento || 'CC';
+      const docNum = cliente.NroDocumento || cliente.nro_documento || 'N/A';
+      const status = String(cliente.Estado);
       
       return `
-        <tr>
-          <td>${cliente.NroDocumento || 'N/A'}</td>
-          <td>${nombreCompleto}</td>
-          <td>${cliente.Email || 'Sin email'}</td>
-          <td>${cliente.Telefono || 'Sin teléfono'}</td>
-          <td>
-            <span class="status-badge ${this.getTipoClass(cliente.IDRol)}">
-              ${this.getTipoText(cliente.IDRol)}
-            </span>
+        <tr class="hover:bg-gray-50/50 transition-all duration-200">
+          <td class="px-6 py-4 font-semibold text-brand-deep">${docType}</td>
+          <td class="px-6 py-4 font-semibold text-gray-400">${docNum}</td>
+          <td class="px-6 py-4 font-semibold text-brand-deep">${nombreCompleto}</td>
+          <td class="px-6 py-4 text-xs text-muted">${cliente.Email || 'Sin email'}</td>
+          <td class="px-6 py-4 font-semibold text-gray-600">${cliente.Telefono || 'Sin teléfono'}</td>
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-3">
+              <label class="relative inline-block w-11 h-6 m-0 cursor-pointer shrink-0">
+                <input type="checkbox" class="sr-only peer" ${status == '1' ? 'checked' : ''} 
+                       onchange="window.clientesModule.changeStatusFromDropdown('${docNum}', this.checked ? 1 : 0)">
+                <span class="absolute inset-0 rounded-full bg-slate-200 peer-checked:bg-emerald-500 transition-colors duration-300 before:content-[''] before:absolute before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:rounded-full before:transition-transform before:duration-300 peer-checked:before:translate-x-5"></span>
+              </label>
+              <span class="px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition-all duration-300 ${status == '1' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                ${status == '1' ? 'Activo' : 'Inactivo'}
+              </span>
+            </div>
           </td>
-          <td>
-            <span class="status-badge ${this.getStatusClass(cliente.Estado)}">
-              ${this.getStatusText(cliente.Estado)}
-            </span>
-          </td>
-          <td>${cliente.Direccion || 'Sin dirección'}</td>
-          <td>
-            <div class="action-buttons">
-              <button class="btn-icon btn-view" onclick="window.location.hash='clientes'; setTimeout(() => window.clientesModule.view('${cliente.NroDocumento}'), 100)" title="Ver detalle">
-                👁️
+          <td class="px-6 py-4">
+            <div class="action-group-modern">
+              <button class="btn-action-modern view" onclick="window.clientesModule.view('${docNum}')" title="Ver detalle">
+                🔍
               </button>
-              <button class="btn-icon btn-edit" onclick="window.clientesModule.edit('${cliente.NroDocumento}')" title="Editar">
+              <button class="btn-action-modern edit" onclick="window.clientesModule.edit('${docNum}')" title="Editar">
                 ✏️
               </button>
-              <button class="btn-icon btn-toggle" onclick="window.clientesModule.toggleStatus('${cliente.NroDocumento}')" title="Cambiar estado">
-                🔄
-              </button>
-              <button class="btn-icon btn-delete" onclick="window.clientesModule.delete('${cliente.NroDocumento}')" title="Eliminar">
+              <button class="btn-action-modern delete" onclick="window.clientesModule.delete('${docNum}')" title="Eliminar">
                 🗑️
               </button>
             </div>
@@ -172,16 +189,17 @@ class ClientesModule {
     const term = this.container.querySelector("#searchClientes").value.toLowerCase();
 
     const filtered = this.clientes.filter(c =>
-      `${c.Nombre} ${c.Apellido}`.toLowerCase().includes(term) ||
-      (c.Email || '').toLowerCase().includes(term)
+      `${c.Nombre || c.Nombres || ''} ${c.Apellido || c.Apellidos || ''}`.toLowerCase().includes(term) ||
+      (c.Email || '').toLowerCase().includes(term) ||
+      (c.NroDocumento || c.nro_documento || '').toLowerCase().includes(term)
     );
 
     this.renderTable(filtered);
   }
 
   filter() {
-    const estado = this.container.querySelector("#filterEstado").value;
-    const tipo = this.container.querySelector("#filterTipo").value;
+    const estadoElem = this.container.querySelector("#filterEstado");
+    const estado = estadoElem ? estadoElem.value : "";
 
     let filtered = this.clientes;
 
@@ -191,33 +209,7 @@ class ClientesModule {
       );
     }
 
-    if (tipo) {
-      filtered = filtered.filter(c =>
-        tipo === "premium" ? c.IDRol === "2" : c.IDRol === "1"
-      );
-    }
-
     this.renderTable(filtered);
-  }
-
-  getTipoClass(rolId) {
-    switch (String(rolId || '')) {
-      case '2':
-        return 'status-premium';
-      case '1':
-      default:
-        return 'status-regular';
-    }
-  }
-
-  getTipoText(rolId) {
-    switch (String(rolId || '')) {
-      case '2':
-        return 'Premium';
-      case '1':
-      default:
-        return 'Regular';
-    }
   }
 
   getStatusClass(estado) {
@@ -242,64 +234,98 @@ class ClientesModule {
     }
   }
 
+  // Export Data to CSV
+  exportData() {
+    if (!this.clientes.length) {
+      alert("No hay clientes para exportar");
+      return;
+    }
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Tipo Documento,Documento,Nombre,Email,Telefono,Estado\n";
+    
+    this.clientes.forEach(c => {
+      const nombreCompleto = `${c.Nombre || c.Nombres || ''} ${c.Apellido || c.Apellidos || ''}`.trim();
+      const row = [
+        c.TipoDocumento || "CC",
+        c.NroDocumento || "",
+        nombreCompleto,
+        c.Email || "",
+        c.Telefono || "",
+        c.Estado == "1" ? "Activo" : "Inactivo"
+      ].map(val => `"${val.replace(/"/g, '""')}"`).join(",");
+      
+      csvContent += row + "\n";
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `clientes_vialuna_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   view(id) {
-    const cliente = this.clientes.find(c => c.NroDocumento === id);
+    const cliente = this.clientes.find(c => (c.NroDocumento || c.nro_documento) === id);
     if (!cliente) {
       alert('Cliente no encontrado');
       return;
     }
 
-    const nombreCompleto = `${cliente.Nombre || ''} ${cliente.Apellido || ''}`.trim() || 'Sin nombre';
+    const nombreCompleto = `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || 'Sin nombre';
     
     this.container.innerHTML = `
-      <div class="client-detail-view">
-        <div class="detail-header">
-          <button onclick="window.clientesModule.showList()" class="btn-back">
+      <div class="max-w-2xl mx-auto p-6 sm:p-8 bg-white border border-gray-100 rounded-3xl shadow-sm">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
+          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">🔍 Detalle del Huésped</h2>
+          <button onclick="window.clientesModule.showList()" class="px-4 py-2 bg-gray-50 border border-gray-200 text-brand-deep text-xs font-bold rounded-xl hover:bg-gray-100 cursor-pointer transition-all duration-300">
             ← Volver a la lista
           </button>
-          <h2>Detalle del Cliente</h2>
         </div>
         
-        <div class="detail-content">
-          <div class="detail-card">
-            <h3>Información Personal</h3>
-            <div class="detail-grid">
-              <div class="detail-item">
-                <label>Documento:</label>
-                <span>${cliente.NroDocumento}</span>
+        <div class="flex flex-col gap-6">
+          <!-- Main Details -->
+          <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-4">
+            <h3 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">Información Personal</h3>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-muted font-semibold uppercase tracking-wide">Tipo Documento:</span>
+                <span class="font-bold text-brand-deep">${cliente.TipoDocumento || 'CC'}</span>
               </div>
-              <div class="detail-item">
-                <label>Nombre:</label>
-                <span>${nombreCompleto}</span>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-muted font-semibold uppercase tracking-wide">Nro Documento:</span>
+                <span class="font-bold text-brand-deep">${cliente.NroDocumento || cliente.nro_documento}</span>
               </div>
-              <div class="detail-item">
-                <label>Email:</label>
-                <span>${cliente.Email || 'No especificado'}</span>
+              <div class="flex flex-col gap-1 sm:col-span-2">
+                <span class="text-xs text-muted font-semibold uppercase tracking-wide">Nombre Completo:</span>
+                <span class="font-bold text-brand-deep text-base">${nombreCompleto}</span>
               </div>
-              <div class="detail-item">
-                <label>Teléfono:</label>
-                <span>${cliente.Telefono || 'No especificado'}</span>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-muted font-semibold uppercase tracking-wide">Email:</span>
+                <span class="font-bold text-brand-deep text-xs break-all">${cliente.Email || 'No especificado'}</span>
               </div>
-              <div class="detail-item">
-                <label>Dirección:</label>
-                <span>${cliente.Direccion || 'No especificada'}</span>
+              <div class="flex flex-col gap-1">
+                <span class="text-xs text-muted font-semibold uppercase tracking-wide">Teléfono:</span>
+                <span class="font-bold text-brand-deep">${cliente.Telefono || 'No especificado'}</span>
               </div>
-              <div class="detail-item">
-                <label>Rol:</label>
-                <span class="status-badge ${this.getTipoClass(cliente.IDRol)}">${this.getTipoText(cliente.IDRol)}</span>
-              </div>
-              <div class="detail-item">
-                <label>Estado:</label>
-                <span class="status-badge ${this.getStatusClass(cliente.Estado)}">${this.getStatusText(cliente.Estado)}</span>
+              <div class="flex flex-col gap-1 sm:col-span-2 mt-2 pt-2 border-t border-gray-200/50">
+                <span class="text-xs text-muted font-semibold uppercase tracking-wide">Estado Cuenta:</span>
+                <span class="inline-block px-3 py-1 rounded-full text-xs font-bold w-max mt-1 ${cliente.Estado == '1' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+                  ${this.getStatusText(cliente.Estado)}
+                </span>
               </div>
             </div>
           </div>
           
-          <div class="detail-actions">
-            <button onclick="window.clientesModule.edit('${cliente.NroDocumento}')" class="btn-primary">
-              ✏️ Editar Cliente
+          <!-- Actions -->
+          <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+            <button onclick="window.clientesModule.edit('${id}')" class="px-5 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep cursor-pointer transition-all border-none text-xs">
+              ✏️ Editar Huésped
             </button>
-            <button onclick="window.clientesModule.toggleStatus('${cliente.NroDocumento}')" class="btn-secondary">
+            <button onclick="window.clientesModule.toggleStatus('${id}')" class="px-5 py-3 rounded-xl border border-gray-200 text-brand-deep font-semibold bg-white hover:bg-gray-50 cursor-pointer transition-all text-xs">
               🔄 Cambiar Estado
             </button>
           </div>
@@ -312,80 +338,75 @@ class ClientesModule {
   }
 
   edit(id) {
-    const cliente = this.clientes.find(c => c.NroDocumento === id);
+    const cliente = this.clientes.find(c => (c.NroDocumento || c.nro_documento) === id);
     if (!cliente) {
       alert('Cliente no encontrado');
       return;
     }
 
-    const nombreCompleto = `${cliente.Nombre || ''} ${cliente.Apellido || ''}`.trim() || '';
-    const [nombre, apellido] = nombreCompleto.split(' ').reduce((acc, part, i, arr) => {
-      if (i === 0) acc[0] = part;
-      else if (i === arr.length - 1) acc[1] = part;
-      else acc[0] += ' ' + part;
-      return acc;
-    }, ['', '']);
+    const nombre = cliente.Nombre || cliente.Nombres || '';
+    const apellido = cliente.Apellido || cliente.Apellidos || '';
 
     this.container.innerHTML = `
-      <div class="client-edit-view">
-        <div class="edit-header">
-          <button onclick="window.clientesModule.showList()" class="btn-back">
+      <div class="max-w-2xl mx-auto p-6 sm:p-8 bg-white border border-gray-100 rounded-3xl shadow-sm">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
+          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">✏️ Editar Huésped</h2>
+          <button onclick="window.clientesModule.showList()" class="px-4 py-2 bg-gray-50 border border-gray-200 text-brand-deep text-xs font-bold rounded-xl hover:bg-gray-100 cursor-pointer transition-all duration-300">
             ← Volver a la lista
           </button>
-          <h2>Editar Cliente</h2>
         </div>
         
-        <div class="edit-content">
-          <form id="editClientForm" class="client-form">
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="editNroDocumento">Documento:</label>
-                <input type="text" id="editNroDocumento" value="${cliente.NroDocumento}" readonly>
-              </div>
-              <div class="form-group">
-                <label for="editNombre">Nombre:</label>
-                <input type="text" id="editNombre" value="${nombre}" required>
-              </div>
-              <div class="form-group">
-                <label for="editApellido">Apellido:</label>
-                <input type="text" id="editApellido" value="${apellido}" required>
-              </div>
-              <div class="form-group">
-                <label for="editEmail">Email:</label>
-                <input type="email" id="editEmail" value="${cliente.Email || ''}">
-              </div>
-              <div class="form-group">
-                <label for="editTelefono">Teléfono:</label>
-                <input type="tel" id="editTelefono" value="${cliente.Telefono || ''}">
-              </div>
-              <div class="form-group">
-                <label for="editDireccion">Dirección:</label>
-                <input type="text" id="editDireccion" value="${cliente.Direccion || ''}">
-              </div>
-              <div class="form-group">
-                <label for="editIDRol">Rol:</label>
-                <select id="editIDRol">
-                  <option value="1" ${cliente.IDRol == 1 ? 'selected' : ''}>Regular</option>
-                  <option value="2" ${cliente.IDRol == 2 ? 'selected' : ''}>Premium</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="editEstado">Estado:</label>
-                <select id="editEstado">
-                  <option value="1" ${cliente.Estado == 1 ? 'selected' : ''}>Activo</option>
-                  <option value="0" ${cliente.Estado == 0 ? 'selected' : ''}>Inactivo</option>
-                </select>
-              </div>
+        <form id="editClientForm" class="flex flex-col gap-5 m-0 p-0">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Tipo Documento:</label>
+              <select id="editTipoDocumento" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
+                <option value="CC" ${cliente.TipoDocumento === 'CC' ? 'selected' : ''}>Cédula de Ciudadanía</option>
+                <option value="TI" ${cliente.TipoDocumento === 'TI' ? 'selected' : ''}>Tarjeta de Identidad</option>
+                <option value="CE" ${cliente.TipoDocumento === 'CE' ? 'selected' : ''}>Cédula de Extranjería</option>
+                <option value="Pasaporte" ${cliente.TipoDocumento === 'Pasaporte' ? 'selected' : ''}>Pasaporte</option>
+              </select>
             </div>
             
-            <div class="form-actions">
-              <button type="button" onclick="window.clientesModule.showList()" class="btn-secondary">Cancelar</button>
-              <button type="submit" class="btn-primary">
-                💾 Guardar Cambios
-              </button>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Documento:</label>
+              <input type="text" id="editNroDocumento" value="${cliente.NroDocumento || cliente.nro_documento}" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-100 text-sm font-semibold focus:outline-none cursor-not-allowed" readonly>
             </div>
-          </form>
-        </div>
+            
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Nombre:</label>
+              <input type="text" id="editNombre" value="${nombre}" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" required>
+            </div>
+            
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Apellido:</label>
+              <input type="text" id="editApellido" value="${apellido}" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" required>
+            </div>
+            
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Email:</label>
+              <input type="email" id="editEmail" value="${cliente.Email || ''}" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20">
+            </div>
+            
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Teléfono:</label>
+              <input type="tel" id="editTelefono" value="${cliente.Telefono || ''}" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20">
+            </div>
+
+            <div class="flex flex-col gap-2 sm:col-span-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado:</label>
+              <select id="editEstado" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
+                <option value="1" ${cliente.Estado == 1 ? 'selected' : ''}>Activo</option>
+                <option value="0" ${cliente.Estado == 0 ? 'selected' : ''}>Inactivo</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+            <button type="button" onclick="window.clientesModule.showList()" class="px-5 py-3 rounded-xl border border-gray-200 text-muted font-semibold bg-white hover:bg-gray-50 cursor-pointer transition-all duration-300 text-sm">Cancelar</button>
+            <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm">💾 Guardar Cambios</button>
+          </div>
+        </form>
       </div>
     `;
 
@@ -406,8 +427,8 @@ class ClientesModule {
       Apellido: this.container.querySelector('#editApellido').value,
       Email: this.container.querySelector('#editEmail').value,
       Telefono: this.container.querySelector('#editTelefono').value,
-      Direccion: this.container.querySelector('#editDireccion').value,
-      IDRol: parseInt(this.container.querySelector('#editIDRol').value),
+      TipoDocumento: this.container.querySelector('#editTipoDocumento').value,
+      IDRol: 1, // Defaulting regular role
       Estado: parseInt(this.container.querySelector('#editEstado').value)
     };
 
@@ -416,7 +437,7 @@ class ClientesModule {
       await updateCliente(id, formData);
       alert('Cliente actualizado exitosamente');
       await this.loadData();
-      this.render();
+      this.showList();
     } catch (error) {
       console.error('Error guardando cliente:', error);
       alert('Error al guardar el cliente: ' + (error.message || 'Error desconocido'));
@@ -424,16 +445,25 @@ class ClientesModule {
   }
 
   async toggleStatus(id) {
-    const cliente = this.clientes.find(c => c.NroDocumento === id);
+    const cliente = this.clientes.find(c => (c.NroDocumento || c.nro_documento) === id);
     if (!cliente) {
       alert('Cliente no encontrado');
       return;
     }
 
     const nuevoEstado = cliente.Estado == 1 ? 0 : 1;
+    await this._doChangeStatus(id, nuevoEstado);
+  }
+
+  async changeStatusFromDropdown(id, nuevoEstado) {
+    await this._doChangeStatus(id, nuevoEstado);
+  }
+
+  async _doChangeStatus(id, nuevoEstado) {
     const confirmMessage = `¿Está seguro de cambiar el estado del cliente a ${nuevoEstado == 1 ? 'Activo' : 'Inactivo'}?`;
     
     if (!confirm(confirmMessage)) {
+      this.render(); // Re-render to revert the dropdown selection if cancelled
       return;
     }
 
@@ -446,17 +476,18 @@ class ClientesModule {
     } catch (error) {
       console.error('Error cambiando estado:', error);
       alert('Error al cambiar el estado del cliente: ' + (error.message || 'Error desconocido'));
+      this.render();
     }
   }
 
   async delete(id) {
-    const cliente = this.clientes.find(c => c.NroDocumento === id);
+    const cliente = this.clientes.find(c => (c.NroDocumento || c.nro_documento) === id);
     if (!cliente) {
       alert('Cliente no encontrado');
       return;
     }
 
-    const nombreCompleto = `${cliente.Nombre || ''} ${cliente.Apellido || ''}`.trim() || 'Sin nombre';
+    const nombreCompleto = `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || 'Sin nombre';
     
     if (!confirm(`¿Está seguro de eliminar al cliente "${nombreCompleto}" (${id})? Esta acción no se puede deshacer.`)) {
       return;
@@ -476,65 +507,59 @@ class ClientesModule {
 
   showNewClientModal() {
     this.container.innerHTML = `
-      <div class="client-new-view">
-        <div class="new-header">
-          <button onclick="window.clientesModule.showList()" class="btn-back">
+      <div class="max-w-2xl mx-auto p-6 sm:p-8 bg-white border border-gray-100 rounded-3xl shadow-sm">
+        <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
+          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">➕ Registrar Nuevo Huésped</h2>
+          <button onclick="window.clientesModule.showList()" class="px-4 py-2 bg-gray-50 border border-gray-200 text-brand-deep text-xs font-bold rounded-xl hover:bg-gray-100 cursor-pointer transition-all duration-300">
             ← Volver a la lista
           </button>
-          <h2>Nuevo Cliente</h2>
         </div>
         
-        <div class="new-content">
-          <form id="newClientForm" class="client-form">
-            <div class="form-grid">
-              <div class="form-group">
-                <label for="newNroDocumento">Documento:</label>
-                <input type="text" id="newNroDocumento" required>
-              </div>
-              <div class="form-group">
-                <label for="newNombre">Nombre:</label>
-                <input type="text" id="newNombre" required>
-              </div>
-              <div class="form-group">
-                <label for="newApellido">Apellido:</label>
-                <input type="text" id="newApellido" required>
-              </div>
-              <div class="form-group">
-                <label for="newEmail">Email:</label>
-                <input type="email" id="newEmail">
-              </div>
-              <div class="form-group">
-                <label for="newTelefono">Teléfono:</label>
-                <input type="tel" id="newTelefono">
-              </div>
-              <div class="form-group">
-                <label for="newDireccion">Dirección:</label>
-                <input type="text" id="newDireccion">
-              </div>
-              <div class="form-group">
-                <label for="newIDRol">Rol:</label>
-                <select id="newIDRol">
-                  <option value="1">Regular</option>
-                  <option value="2">Premium</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="newEstado">Estado:</label>
-                <select id="newEstado">
-                  <option value="1">Activo</option>
-                  <option value="0">Inactivo</option>
-                </select>
-              </div>
+        <form id="newClientForm" class="flex flex-col gap-5 m-0 p-0">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Tipo Documento:</label>
+              <select id="newTipoDocumento" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
+                <option value="CC">Cédula de Ciudadanía</option>
+                <option value="TI">Tarjeta de Identidad</option>
+                <option value="CE">Cédula de Extranjería</option>
+                <option value="Pasaporte">Pasaporte</option>
+              </select>
             </div>
-            
-            <div class="form-actions">
-              <button type="button" onclick="window.clientesModule.showList()" class="btn-secondary">Cancelar</button>
-              <button type="submit" class="btn-primary">
-                ➕ Crear Cliente
-              </button>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Documento:</label>
+              <input type="text" id="newNroDocumento" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" required>
             </div>
-          </form>
-        </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Nombre:</label>
+              <input type="text" id="newNombre" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" required>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Apellido:</label>
+              <input type="text" id="newApellido" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" required>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Email:</label>
+              <input type="email" id="newEmail" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20">
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Teléfono:</label>
+              <input type="tel" id="newTelefono" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20">
+            </div>
+            <div class="flex flex-col gap-2 sm:col-span-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial:</label>
+              <select id="newEstado" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
+                <option value="1">Activo</option>
+                <option value="0">Inactivo</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+            <button type="button" onclick="window.clientesModule.showList()" class="px-5 py-3 rounded-xl border border-gray-200 text-muted font-semibold bg-white hover:bg-gray-50 cursor-pointer transition-all duration-300 text-sm">Cancelar</button>
+            <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm">➕ Crear Cliente</button>
+          </div>
+        </form>
       </div>
     `;
 
@@ -555,8 +580,8 @@ class ClientesModule {
       Apellido: this.container.querySelector('#newApellido').value,
       Email: this.container.querySelector('#newEmail').value,
       Telefono: this.container.querySelector('#newTelefono').value,
-      Direccion: this.container.querySelector('#newDireccion').value,
-      IDRol: parseInt(this.container.querySelector('#newIDRol').value),
+      TipoDocumento: this.container.querySelector('#newTipoDocumento').value,
+      IDRol: 1, // Regular guest role
       Estado: parseInt(this.container.querySelector('#newEstado').value)
     };
 
@@ -565,31 +590,21 @@ class ClientesModule {
       await createCliente(formData);
       alert('Cliente creado exitosamente');
       await this.loadData();
-      this.render();
+      this.showList();
     } catch (error) {
       console.error('Error creando cliente via API:', error);
-      // Si falla la API, agregar localmente
-      const nuevoCliente = {
-        IDCliente: String(this.clientes.length + 1),
-        ...formData
-      };
-      this.clientes.push(nuevoCliente);
-      this.calculateMetrics();
-      this.render();
-      alert('Cliente creado localmente (backend no disponible)');
+      alert('Error al crear el cliente: ' + (error.message || 'Error desconocido'));
     }
   }
 
   showError(title, message) {
     this.container.innerHTML = `
-      <div class="error-container">
-        <div class="error-card">
-          <h2>${title}</h2>
-          <p>${message}</p>
-          <button onclick="location.reload()" class="btn-primary">
-            Recargar página
-          </button>
-        </div>
+      <div class="flex flex-col items-center justify-center p-12 text-center">
+        <h2 class="text-xl font-bold text-brand-deep mb-2">${title}</h2>
+        <p class="text-muted text-sm mb-6">${message}</p>
+        <button onclick="location.reload()" class="px-5 py-3 bg-brand hover:bg-brand-deep text-white font-semibold rounded-xl transition cursor-pointer border-none text-sm shadow-md shadow-brand/10">
+          Recargar página
+        </button>
       </div>
     `;
   }

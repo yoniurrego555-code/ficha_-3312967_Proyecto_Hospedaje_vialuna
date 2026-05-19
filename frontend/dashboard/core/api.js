@@ -153,8 +153,8 @@ export function deleteCliente(id) {
 }
 
 export function toggleEstadoCliente(id, estado) {
-  return request(`/clientes/${id}/estado`, {
-    method: "PATCH",
+  return request(`/clientes/${id}`, {
+    method: "PUT",
     body: JSON.stringify({ Estado: estado })
   });
 }
@@ -295,3 +295,83 @@ export function getPermisos() {
 export function getRolesPermisos() {
   return request("/rolespermisos");
 }
+
+// === USUARIOS API ===
+export function getUsuarios() {
+  return request("/usuarios");
+}
+
+export function createUsuario(payload) {
+  return request("/usuarios", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateUsuario(id, payload) {
+  return request(`/usuarios/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteUsuario(id) {
+  return request(`/usuarios/${id}`, {
+    method: "DELETE"
+  });
+}
+
+// === ROLES & PERMISOS API ===
+export function createRol(payload) {
+  return request("/roles", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateRol(id, payload) {
+  return request(`/roles/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteRol(id) {
+  return request(`/roles/${id}`, {
+    method: "DELETE"
+  });
+}
+
+export function createRolPermiso(payload) {
+  return request("/rolespermisos", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteRolPermiso(id) {
+  return request(`/rolespermisos/${id}`, {
+    method: "DELETE"
+  });
+}
+
+export function createPermiso(payload) {
+  return request("/permisos", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updatePermiso(id, payload) {
+  return request(`/permisos/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deletePermiso(id) {
+  return request(`/permisos/${id}`, {
+    method: "DELETE"
+  });
+}
+

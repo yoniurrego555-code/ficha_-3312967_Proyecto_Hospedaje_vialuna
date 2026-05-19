@@ -1,187 +1,335 @@
-<div class="dashboard-header">
-  <h1>Reservas</h1>
-  <p>Gestiona todas las reservas del hotel</p>
-</div>
+<!-- ==========================================================================
+   VISTA DE RESERVAS - MODERNIZACIÓN COMPLETA (VIA LUNA)
+   ========================================================================== -->
 
-<!-- Metrics -->
-<div class="metrics-grid">
-  <div class="metric-card">
-    <div class="metric-icon">📊</div>
-    <div class="metric-content">
-      <h3>Total Reservas</h3>
-      <p class="metric-value" id="totalReservations">0</p>
-    </div>
+<!-- Header Section -->
+<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+  <div>
+    <h1 class="text-2xl font-bold text-brand-deep tracking-tight m-0">Reservas</h1>
+    <p class="text-sm text-muted mt-1 m-0">Gestión integral de estancias, huéspedes y servicios del hotel.</p>
   </div>
-  <div class="metric-card">
-    <div class="metric-icon">✅</div>
-    <div class="metric-content">
-      <h3>Reservas Activas</h3>
-      <p class="metric-value" id="activeReservations">0</p>
-    </div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-icon">📅</div>
-    <div class="metric-content">
-      <h3>Reservas Hoy</h3>
-      <p class="metric-value" id="todayReservations">0</p>
-    </div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-icon">💰</div>
-    <div class="metric-content">
-      <h3>Ingresos del Mes</h3>
-      <p class="metric-value" id="monthlyRevenue">$0</p>
-    </div>
-  </div>
-</div>
-
-<!-- Reservations List Section -->
-<div class="reservations-section" id="reservationsListSection">
-  <div class="section-header">
-    <h2>Lista de Reservas</h2>
-    <button class="btn-primary" id="showReservationFormBtn">
-      <span>➕</span> Crear Nueva Reserva
+  <div>
+    <button class="flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 cursor-pointer border-none" id="showReservationFormBtn">
+      <span class="text-lg font-bold">+</span> Nueva Reserva
     </button>
   </div>
+</header>
 
-  <!-- Filters -->
-  <div class="filters-container">
-    <input type="text" class="search-input" id="searchReservations" placeholder="Buscar reservas...">
-    <select class="filter-select" id="filterStatus">
-      <option value="">Todos los estados</option>
-      <option value="1">Activa</option>
-      <option value="2">Completada</option>
-      <option value="3">Cancelada</option>
-    </select>
+<!-- Metrics Stats Dashboard Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+  <!-- Total Reservas -->
+  <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
+    <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner">📅</div>
+    <div>
+      <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Total Reservas</p>
+      <h3 id="totalReservations" class="m-0 text-xl font-bold text-brand-deep mt-0.5">0</h3>
+    </div>
+  </div>
+  
+  <!-- Activas / Confirmadas -->
+  <div class="p-5 bg-emerald-50/40 rounded-2xl border border-emerald-100/50 border-l-4 border-l-emerald-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-emerald-600 font-bold">✓</div>
+    <div>
+      <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Confirmadas</p>
+      <h3 id="activeReservations" class="m-0 text-xl font-bold text-emerald-700 mt-0.5">0</h3>
+    </div>
   </div>
 
-  <!-- Table -->
-  <div class="table-container">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Cliente</th>
-          <th>Habitación</th>
-          <th>Fechas</th>
-          <th>Total</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="reservationsTableBody">
-        <tr><td colspan="7" class="empty-state">Cargando...</td></tr>
-      </tbody>
-    </table>
+  <!-- Check-ins Hoy -->
+  <div class="p-5 bg-purple-50/40 rounded-2xl border border-purple-100/50 border-l-4 border-l-purple-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-purple-600 font-bold">✨</div>
+    <div>
+      <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Check-ins Hoy</p>
+      <h3 id="todayReservations" class="m-0 text-xl font-bold text-purple-700 mt-0.5">0</h3>
+    </div>
+  </div>
+
+  <!-- Ingresos Totales -->
+  <div class="p-5 bg-amber-50/40 rounded-2xl border border-amber-100/50 border-l-4 border-l-amber-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-amber-600 font-bold">💰</div>
+    <div>
+      <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Ingresos Totales</p>
+      <h3 id="monthlyRevenue" class="m-0 text-xl font-bold text-amber-700 mt-0.5">$0</h3>
+    </div>
   </div>
 </div>
 
-<!-- Reservation Form Section -->
-<div class="reservation-form-section" id="reservationFormSection" style="display: none;">
-  <div class="section-header">
-    <h2>Nueva Reserva</h2>
-    <button class="btn-secondary" id="cancelNewReservationBtn">Cancelar</button>
+<!-- SECTION: RESERVATIONS LIST -->
+<section id="reservationsListSection" class="transition-all duration-300">
+  <!-- Filters Bar -->
+  <div class="flex flex-col sm:flex-row justify-between items-stretch gap-4 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm mb-6">
+    <div class="flex-1 max-w-md">
+      <div class="relative">
+        <span class="absolute inset-y-0 left-3 flex items-center text-muted text-sm">🔍</span>
+        <input type="text" id="searchReservations" placeholder="Buscar por cliente, habitación o ID..." class="w-full h-11 pl-9 pr-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all duration-300 text-sm">
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <select id="filterStatus" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
+        <option value="">Todos los estados</option>
+        <option value="1">Confirmada (Activa)</option>
+        <option value="2">Cancelada</option>
+        <option value="3">Finalizada</option>
+      </select>
+    </div>
   </div>
 
-  <form class="reservation-form" id="reservationForm">
-    <!-- Basic Information -->
-    <div class="form-section">
-      <h3>Información Básica</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="clienteSelect">Cliente *</label>
-          <select id="clienteSelect" required>
-            <option value="">Seleccionar cliente...</option>
-          </select>
+  <!-- Data Table SaaS Premium -->
+  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse text-left text-sm text-gray-500">
+        <thead class="bg-gray-50/75 border-b border-gray-100 text-brand-deep font-bold">
+          <tr>
+            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">ID</th>
+            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Cliente</th>
+            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Hab.</th>
+            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Periodo</th>
+            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Total</th>
+            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Estado</th>
+            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="reservationsTableBody" class="divide-y divide-gray-50 bg-white">
+          <tr>
+            <td colspan="7" class="px-6 py-10 text-center text-muted font-semibold">
+              <div class="flex items-center justify-center gap-2">
+                <span class="animate-spin text-lg">⏳</span> Cargando reservas del hotel...
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION: CREATE RESERVATION FORM -->
+<section id="reservationFormSection" style="display: none;" class="transition-all duration-300">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+    <!-- Form Content Left -->
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+      <div class="border-b border-gray-100 pb-5 mb-6">
+        <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">📅 Registrar Nueva Reserva</h2>
+        <p class="text-sm text-muted mt-1 m-0">Complete la información básica del huésped y personalice su estancia.</p>
+      </div>
+
+      <form id="reservationForm" class="flex flex-col gap-6 m-0 p-0 bg-transparent border-none">
+        <!-- Grid Basic Info -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Huésped:</label>
+            <select id="clienteSelect" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer" required>
+              <option value="">Seleccionar cliente...</option>
+            </select>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Documento:</label>
+            <input type="text" id="documentoInput" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-100 text-sm font-semibold focus:outline-none cursor-not-allowed" readonly>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Fecha Entrada:</label>
+            <input type="date" id="fechaInicio" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" required>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Fecha Salida:</label>
+            <input type="date" id="fechaFin" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" required>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Hora Entrada:</label>
+            <input type="time" id="horaEntrada" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" value="14:00">
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Hora Salida:</label>
+            <input type="time" id="horaSalida" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" value="11:00">
+          </div>
         </div>
-        <div class="form-group">
-          <label for="documentoInput">Documento</label>
-          <input type="text" id="documentoInput" readonly>
+
+        <!-- Room Selection Card Grid -->
+        <div class="border-t border-gray-100 pt-6 mt-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider mb-4 flex items-center gap-2">🏨 Habitación Disponible</h3>
+          <div id="roomSelection" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="text-center py-6 text-muted font-semibold col-span-2">Cargando habitaciones...</div>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="fechaInicio">Fecha Inicio *</label>
-          <input type="date" id="fechaInicio" required min="">
+
+        <!-- Packages Selection Grid -->
+        <div class="border-t border-gray-100 pt-6 mt-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider mb-4 flex items-center gap-2">🎁 Paquetes Especiales</h3>
+          <div id="packagesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="text-center py-6 text-muted font-semibold col-span-2">Cargando paquetes...</div>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="fechaFin">Fecha Fin *</label>
-          <input type="date" id="fechaFin" required min="">
+
+        <!-- Additional Services selection -->
+        <div class="border-t border-gray-100 pt-6 mt-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider mb-4 flex items-center gap-2">✨ Servicios Adicionales</h3>
+          <div id="servicesGrid" class="flex flex-col gap-3">
+            <div class="text-center py-6 text-muted font-semibold">Cargando servicios...</div>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="horaEntrada">Hora Entrada</label>
-          <input type="time" id="horaEntrada" value="14:00">
+
+        <!-- Payment and Initial State Details -->
+        <div class="border-t border-gray-100 pt-6 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Método de Pago:</label>
+            <select id="metodoPago" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer" required>
+              <option value="">Seleccionar método...</option>
+              <option value="1">Efectivo</option>
+              <option value="2">Tarjeta Débito/Crédito</option>
+              <option value="3">Transferencia Bancaria</option>
+            </select>
+          </div>
+          <div class="flex flex-col gap-2">
+            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial:</label>
+            <select id="estadoReserva" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer" required>
+              <option value="1">Confirmada (Activa)</option>
+              <option value="2">Pendiente</option>
+            </select>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="horaSalida">Hora Salida</label>
-          <input type="time" id="horaSalida" value="12:00">
+
+        <!-- Form Action Buttons -->
+        <div class="border-t border-gray-100 pt-6 mt-4 flex justify-end gap-3">
+          <button type="button" id="clearFormBtn" class="px-5 py-3 rounded-xl border border-gray-200 text-muted font-semibold bg-white hover:bg-gray-50 transition-all duration-300 cursor-pointer text-sm">Limpiar Formulario</button>
+          <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm">Confirmar y Crear Reserva 🚀</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Summary Sidebar Content Right -->
+    <aside class="sticky top-6 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+      <div class="bg-brand-deep text-white p-5 text-center">
+        <h3 class="m-0 text-base font-bold tracking-wide">Resumen de Estancia</h3>
+      </div>
+      
+      <div class="p-6 flex flex-col gap-6">
+        <!-- Room details -->
+        <div id="summaryRoom" class="flex flex-col gap-3 pb-5 border-b border-gray-100">
+          <p class="text-xs text-center text-muted italic my-4">Sin habitación seleccionada</p>
+        </div>
+
+        <!-- Packages included -->
+        <div>
+          <h4 class="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Paquetes Seleccionados</h4>
+          <div id="summaryPackages" class="flex flex-col gap-2">
+            <p class="text-xs text-muted italic m-0">Ningún paquete seleccionado</p>
+          </div>
+        </div>
+
+        <!-- Services included -->
+        <div class="pb-5 border-b border-gray-100">
+          <h4 class="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Servicios Adicionales</h4>
+          <div id="summaryServices" class="flex flex-col gap-2">
+            <p class="text-xs text-muted italic m-0">Ningún servicio seleccionado</p>
+          </div>
+        </div>
+
+        <!-- Summary Totals -->
+        <div class="flex flex-col gap-2">
+          <div class="flex justify-between items-center text-xs text-muted font-semibold">
+            <span>Subtotal:</span>
+            <span id="subtotal">$0</span>
+          </div>
+          <div class="flex justify-between items-center mt-2">
+            <strong class="text-brand-deep text-sm font-bold">TOTAL ESTANCIA:</strong>
+            <strong id="totalAmount" class="text-2xl font-extrabold text-brand">$0</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-center">
+        <button id="cancelNewReservationBtn" class="w-full py-2.5 rounded-xl border border-dashed border-brand/40 text-brand-deep font-bold hover:bg-brand/5 active:scale-98 transition-all duration-300 cursor-pointer bg-white text-xs">
+          ← Volver al listado de reservas
+        </button>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- SECTION: EDIT RESERVATION CONTAINER -->
+<section id="editReservationSection" style="display: none;" class="transition-all duration-300">
+  <div id="editReservationContainer" class="bg-transparent"></div>
+</section>
+
+<!-- Reservation Detail Modal -->
+<div id="reservaDetalleModal" class="hidden fixed inset-0 bg-[#173029]/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 transition-all duration-300">
+  <article class="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300">
+    <div class="mb-6 border-b border-gray-100 pb-4 flex justify-between items-start">
+      <div>
+        <div class="flex items-center gap-3">
+          <h3 class="text-2xl font-bold text-brand-deep m-0">Detalle de Reserva</h3>
+          <span id="detalleReservaID" class="text-xs font-bold text-muted bg-gray-100 px-2 py-0.5 rounded-md">ID: #0</span>
+        </div>
+        <p class="text-[10px] font-bold text-brand tracking-wider uppercase mt-1 m-0">VIA LUNA Dashboard</p>
+      </div>
+      <button type="button" class="text-muted hover:text-ink text-2xl font-bold bg-transparent border-none cursor-pointer p-1" onclick="document.getElementById('reservaDetalleModal').classList.add('hidden')">&times;</button>
+    </div>
+
+    <div class="flex flex-col gap-6">
+      <!-- Grid: Cliente & Habitación -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Cliente info -->
+        <div class="p-5 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-3">
+          <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">Huésped Principal</h4>
+          <div>
+            <strong id="detResClienteNombre" class="block text-base text-ink">Cargando...</strong>
+            <span id="detResClienteDoc" class="block text-xs text-muted mt-1">Doc: --</span>
+            <span id="detResClienteEmail" class="block text-xs text-muted">Email: --</span>
+            <span id="detResClienteTel" class="block text-xs text-muted">Tel: --</span>
+          </div>
+        </div>
+
+        <!-- Habitación info -->
+        <div class="p-5 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-3">
+          <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">Habitación Reservada</h4>
+          <div>
+            <strong id="detResHabNombre" class="block text-base text-brand-deep">Cargando...</strong>
+            <span id="detResHabPrecio" class="block text-xs text-brand font-semibold mt-1">--</span>
+            <span class="block text-xs text-muted mt-0.5">Check-in: 14:00 | Check-out: 12:00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Periodo & Fechas Banner -->
+      <div class="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50 flex justify-between items-center text-sm font-semibold">
+        <div>
+          <span class="text-muted text-xs block">Fecha Entrada</span>
+          <strong id="detResFechaInicio" class="text-brand-deep block mt-0.5">--</strong>
+        </div>
+        <div class="text-brand text-lg">➔</div>
+        <div class="text-right">
+          <span class="text-muted text-xs block">Fecha Salida</span>
+          <strong id="detResFechaFin" class="text-brand-deep block mt-0.5">--</strong>
+        </div>
+      </div>
+
+      <!-- Paquetes & Servicios Incluidos -->
+      <div class="flex flex-col gap-3">
+        <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">Servicios & Paquetes Incluidos</h4>
+        <div id="detResServiciosGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-semibold text-muted">
+          <!-- Dynamic services and packages badges -->
+        </div>
+      </div>
+
+      <!-- Pago, Total & Estado -->
+      <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span class="text-xs text-muted font-bold uppercase tracking-wider block">Método de Pago</span>
+          <strong id="detResMetodoPago" class="text-brand-deep block mt-1">--</strong>
+        </div>
+        <div>
+          <span class="text-xs text-muted font-bold uppercase tracking-wider block">Estado Reserva</span>
+          <span id="detResEstadoBadge" class="inline-block px-3 py-1 rounded-full text-xs font-bold mt-1">--</span>
+        </div>
+        <div class="text-right sm:text-right">
+          <span class="text-xs text-muted font-bold uppercase tracking-wider block">Total de Estancia</span>
+          <strong id="detResTotal" class="text-2xl font-bold text-brand block mt-0.5">$0</strong>
         </div>
       </div>
     </div>
 
-    <!-- Room Selection -->
-    <div class="form-section">
-      <h3>Selección de Habitación *</h3>
-      <div class="room-selection" id="roomSelection">
-        <!-- Rooms will be loaded here -->
-      </div>
+    <div class="flex gap-3 mt-8 pt-4 border-t border-gray-100">
+      <button class="flex-1 px-5 py-3 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep active:scale-98 shadow-md shadow-brand/10 cursor-pointer border-none transition-all duration-300" type="button" onclick="document.getElementById('reservaDetalleModal').classList.add('hidden')">Cerrar detalle</button>
     </div>
-
-    <!-- Packages -->
-    <div class="form-section">
-      <h3>Paquetes Adicionales</h3>
-      <div class="packages-grid" id="packagesGrid">
-        <!-- Packages will be loaded here -->
-      </div>
-    </div>
-
-    <!-- Services -->
-    <div class="form-section">
-      <h3>Servicios Adicionales</h3>
-      <div class="services-grid" id="servicesGrid">
-        <!-- Services will be loaded here -->
-      </div>
-    </div>
-
-    <!-- Payment Information -->
-    <div class="form-section">
-      <h3>Información de Pago</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="metodoPago">Método de Pago *</label>
-          <select id="metodoPago" required>
-            <option value="">Seleccionar...</option>
-            <option value="1">Efectivo</option>
-            <option value="2">Tarjeta</option>
-            <option value="3">Transferencia</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="estadoReserva">Estado Reserva *</label>
-          <select id="estadoReserva" required>
-            <option value="1">Activa</option>
-            <option value="2">Pendiente</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- Total -->
-    <div class="form-section">
-      <div class="total-section">
-        <div class="total-row">
-          <span>Subtotal:</span>
-          <span id="subtotal">$0</span>
-        </div>
-        <div class="total-row">
-          <strong>Total:</strong>
-          <strong id="totalAmount">$0</strong>
-        </div>
-      </div>
-    </div>
-
-    <!-- Form Actions -->
-    <div class="form-actions">
-      <button type="button" class="btn-secondary" id="clearFormBtn">Limpiar Formulario</button>
-      <button type="submit" class="btn-primary">Crear Reserva</button>
-    </div>
-  </form>
+  </article>
 </div>

@@ -1,93 +1,93 @@
-<header class="module-header">
-  <div class="header-left">
-    <h1>Clientes</h1>
-    <p>Gestión de clientes del hotel</p>
+<!-- ==========================================================================
+   VISTA DE CLIENTES - MODERNIZACIÓN COMPLETA (VIA LUNA)
+   ========================================================================== -->
+
+<!-- Header Section -->
+<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+  <div>
+    <h1 class="text-2xl font-bold text-brand-deep tracking-tight m-0">Huéspedes</h1>
+    <p class="text-sm text-muted mt-1 m-0">Gestión y seguimiento de los huéspedes registrados en el hotel.</p>
   </div>
-  <div class="header-right">
-    <button class="btn-primary" onclick="window.clientesModule.showNewClientModal()">
-      <span>➕</span> Nuevo Cliente
+  <div>
+    <button class="flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 cursor-pointer border-none" onclick="window.clientesModule.showNewClientModal()">
+      <span class="text-lg font-bold">+</span> Nuevo Cliente
     </button>
   </div>
 </header>
 
-<div class="metrics-grid">
-  <div class="metric-card">
-    <div class="metric-header">
-      <div class="metric-title">Total Clientes</div>
-      <div class="metric-icon blue">👥</div>
-    </div>
-    <div class="metric-value" id="totalClientes">0</div>
-    <div class="metric-change">
-      <span>📊</span> Total registrados
-    </div>
-  </div>
-  <div class="metric-card">
-    <div class="metric-header">
-      <div class="metric-title">Clientes Activos</div>
-      <div class="metric-icon green">✅</div>
-    </div>
-    <div class="metric-value" id="clientesActivos">0</div>
-    <div class="metric-change positive">
-      <span>↑</span> Cuentas activas
+<!-- Metrics Stats Dashboard Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+  <!-- Total Clientes -->
+  <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
+    <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner">👥</div>
+    <div>
+      <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Total Clientes</p>
+      <h3 id="totalClientes" class="m-0 text-xl font-bold text-brand-deep mt-0.5">0</h3>
     </div>
   </div>
-  <div class="metric-card">
-    <div class="metric-header">
-      <div class="metric-title">Clientes Premium</div>
-      <div class="metric-icon purple">⭐</div>
+  
+  <!-- Clientes Activos -->
+  <div class="p-5 bg-emerald-50/40 rounded-2xl border border-emerald-100/50 border-l-4 border-l-emerald-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-emerald-600 font-bold">✓</div>
+    <div>
+      <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Clientes Activos</p>
+      <h3 id="clientesActivos" class="m-0 text-xl font-bold text-emerald-700 mt-0.5">0</h3>
     </div>
-    <div class="metric-value" id="clientesPremium">0</div>
-    <div class="metric-change">
-      <span>👑</span> Membresía premium
+  </div>
+
+  <!-- Clientes Inactivos -->
+  <div class="p-5 bg-gray-50 rounded-2xl border border-gray-200 border-l-4 border-l-gray-400 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-gray-500 font-bold">💤</div>
+    <div>
+      <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Clientes Inactivos</p>
+      <h3 id="clientesInactivos" class="m-0 text-xl font-bold text-gray-700 mt-0.5">0</h3>
     </div>
   </div>
 </div>
 
-<div class="search-section">
-  <div class="search-container">
-    <input type="text" id="searchClientes" placeholder="Buscar cliente..." class="search-input">
-    <button class="btn-secondary" onclick="window.clientesModule.search()">
-      <span>🔍</span> Buscar
-    </button>
+<!-- Filters Bar -->
+<div class="flex flex-col sm:flex-row justify-between items-stretch gap-4 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm mb-6">
+  <div class="flex-1 max-w-md">
+    <div class="relative">
+      <span class="absolute inset-y-0 left-3 flex items-center text-muted text-sm">🔍</span>
+      <input type="text" id="searchClientes" placeholder="Buscar cliente por nombre o documento..." class="w-full h-11 pl-9 pr-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all duration-300 text-sm">
+    </div>
   </div>
-  <div class="filter-container">
-    <select id="filterEstado" class="filter-select">
+  <div class="flex gap-2 items-center">
+    <select id="filterEstado" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
       <option value="">Todos los estados</option>
       <option value="activo">Activo</option>
       <option value="inactivo">Inactivo</option>
     </select>
-    <select id="filterTipo" class="filter-select">
-      <option value="">Todos los tipos</option>
-      <option value="regular">Regular</option>
-      <option value="premium">Premium</option>
-    </select>
+    <button class="h-11 px-5 rounded-xl bg-gray-100 text-brand-deep font-semibold shadow-sm hover:bg-gray-200 active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm flex items-center gap-1.5" onclick="window.clientesModule.exportData()">
+      <span>📥</span> Exportar
+    </button>
   </div>
 </div>
 
-<div class="table-card">
-  <div class="table-header">
-    <h3 class="table-title">Lista de Clientes</h3>
-    <div class="table-actions">
-      <button class="btn-secondary" onclick="window.clientesModule.exportData()">
-        <span>📥</span> Exportar
-      </button>
-    </div>
-  </div>
-  <div class="table-container">
-    <table class="data-table">
-      <thead>
+<!-- Data Table SaaS Premium -->
+<div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse text-left text-sm text-gray-500">
+      <thead class="bg-gray-50/75 border-b border-gray-100 text-brand-deep font-bold">
         <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Email</th>
-          <th>Teléfono</th>
-          <th>Tipo</th>
-          <th>Estado</th>
-          <th>Acciones</th>
+          <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Tipo Doc</th>
+          <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Documento</th>
+          <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Nombre</th>
+          <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Email</th>
+          <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Teléfono</th>
+          <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Estado</th>
+          <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider text-center">Acciones</th>
         </tr>
       </thead>
-      <tbody id="clientesTableBody">
-        <tr><td colspan="7" class="text-center">Cargando...</td></tr>
+      <tbody id="clientesTableBody" class="divide-y divide-gray-50 bg-white">
+        <tr>
+          <td colspan="7" class="px-6 py-10 text-center text-muted font-semibold">
+            <div class="flex items-center justify-center gap-2">
+              <span class="animate-spin text-lg">⏳</span> Cargando huéspedes...
+            </div>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>

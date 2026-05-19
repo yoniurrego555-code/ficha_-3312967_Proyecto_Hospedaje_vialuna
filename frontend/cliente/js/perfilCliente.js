@@ -26,6 +26,8 @@ async function init() {
             if (el) el.value = val || '';
         };
 
+        setVal('tipo_documento', session.TipoDocumento || session.tipo_documento || 'CC');
+        setVal('documento', session.id_cliente || session.IDCliente || session.NroDocumento || session.id || '');
         setVal('nombres', session.Nombres || session.Nombre || '');
         setVal('apellidos', session.Apellidos || '');
         setVal('email', session.email || session.Email || '');

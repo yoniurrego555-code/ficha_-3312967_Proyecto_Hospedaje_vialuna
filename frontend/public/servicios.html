@@ -4,75 +4,197 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Servicios | Via Luna</title>
-    <link rel="stylesheet" href="../css/admin-theme.css">
 </head>
-<body>
-    <main class="content">
-        <section class="hero">
+<body class="bg-[#f8fcf8]">
+    <main class="w-full">
+        <!-- Header Section -->
+        <section class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div>
-                <h2>Modulo de servicios</h2>
-                <p>Crea, consulta, edita y elimina servicios adicionales. Tambien puedes cambiar su estado para controlar su disponibilidad comercial.</p>
+                <h1 class="text-2xl font-bold text-brand-deep tracking-tight m-0">Servicios</h1>
+                <p class="text-sm text-muted mt-1 m-0">Gestiona las experiencias, actividades y servicios adicionales ofrecidos a los huéspedes.</p>
             </div>
-            <div class="badge">CRUD conectado</div>
+            <button class="flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 cursor-pointer border-none" id="btnNuevoServicio">
+                <span class="text-lg font-bold">+</span> Nuevo servicio
+            </button>
         </section>
 
-        <section class="grid">
-            <article class="panel">
-                <div class="panel-header">
-                    <h3>Formulario</h3>
-                    <p id="formTitle">Registra un nuevo servicio</p>
+        <!-- Metrics Grid -->
+        <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
+                <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner">✨</div>
+                <div>
+                    <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Total servicios</p>
+                    <h3 id="metricTotal" class="m-0 text-xl font-bold text-brand-deep mt-0.5">0</h3>
+                </div>
+            </div>
+            <div class="p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100/50 border-l-4 border-l-emerald-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
+                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-xl shadow-sm text-emerald-600 font-bold">✓</div>
+                <div>
+                    <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Activos</p>
+                    <h3 id="metricActivos" class="m-0 text-xl font-bold text-emerald-700 mt-0.5">0</h3>
+                </div>
+            </div>
+            <div class="p-5 bg-red-50/50 rounded-2xl border border-red-100/50 border-l-4 border-l-red-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
+                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-xl shadow-sm text-red-600 font-bold">✕</div>
+                <div>
+                    <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Inactivos</p>
+                    <h3 id="metricInactivos" class="m-0 text-xl font-bold text-red-700 mt-0.5">0</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters Bar -->
+        <section class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-8">
+            <div class="flex flex-col gap-2">
+                <label class="text-[11px] font-bold text-brand-deep uppercase tracking-wider">Buscar Experiencia</label>
+                <input type="text" id="buscador" placeholder="Nombre o descripción del servicio..." class="px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-ink focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm">
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-[11px] font-bold text-brand-deep uppercase tracking-wider">Filtro Estado</label>
+                <select id="filtroEstado" class="px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-ink focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm cursor-pointer">
+                    <option value="todos">Todos los estados</option>
+                    <option value="1">Activos</option>
+                    <option value="0">Inactivos</option>
+                </select>
+            </div>
+            <button class="px-5 py-2.5 rounded-xl bg-emerald-50 text-brand-deep font-semibold hover:bg-emerald-100 active:scale-95 transition-all duration-300 text-sm border-none shadow-sm cursor-pointer h-[42px] flex items-center justify-center gap-2" id="btnLimpiarFiltros">
+                🔄 Limpiar filtros
+            </button>
+        </section>
+
+        <!-- Services Grid -->
+        <section id="serviciosContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="col-span-full py-12 text-center text-muted font-medium bg-white rounded-2xl border border-gray-100">
+                <span class="inline-block animate-spin mr-2">⏳</span> Cargando servicios de Via Luna...
+            </div>
+        </section>
+
+        <!-- Service Create/Edit Form Modal -->
+        <div id="servicioModal" class="hidden fixed inset-0 bg-[#173029]/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 transition-all duration-300">
+            <article class="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300">
+                <div class="mb-6 border-b border-gray-100 pb-4 flex justify-between items-start">
+                    <div>
+                        <h3 id="formTitle" class="text-xl font-bold text-brand-deep m-0">Nuevo Servicio</h3>
+                        <p id="formSubtitle" class="text-xs text-muted mt-1 m-0">Completa los datos detallados del servicio hotelero.</p>
+                    </div>
+                    <button type="button" class="text-muted hover:text-ink text-xl font-bold bg-transparent border-none cursor-pointer p-1" onclick="document.getElementById('servicioModal').classList.add('hidden')">&times;</button>
                 </div>
 
-                <div id="mensaje" class="message"></div>
+                <div id="mensaje" class="hidden p-4 mb-4 rounded-xl text-sm font-medium"></div>
 
-                <form id="servicioForm">
+                <form id="servicioForm" class="flex flex-col gap-4 p-0 bg-transparent border-none m-0">
                     <input type="hidden" id="servicioId">
 
-                    <div class="field">
-                        <label for="nombre">Nombre</label>
-                        <input type="text" id="nombre" name="nombre" placeholder="Ej. Spa, desayuno premium" required>
+                    <div class="flex flex-col gap-1.5">
+                        <label for="nombre" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Nombre del Servicio</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="Ej. Cabalgata Guiada Nocturna" required class="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm">
                     </div>
 
-                    <div class="field">
-                        <label for="descripcion">Descripcion</label>
-                        <textarea id="descripcion" name="descripcion" placeholder="Describe que incluye el servicio."></textarea>
+                    <div class="flex flex-col gap-1.5">
+                        <label for="descripcion" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Descripción</label>
+                        <textarea id="descripcion" name="descripcion" placeholder="Detalles de la experiencia, duración y qué incluye..." style="height: 90px;" class="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm resize-none"></textarea>
                     </div>
 
-                    <div class="field-grid">
-                        <div class="field">
-                            <label for="precio">Precio</label>
-                            <input type="number" id="precio" name="precio" min="0" step="0.01" placeholder="450" required>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-1.5">
+                            <label for="precio" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Precio del Servicio (COP)</label>
+                            <input type="number" id="precio" name="precio" min="0" placeholder="50000" required class="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm">
                         </div>
-                        <div class="field">
-                            <label for="estado">Estado</label>
-                            <select id="estado" name="estado" required>
-                                <option value="disponible">Disponible</option>
-                                <option value="no_disponible">No disponible</option>
-                                <option value="inactivo">Inactivo</option>
+                        <div class="flex flex-col gap-1.5">
+                            <label for="estado" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial</label>
+                            <select id="estado" name="estado" required class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm cursor-pointer">
+                                <option value="1">Activo</option>
+                                <option value="0">Inactivo</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="actions">
-                        <button class="primary" type="submit" id="submitButton">Guardar servicio</button>
-                        <button class="secondary" type="button" id="btnCancelarEdicion">Cancelar</button>
+                    <div class="flex gap-3 mt-6 pt-4 border-t border-gray-100">
+                        <button class="flex-1 px-5 py-3 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep active:scale-98 shadow-md shadow-brand/10 cursor-pointer border-none transition-all duration-300" type="submit" id="submitButton">Guardar servicio</button>
+                        <button class="px-5 py-3 rounded-xl bg-gray-100 text-brand-deep font-semibold hover:bg-gray-200 active:scale-98 cursor-pointer border-none transition-all duration-300" type="button" id="btnCancelarEdicion">Cancelar</button>
                     </div>
                 </form>
             </article>
+        </div>
 
-            <article class="panel">
-                <div class="toolbar">
-                    <input class="search" type="search" id="buscador" placeholder="Buscar por nombre, descripcion o estado">
-                    <button class="secondary" type="button" id="btnListar">Listar servicios</button>
+        <!-- Service Detail Modal (NEW FEATURE) -->
+        <div id="servicioDetalleModal" class="hidden fixed inset-0 bg-[#173029]/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 transition-all duration-300">
+            <article class="bg-white rounded-3xl p-8 max-w-xl w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300">
+                <div class="mb-6 border-b border-gray-100 pb-4 flex justify-between items-start">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <h3 id="detalleNombre" class="text-2xl font-bold text-brand-deep m-0">Servicio de Spa</h3>
+                            <span id="detalleID" class="text-xs font-bold text-muted bg-gray-100 px-2 py-0.5 rounded-md">ID: #0</span>
+                        </div>
+                        <p class="text-xs font-semibold text-brand tracking-wider uppercase mt-1 m-0">Experiencias y Actividades Via Luna</p>
+                    </div>
+                    <button type="button" class="text-muted hover:text-ink text-2xl font-bold bg-transparent border-none cursor-pointer p-1" onclick="document.getElementById('servicioDetalleModal').classList.add('hidden')">&times;</button>
                 </div>
 
-                <div id="serviciosContainer" class="cards">
-                    <div class="empty">Cargando servicios...</div>
+                <!-- Detail Body -->
+                <div class="flex flex-col gap-6">
+                    <!-- Banner Image -->
+                    <div class="relative w-full aspect-[16/9] rounded-2xl overflow-hidden shadow-sm bg-gray-100">
+                        <img id="detalleImagenPrincipal" src="" alt="Servicio" class="w-full h-full object-cover">
+                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent p-4 flex justify-between items-center text-white">
+                            <span class="text-xs font-medium bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm">Aventura & Relax</span>
+                            <span id="detalleCostoBadge" class="text-sm font-bold bg-brand px-3 py-1 rounded-full shadow">COP $50,000</span>
+                        </div>
+                    </div>
+
+                    <!-- Room Metrics Tags -->
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <span class="block text-lg">⏳</span>
+                            <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">Duración</span>
+                            <strong class="block text-sm text-brand-deep mt-0.5">2 Horas Aprox.</strong>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <span class="block text-lg">👥</span>
+                            <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">Capacidad</span>
+                            <strong class="block text-sm text-brand-deep mt-0.5">Grupal / Pareja</strong>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <span class="block text-lg">⛰️</span>
+                            <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">Lugar</span>
+                            <strong class="block text-sm text-brand-deep mt-0.5">Instalaciones</strong>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="flex flex-col gap-2">
+                        <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider m-0">Descripción de la Experiencia</h4>
+                        <p id="detalleDescripcion" class="text-sm text-muted leading-relaxed m-0">
+                            Detalles del servicio...
+                        </p>
+                    </div>
+
+                    <!-- Included Elements -->
+                    <div class="flex flex-col gap-3">
+                        <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider m-0">¿Qué Incluye esta Actividad?</h4>
+                        <div class="grid grid-cols-2 gap-3 text-xs font-semibold text-muted">
+                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
+                                🛡️ <span>Equipos de Seguridad & Guía</span>
+                            </div>
+                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
+                                🥤 <span>Refrigerio Campestre Tradicional</span>
+                            </div>
+                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
+                                📸 <span>Registro Fotográfico de Recuerdo</span>
+                            </div>
+                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
+                                🚑 <span>Póliza de Asistencia Médica</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="flex gap-3 mt-8 pt-4 border-t border-gray-100">
+                    <button class="flex-1 px-5 py-3 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep active:scale-98 shadow-md shadow-brand/10 cursor-pointer border-none transition-all duration-300" type="button" onclick="document.getElementById('servicioDetalleModal').classList.add('hidden')">Cerrar detalle</button>
                 </div>
             </article>
-        </section>
+        </div>
     </main>
-
-    <script type="module" src="../js/servicios.js"></script>
 </body>
 </html>

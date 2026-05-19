@@ -1,1056 +1,668 @@
-// Roles y Permisos Module
+// Módulo de Roles y Permisos (VIA LUNA)
 import { 
   getRoles, 
   getPermisos, 
-  getRolesPermisos 
+  getRolesPermisos,
+  createRol,
+  updateRol,
+  deleteRol,
+  createRolPermiso,
+  deleteRolPermiso,
+  createPermiso,
+  getUsuarios
 } from "../core/api.js";
 
 export class RolesPermisosModule {
   constructor(container) {
     this.container = container;
-    this.currentData = {
-      roles: [],
-      permisos: [],
-      asignaciones: []
-    };
-    this.currentView = 'main'; // main, nuevo-rol, editar-rol, asignar-permisos
+    
+    // Datos en memoria
+    this.roles = [];
+    this.permisos = [];
+    this.originalAsignaciones = []; // Mapeo plano de relaciones
+    this.asignaciones = {};         // Relaciones agrupadas: { [IDRol]: [IDPermiso1, IDPermiso2, ...] }
+    this.usuarios = [];             // Lista de usuarios para calcular counts por rol
+    
+    // Control de selección en la vista
     this.currentRoleId = null;
+    this.tempSelectedPermisos = new Set(); // Copia temporal para el panel de permisos activo
   }
 
-  // Initialize module
+  // Inicialización del módulo
   async initialize() {
+    console.log('🔄 Inicializando RolesPermisosModule...');
     try {
-      // Cargar datos (simulados por ahora)
       await this.loadData();
       this.render();
-      this.setupEventListeners();
+      console.log('✅ Vista de Roles y Permisos lista');
     } catch (error) {
-      this.showError('Error al cargar datos', error.message);
+      console.error('❌ Error al inicializar RolesPermisosModule:', error);
+      this.showError('Error al cargar datos', error.message || 'Verifique la conexión con el servidor.');
     }
   }
 
-  // Load data
+  // Carga de datos desde la API
   async loadData() {
     try {
-      console.log('🔄 Iniciando carga de datos desde API...');
+      console.log('🔄 Cargando Roles, Permisos y Relaciones de la BD...');
       
-      let rolesResponse, permisosResponse, asignacionesResponse;
+      const [rolesRes, permisosRes, rpRes, usersRes] = await Promise.all([
+        getRoles().catch(err => { console.error("Error getRoles:", err); return []; }),
+        getPermisos().catch(err => { console.error("Error getPermisos:", err); return []; }),
+        getRolesPermisos().catch(err => { console.error("Error getRolesPermisos:", err); return []; }),
+        getUsuarios().catch(err => { console.error("Error getUsuarios:", err); return []; })
+      ]);
 
-      try {
-        // Cargar datos desde la API real
-        [rolesResponse, permisosResponse, asignacionesResponse] = await Promise.all([
-          getRoles().catch(err => {
-            console.error('❌ Error en getRoles():', err);
-            return { data: [] };
-          }),
-          getPermisos().catch(err => {
-            console.error('❌ Error en getPermisos():', err);
-            return { data: [] };
-          }),
-          getRolesPermisos().catch(err => {
-            console.error('❌ Error en getRolesPermisos():', err);
-            return { data: [] };
-          })
-        ]);
-      } catch (apiError) {
-        console.error('Error general en carga de API:', apiError);
-        // Usar datos de ejemplo si falla la API
-        rolesResponse = { data: this.getRolesEjemplo() };
-        permisosResponse = { data: this.getPermisosEjemplo() };
-        asignacionesResponse = { data: [] };
-        console.log('Usando datos de ejemplo para roles-permisos');
-      }
+      this.roles = rolesRes.data || rolesRes || [];
+      this.permisos = permisosRes.data || permisosRes || [];
+      this.originalAsignaciones = rpRes.data || rpRes || [];
+      this.usuarios = usersRes || [];
 
-      console.log('📥 Respuesta API - Roles:', rolesResponse);
-      console.log('📥 Respuesta API - Permisos:', permisosResponse);
-      console.log('📥 Respuesta API - Asignaciones:', asignacionesResponse);
-
-      // Verificar si hay datos
-      console.log('🔍 ESTRUCTURA COMPLETA DE RESPUESTAS:');
-      console.log('RolesResponse completo:', JSON.stringify(rolesResponse, null, 2));
-      console.log('PermisosResponse completo:', JSON.stringify(permisosResponse, null, 2));
-      console.log('AsignacionesResponse completo:', JSON.stringify(asignacionesResponse, null, 2));
-
-      const rolesData = rolesResponse.data || rolesResponse || [];
-      const permisosData = permisosResponse.data || permisosResponse || [];
-      const asignacionesData = asignacionesResponse.data || asignacionesResponse || [];
-
-      console.log('📊 Cantidad de datos recibidos:');
-      console.log('  - Roles:', rolesData.length);
-      console.log('  - Permisos:', permisosData.length);
-      console.log('  - Asignaciones:', asignacionesData.length);
-
-      // Si no hay datos, mostrar estructura para depuración
-      if (rolesData.length === 0 && permisosData.length === 0) {
-        console.log('⚠️ No se recibieron datos en .data, intentando con respuesta directa');
-        console.log('rolesResponse directamente:', rolesResponse);
-        console.log('permisosResponse directamente:', permisosResponse);
-      }
-
-      // Procesar roles con mapeo según estructura real de la BD
-      const roles = rolesData.map((rol, index) => {
-        console.log(`🔍 Procesando rol ${index}:`, rol);
-        console.log(`  - IDRol: ${rol.IDRol}`);
-        console.log(`  - Nombre: ${rol.Nombre}`);
-        console.log(`  - Descripcion: ${rol.Descripcion}`);
-        console.log(`  - Estado: ${rol.Estado}`);
-        
-        const rolProcesado = {
-          id: rol.IDRol || rol.id || index + 1,
-          nombre: rol.Nombre || rol.nombre || rol.RolNombre || `Rol ${index + 1}`,
-          descripcion: rol.Descripcion || rol.descripcion || 'Sin descripción',
-          estado: (rol.Estado === 1 || rol.Estado === '1' || rol.estado === 'activo' || rol.Estado === 'activo') ? 'activo' : 'inactivo',
-          usuarios_count: rol.usuarios_count || rol.UsuariosCount || 0
-        };
-        
-        console.log(`✅ Rol procesado:`, rolProcesado);
-        return rolProcesado;
-      });
-
-      // Procesar permisos con mapeo según estructura real de la BD
-      const permisos = permisosData.map((permiso, index) => {
-        console.log(`🔍 Procesando permiso ${index}:`, permiso);
-        console.log(`  - IDPermiso: ${permiso.IDPermiso}`);
-        console.log(`  - NombrePermisos: ${permiso.NombrePermisos}`);
-        console.log(`  - Descripcion: ${permiso.Descripcion}`);
-        console.log(`  - IsActive: ${permiso.IsActive}`);
-        console.log(`  - EstadoPermisos: ${permiso.EstadoPermisos}`);
-        
-        const permisoProcesado = {
-          id: permiso.IDPermiso || permiso.id || index + 1,
-          nombre: permiso.NombrePermisos || permiso.nombre || permiso.Nombre || `Permiso ${index + 1}`,
-          descripcion: permiso.Descripcion || permiso.descripcion || 'Sin descripción',
-          modulo: permiso.Modulo || permiso.modulo || 'general',
-          estado: (permiso.IsActive === 1 || permiso.EstadoPermisos === 'Activo' || permiso.EstadoPermisos === 'activo' || permiso.estado === 'activo') ? 'activo' : 'inactivo'
-        };
-        
-        console.log(`✅ Permiso procesado:`, permisoProcesado);
-        return permisoProcesado;
-      });
-
-      // Procesar asignaciones
-      const asignaciones = {};
-      asignacionesData.forEach((asignacion, index) => {
-        console.log(`🔍 Procesando asignación ${index}:`, asignacion);
-        const rolId = asignacion.IDRol || asignacion.rol_id || asignacion.IdRol || asignacion.id_rol;
-        const permisoId = asignacion.IDPermiso || asignacion.permiso_id || asignacion.IdPermiso || asignacion.id_permiso;
-        
-        if (rolId && permisoId) {
-          if (!asignaciones[rolId]) {
-            asignaciones[rolId] = [];
+      // Estructurar relaciones en formato: { [IDRol]: [IDPermiso, IDPermiso, ...] }
+      this.asignaciones = {};
+      this.originalAsignaciones.forEach(rel => {
+        const rolId = rel.IDRol || rel.rol_id;
+        const permId = rel.IDPermiso || rel.permiso_id;
+        if (rolId && permId) {
+          if (!this.asignaciones[rolId]) {
+            this.asignaciones[rolId] = [];
           }
-          asignaciones[rolId].push(permisoId);
+          this.asignaciones[rolId].push(permId);
         }
       });
 
-      this.currentData = {
-        roles,
-        permisos,
-        asignaciones
-      };
-
-      console.log('✅ Datos procesados - Roles:', roles);
-      console.log('✅ Datos procesados - Permisos:', permisos);
-      console.log('✅ Datos procesados - Asignaciones:', asignaciones);
+      console.log('📊 Datos cargados:', {
+        roles: this.roles.length,
+        permisos: this.permisos.length,
+        relaciones: this.originalAsignaciones.length,
+        usuarios: this.usuarios.length
+      });
 
     } catch (error) {
-      console.error('❌ Error general cargando datos de roles y permisos:', error);
-      
-      // Mostrar error detallado
-      this.currentData = {
-        roles: [],
-        permisos: [],
-        asignaciones: {}
-      };
-      
-      // Mostrar mensaje de error al usuario con detalles
-      if (this.container) {
-        this.container.innerHTML = `
-          <div style="padding: 40px; text-align: center; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; margin: 20px;">
-            <h3 style="color: #721c24; margin-bottom: 15px;">❌ Error de Conexión con la Base de Datos</h3>
-            <p style="color: #721c24; margin-bottom: 20px;">No se pudieron cargar los roles y permisos desde la base de datos.</p>
-            <p style="color: #6c757d; font-size: 14px; margin-bottom: 10px;">Error: ${error.message}</p>
-            <p style="color: #6c757d; font-size: 12px;">Verifique que el servidor esté en ejecución en http://localhost:3000</p>
-            <div style="margin: 20px 0;">
-              <button onclick="location.reload()" style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px;">
-                🔄 Reintentar
-              </button>
-              <button onclick="console.log('Verificando conexión...'); fetch('http://localhost:3000/api/roles').then(r=>r.json()).then(d=>console.log('Datos de roles:', d)).catch(e=>console.error('Error:', e))" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px;">
-                � Verificar Conexión
-              </button>
-            </div>
-          </div>
-        `;
-      }
+      console.error('Error general de la API, cargando ejemplos:', error);
+      this.roles = this.getRolesEjemplo();
+      this.permisos = this.getPermisosEjemplo();
+      this.originalAsignaciones = [];
+      this.asignaciones = { 1: [1, 2, 3, 4, 5, 6], 2: [5, 6, 7] };
+      this.usuarios = [];
     }
   }
 
-  // Main render
+  // Renderizar la vista principal
   render() {
-    switch(this.currentView) {
-      case 'main':
-        this.renderMain();
-        break;
-      case 'nuevo-rol':
-        this.renderNuevoRol();
-        break;
-      case 'editar-rol':
-        this.renderEditarRol();
-        break;
-      case 'asignar-permisos':
-        this.renderAsignarPermisos();
-        break;
-      case 'detalle-rol':
-        this.renderDetalleRol();
-        break;
-      case 'detalle-permiso':
-        this.renderDetallePermiso();
-        break;
+    const rolesBadge = this.container.querySelector("#rolesCountBadge");
+    if (rolesBadge) rolesBadge.textContent = this.roles.length;
+
+    this.renderRolesList();
+
+    // Si hay un rol seleccionado, volver a cargarlo en el panel derecho. Si no, dejar vacío.
+    if (this.currentRoleId) {
+      this.selectRole(this.currentRoleId);
     }
-    
-    // Ensure module is always available globally after render
     window.rolesPermisosModule = this;
   }
 
-  renderMain() {
-    const rolesTable = this.container.querySelector('#rolesTable');
-    if (rolesTable) rolesTable.innerHTML = this.renderRolesTable();
-    
-    const permisosList = this.container.querySelector('#permisosList');
-    if (permisosList) permisosList.innerHTML = this.renderPermisosList();
-    
-    const rolesCount = this.container.querySelector('#rolesCount');
-    if (rolesCount) rolesCount.textContent = this.currentData.roles?.length || 0;
-    
-    const permisosCount = this.container.querySelector('#permisosCount');
-    if (permisosCount) permisosCount.textContent = this.currentData.permisos?.length || 0;
-  }
+  // Renderizar la lista de roles (Columna Izquierda)
+  renderRolesList() {
+    const container = this.container.querySelector("#rolesCardsContainer");
+    if (!container) return;
 
-  // Render roles table - ultra compacto
-  renderRolesTable() {
-    if (!this.currentData.roles || this.currentData.roles.length === 0) {
-      return '<tr><td colspan="3" style="text-align: center; padding: 15px; color: #6b7280; font-style: italic;">No hay roles registrados</td></tr>';
+    if (!this.roles.length) {
+      container.innerHTML = '<div class="text-xs text-center text-muted italic p-6">No hay roles registrados</div>';
+      return;
     }
-    
-    return this.currentData.roles.map(rol => {
+
+    container.innerHTML = this.roles.map(rol => {
+      const id = rol.IDRol;
+      const nombre = rol.Nombre || 'Sin Nombre';
+      const desc = rol.Descripcion || 'Sin descripción del rol';
+      const status = rol.Estado !== undefined ? String(rol.Estado) : '1';
+      
+      // Contar permisos y usuarios
+      const permCount = this.asignaciones[id] ? this.asignaciones[id].length : 0;
+      const userCount = this.usuarios.filter(u => Number(u.IDRol) === Number(id)).length;
+      
+      const isSelected = this.currentRoleId === id;
+      const selectClass = isSelected 
+        ? 'border-brand bg-brand/5 shadow-sm ring-1 ring-brand/30' 
+        : 'border-gray-100 hover:border-brand/40 bg-white hover:bg-gray-50/50';
+
       return `
-        <tr style="border-bottom: 1px solid #f3f4f6; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#f9fafb'" onmouseout="this.style.backgroundColor='white'">
-          <td style="padding: 6px 8px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.7rem; flex-shrink: 0;">
-                ${rol.nombre.charAt(0).toUpperCase()}
-              </div>
-              <div style="min-width: 0; flex: 1;">
-                <div style="font-weight: 600; color: #1f2937; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${rol.nombre}</div>
-                <div style="color: #6b7280; font-size: 0.7rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${rol.descripcion}</div>
-              </div>
-            </div>
-          </td>
-          <td style="padding: 6px 8px;">
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <label style="position: relative; display: inline-block; width: 32px; height: 18px; cursor: pointer;">
-                <input type="checkbox" 
-                       ${rol.estado === 'activo' ? 'checked' : ''} 
-                       onchange="window.rolesPermisosModule.toggleEstadoRol(${rol.id}, this.checked)"
-                       data-rol-id="${rol.id}"
-                       style="opacity: 0; width: 0; height: 0;">
-                <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${rol.estado === 'activo' ? '#10b981' : '#d1d5db'}; transition: 0.3s; border-radius: 18px;">
-                  <span style="position: absolute; content: ''; height: 14px; width: 14px; left: ${rol.estado === 'activo' ? '18px' : '2px'}; bottom: 2px; background-color: white; transition: 0.3s; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.1);"></span>
-                </span>
-              </label>
-              <span style="padding: 1px 4px; border-radius: 6px; font-size: 0.6rem; font-weight: 500; background: ${rol.estado === 'activo' ? '#dcfce7' : '#fee2e2'}; color: ${rol.estado === 'activo' ? '#166534' : '#dc2626'}; white-space: nowrap;">
-                ${rol.estado === 'activo' ? 'Activo' : 'Inactivo'}
-              </span>
-            </div>
-          </td>
-          <td style="padding: 6px 8px;">
-            <div style="display: flex; gap: 3px; justify-content: center;">
-              <button onclick="window.rolesPermisosModule.editarRol(${rol.id})" title="Editar rol" style="width: 24px; height: 24px; border: none; border-radius: 4px; background: #f3f4f6; color: #6b7280; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;" onmouseover="this.style.background='#e5e7eb'; this.style.color='#374151';" onmouseout="this.style.background='#f3f4f6'; this.style.color='#6b7280';">
-                ✏️
-              </button>
-              <button onclick="window.rolesPermisosModule.verDetalleRol(${rol.id})" title="Ver detalles" style="width: 24px; height: 24px; border: none; border-radius: 4px; background: #f3f4f6; color: #6b7280; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;" onmouseover="this.style.background='#dbeafe'; this.style.color='#2563eb';" onmouseout="this.style.background='#f3f4f6'; this.style.color='#6b7280';">
-                👁️
-              </button>
-              <button onclick="window.rolesPermisosModule.asignarPermisos(${rol.id})" title="Gestionar permisos" style="width: 24px; height: 24px; border: none; border-radius: 4px; background: #f3f4f6; color: #6b7280; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;" onmouseover="this.style.background='#d1fae5'; this.style.color='#059669';" onmouseout="this.style.background='#f3f4f6'; this.style.color='#6b7280';">
-                🔐
-              </button>
-              <button onclick="window.rolesPermisosModule.eliminarRol(${rol.id})" title="Eliminar rol" style="width: 24px; height: 24px; border: none; border-radius: 4px; background: #f3f4f6; color: #6b7280; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;" onmouseover="this.style.background='#fee2e2'; this.style.color='#dc2626';" onmouseout="this.style.background='#f3f4f6'; this.style.color='#6b7280';">
-                🗑️
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-  }
-
-  // Render permissions list - ultra compacto
-  renderPermisosList() {
-    if (!this.currentData.permisos || this.currentData.permisos.length === 0) {
-      return '<div style="text-align: center; padding: 15px; color: #6b7280; font-style: italic;">No hay permisos registrados</div>';
-    }
-    
-    const permisosHTML = this.currentData.permisos.map(permiso => {
-      return `
-        <tr style="border-bottom: 1px solid #f3f4f6; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#f9fafb'" onmouseout="this.style.backgroundColor='white'">
-          <td style="padding: 6px 8px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <div style="width: 24px; height: 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 4px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.7rem; flex-shrink: 0;">
-                🔐
-              </div>
-              <div style="min-width: 0; flex: 1;">
-                <div style="font-weight: 600; color: #1f2937; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${permiso.nombre}</div>
-                <div style="color: #6b7280; font-size: 0.7rem; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${permiso.descripcion}</div>
-              </div>
-            </div>
-          </td>
-          <td style="padding: 6px 8px;">
-            <span style="padding: 2px 6px; border-radius: 8px; font-size: 0.6rem; font-weight: 500; background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; white-space: nowrap;">
-              ${permiso.modulo || 'general'}
-            </span>
-          </td>
-          <td style="padding: 6px 8px;">
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <label style="position: relative; display: inline-block; width: 32px; height: 18px; cursor: pointer;">
-                <input type="checkbox" 
-                       ${permiso.estado === 'activo' ? 'checked' : ''} 
-                       onchange="window.rolesPermisosModule.toggleEstadoPermiso(${permiso.id}, this.checked)"
-                       data-permiso-id="${permiso.id}"
-                       style="opacity: 0; width: 0; height: 0;">
-                <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: ${permiso.estado === 'activo' ? '#10b981' : '#d1d5db'}; transition: 0.3s; border-radius: 18px;">
-                  <span style="position: absolute; content: ''; height: 14px; width: 14px; left: ${permiso.estado === 'activo' ? '18px' : '2px'}; bottom: 2px; background-color: white; transition: 0.3s; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.1);"></span>
-                </span>
-              </label>
-            </div>
-          </td>
-          <td style="padding: 6px 8px;">
-            <div style="display: flex; gap: 3px; justify-content: center;">
-              <button onclick="window.rolesPermisosModule.editarPermiso(${permiso.id})" title="Editar permiso" style="width: 24px; height: 24px; border: none; border-radius: 4px; background: #f3f4f6; color: #6b7280; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;" onmouseover="this.style.background='#e5e7eb'; this.style.color='#374151';" onmouseout="this.style.background='#f3f4f6'; this.style.color='#6b7280';">
-                ✏️
-              </button>
-              <button onclick="window.rolesPermisosModule.verDetallePermiso(${permiso.id})" title="Ver detalles" style="width: 24px; height: 24px; border: none; border-radius: 4px; background: #f3f4f6; color: #6b7280; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;" onmouseover="this.style.background='#dbeafe'; this.style.color='#2563eb';" onmouseout="this.style.background='#f3f4f6'; this.style.color='#6b7280';">
-                👁️
-              </button>
-              <button onclick="window.rolesPermisosModule.eliminarPermiso(${permiso.id})" title="Eliminar permiso" style="width: 24px; height: 24px; border: none; border-radius: 4px; background: #f3f4f6; color: #6b7280; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;" onmouseover="this.style.background='#fee2e2'; this.style.color='#dc2626';" onmouseout="this.style.background='#f3f4f6'; this.style.color='#6b7280';">
-                🗑️
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-    
-    const finalHTML = `
-      <div class="permisos-table">
-        <table class="data-table-modern" style="width: 100%; border-collapse: separate; border-spacing: 0;">
-          <thead style="position: sticky; top: 0; background: white; z-index: 10;">
-            <tr>
-              <th style="padding: 6px 8px; text-align: left; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Permiso</th>
-              <th style="padding: 6px 8px; text-align: left; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Módulo</th>
-              <th style="padding: 6px 8px; text-align: left; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Estado</th>
-              <th style="padding: 6px 8px; text-align: center; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${permisosHTML}
-          </tbody>
-        </table>
-      </div>
-    `;
-    
-    return finalHTML;
-  }
-
-  // Render nuevo rol
-  renderNuevoRol() {
-    this.container.innerHTML = `
-      <!-- Header -->
-      <header class="module-header">
-        <div class="header-left">
-          <button class="btn-secondary" onclick="window.rolesPermisosModule.showMain()">
-            <span>←</span> Volver
-          </button>
-          <h1>➕ Nuevo Rol</h1>
-        </div>
-      </header>
-
-      <!-- Form -->
-      <div class="form-card">
-        <form id="nuevoRolForm">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="rolNombre">Nombre del Rol *</label>
-              <input type="text" id="rolNombre" name="nombre" required class="form-control" placeholder="Ej: Administrador">
-            </div>
-            <div class="form-group">
-              <label for="rolDescripcion">Descripción *</label>
-              <textarea id="rolDescripcion" name="descripcion" required class="form-control" rows="3" placeholder="Descripción del rol"></textarea>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="rolEstado">Estado</label>
-              <select id="rolEstado" name="estado" class="form-control">
-                <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
-              </select>
-            </div>
-          </div>
+        <div onclick="window.rolesPermisosModule.selectRole(${id})" 
+             class="p-4 rounded-xl border-2 transition-all duration-300 cursor-pointer flex flex-col gap-3 relative ${selectClass}">
           
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" onclick="window.rolesPermisosModule.showMain()">
-              <span>✖</span> Cancelar
-            </button>
-            <button type="submit" class="btn-success">
-              <span>💾</span> Guardar Rol
-            </button>
-          </div>
-        </form>
-      </div>
-    `;
-  }
-
-  // Render editar rol
-  renderEditarRol() {
-    const rol = this.currentData.roles.find(r => r.id === this.currentRoleId);
-    if (!rol) return;
-
-    this.container.innerHTML = `
-      <!-- Header -->
-      <header class="module-header">
-        <div class="header-left">
-          <button class="btn-secondary" onclick="window.rolesPermisosModule.showMain()">
-            <span>←</span> Volver
-          </button>
-          <h1>✏️ Editar Rol: ${rol.nombre}</h1>
-        </div>
-      </header>
-
-      <!-- Form -->
-      <div class="form-card">
-        <form id="editarRolForm">
-          <input type="hidden" name="id" value="${rol.id}">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="rolNombre">Nombre del Rol *</label>
-              <input type="text" id="rolNombre" name="nombre" value="${rol.nombre}" required class="form-control">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="m-0 text-sm font-extrabold text-brand-deep">${nombre}</h3>
+              <p class="m-0 text-xs text-muted mt-1 max-w-[220px] leading-relaxed truncate">${desc}</p>
             </div>
-            <div class="form-group">
-              <label for="rolDescripcion">Descripción *</label>
-              <textarea id="rolDescripcion" name="descripcion" required class="form-control" rows="3">${rol.descripcion}</textarea>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="rolEstado">Estado</label>
-              <select id="rolEstado" name="estado" class="form-control">
-                <option value="activo" ${rol.estado === 'activo' ? 'selected' : ''}>Activo</option>
-                <option value="inactivo" ${rol.estado === 'inactivo' ? 'selected' : ''}>Inactivo</option>
-              </select>
-            </div>
-          </div>
-          
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" onclick="window.rolesPermisosModule.showMain()">
-              <span>✖</span> Cancelar
-            </button>
-            <button type="submit" class="btn-success">
-              <span>💾</span> Actualizar Rol
-            </button>
-          </div>
-        </form>
-      </div>
-    `;
-  }
-
-  // Render asignar permisos
-  renderAsignarPermisos() {
-    const rol = this.currentData.roles.find(r => r.id === this.currentRoleId);
-    if (!rol) return;
-
-    const rolPermisos = this.currentData.asignaciones[rol.id] || [];
-
-    this.container.innerHTML = `
-      <!-- Header -->
-      <header class="module-header">
-        <div class="header-left">
-          <button class="btn-secondary" onclick="window.rolesPermisosModule.showMain()">
-            <span>←</span> Volver
-          </button>
-          <h1>Asignar Permisos - ${rol.nombre}</h1>
-        </div>
-      </header>
-
-      <!-- Form -->
-      <div class="form-card">
-        <form id="asignarPermisosForm">
-          <input type="hidden" name="rolId" value="${rol.id}">
-          
-          <div class="permissions-assignment">
-            <h3>Seleccionar Permisos para "${rol.nombre}"</h3>
             
-            ${this.currentData.permisos.map(permiso => `
-              <div class="permission-checkbox">
-                <label class="checkbox-label">
-                  <input type="checkbox" 
-                         name="permisos" 
-                         value="${permiso.id}"
-                         ${rolPermisos.includes(permiso.id) ? 'checked' : ''}
-                         class="form-checkbox">
-                  <div class="checkbox-content">
-                    <strong>${permiso.nombre}</strong>
-                    <small>${permiso.descripcion}</small>
-                    <span class="permission-module-tag">${permiso.modulo}</span>
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${status === '1' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
+              ${status === '1' ? 'Activo' : 'Inactivo'}
+            </span>
+          </div>
+
+          <!-- Badges de información -->
+          <div class="flex items-center gap-2 mt-1">
+            <span class="px-2 py-1 bg-brand-light/10 text-brand-deep text-[10px] rounded-lg font-semibold flex items-center gap-1">
+              🔑 ${permCount} Permisos
+            </span>
+            <span class="px-2 py-1 bg-gray-100 text-gray-700 text-[10px] rounded-lg font-semibold flex items-center gap-1">
+              👥 ${userCount} Usuarios
+            </span>
+          </div>
+
+          <!-- Acciones de edición rápida -->
+          <div class="flex justify-end gap-1.5 border-t border-gray-100 pt-2.5 mt-1" onclick="event.stopPropagation()">
+            <button onclick="window.rolesPermisosModule.showEditRoleModal(${id})" 
+                    class="p-1 px-2 text-[10px] bg-gray-50 hover:bg-gray-100 text-brand-deep border border-gray-200 rounded-md font-semibold transition" title="Editar">
+              ✏️ Editar
+            </button>
+            <button onclick="window.rolesPermisosModule.deleteRole(${id})" 
+                    class="p-1 px-2 text-[10px] bg-red-50 hover:bg-red-100 text-red-700 border border-red-100 rounded-md font-semibold transition" title="Eliminar">
+              🗑️ Eliminar
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Acción al seleccionar un rol de la columna izquierda
+  selectRole(id) {
+    this.currentRoleId = id;
+    this.tempSelectedPermisos = new Set(this.asignaciones[id] || []);
+
+    // Re-render de roles para marcar el seleccionado
+    this.renderRolesList();
+
+    // Actualizar indicadores del panel
+    const rol = this.roles.find(r => r.IDRol === id);
+    const indicator = this.container.querySelector("#selectedRoleIndicator");
+    if (indicator && rol) {
+      indicator.innerHTML = `Gestionando privilegios para: <span class="text-brand-deep font-bold border-b-2 border-brand">${rol.Nombre}</span>`;
+    }
+
+    // Mostrar controles y footer
+    const controls = this.container.querySelector("#panelHeaderControls");
+    const footer = this.container.querySelector("#panelFooterActions");
+    if (controls) controls.classList.remove("hidden");
+    if (footer) footer.classList.remove("hidden");
+
+    this.renderPermissionsPanel();
+  }
+
+  // Agrupador inteligente de permisos por módulo del sistema
+  getModuloPermiso(nombre) {
+    const n = nombre.toLowerCase();
+    if (n.includes('dashboard') || n.includes('sistema') || n.includes('consultar')) return '💻 DASHBOARD Y SISTEMA';
+    if (n.includes('usuario')) return '👥 USUARIOS Y CUENTAS';
+    if (n.includes('rol') || n.includes('permiso')) return '🔐 ROLES Y ACCESOS';
+    if (n.includes('reserva')) return '📅 RESERVAS Y PLANES';
+    if (n.includes('habitacion') || n.includes('habitación')) return '🏨 HABITACIONES';
+    if (n.includes('servicio')) return '🍽️ SERVICIOS';
+    if (n.includes('paquete')) return '📦 PAQUETES';
+    if (n.includes('cliente') || n.includes('perfil')) return '👤 CLIENTES';
+    return '⚙️ MÓDULO GENERAL';
+  }
+
+  // Renderizar panel derecho de permisos agrupados
+  renderPermissionsPanel() {
+    const container = this.container.querySelector("#permissionsPanelBody");
+    if (!container) return;
+
+    if (!this.permisos.length) {
+      container.innerHTML = '<div class="text-xs text-center text-muted italic p-6">No hay permisos registrados en el sistema</div>';
+      return;
+    }
+
+    // Agrupar los permisos por módulo
+    const grupos = {};
+    this.permisos.forEach(perm => {
+      const mod = this.getModuloPermiso(perm.NombrePermisos || perm.nombre);
+      if (!grupos[mod]) {
+        grupos[mod] = [];
+      }
+      grupos[mod].push(perm);
+    });
+
+    let panelHTML = '';
+
+    // Renderizar cada bloque/bloque modular
+    Object.entries(grupos).forEach(([moduloName, permList]) => {
+      // Verificar si todos los permisos de este módulo están marcados
+      const todosMarcadosInModulo = permList.every(p => this.tempSelectedPermisos.has(p.IDPermiso || p.id));
+
+      panelHTML += `
+        <div class="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+          <!-- Encabezado del Módulo -->
+          <div class="bg-gray-50/75 p-3 px-4 flex items-center justify-between border-b border-gray-100">
+            <span class="text-xs font-extrabold text-brand-deep">${moduloName}</span>
+            <label class="flex items-center gap-1.5 text-[10px] font-bold text-muted cursor-pointer">
+              <input type="checkbox" class="rounded border-gray-300 text-brand focus:ring-brand" 
+                     ${todosMarcadosInModulo ? 'checked' : ''} 
+                     onchange="window.rolesPermisosModule.toggleModulePermissions('${moduloName}', this.checked)">
+              Marcar todo
+            </label>
+          </div>
+
+          <!-- Listado de Permisos Individuales -->
+          <div class="p-4 bg-white grid grid-cols-1 md:grid-cols-2 gap-3">
+            ${permList.map(perm => {
+              const pId = perm.IDPermiso || perm.id;
+              const pName = perm.NombrePermisos || perm.nombre;
+              const pDesc = perm.Descripcion || 'Sin descripción disponible';
+              const isChecked = this.tempSelectedPermisos.has(pId);
+
+              return `
+                <label class="flex items-start gap-3 p-2.5 rounded-lg border border-gray-50 hover:border-brand-light/30 hover:bg-brand-light/[0.02] cursor-pointer transition">
+                  <input type="checkbox" value="${pId}" class="mt-0.5 rounded border-gray-300 text-brand focus:ring-brand cursor-pointer" 
+                         ${isChecked ? 'checked' : ''} 
+                         onchange="window.rolesPermisosModule.togglePermission(${pId}, this.checked)">
+                  <div class="flex flex-col gap-0.5 min-w-0">
+                    <span class="text-xs font-bold text-brand-deep truncate">${pName}</span>
+                    <span class="text-[10px] text-muted leading-relaxed truncate md:max-w-[200px]" title="${pDesc}">${pDesc}</span>
                   </div>
                 </label>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
-          
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" onclick="window.rolesPermisosModule.showMain()">
-              <span>✖</span> Cancelar
-            </button>
-            <button type="submit" class="btn-primary">
-              <span>💾</span> Guardar Asignación
-            </button>
-          </div>
-        </form>
-      </div>
-    `;
+        </div>
+      `;
+    });
+
+    container.innerHTML = panelHTML;
   }
 
-  // Setup event listeners
-  setupEventListeners() {
-    // Nuevo rol form
-    const nuevoRolForm = this.container.querySelector('#nuevoRolForm');
-    if (nuevoRolForm) {
-      nuevoRolForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.guardarNuevoRol(e.target);
-      });
+  // Activar/desactivar un permiso específico
+  togglePermission(permId, isChecked) {
+    if (isChecked) {
+      this.tempSelectedPermisos.add(permId);
+    } else {
+      this.tempSelectedPermisos.delete(permId);
     }
-
-    // Editar rol form
-    const editarRolForm = this.container.querySelector('#editarRolForm');
-    if (editarRolForm) {
-      editarRolForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.actualizarRol(e.target);
-      });
-    }
-
-    // Nuevo permiso form
-    const nuevoPermisoForm = this.container.querySelector('#nuevoPermisoForm');
-    if (nuevoPermisoForm) {
-      nuevoPermisoForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.guardarNuevoPermiso(e.target);
-      });
-    }
-
-    // Editar permiso form
-    const editarPermisoForm = this.container.querySelector('#editarPermisoForm');
-    if (editarPermisoForm) {
-      editarPermisoForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.actualizarPermiso(e.target);
-      });
-    }
-
-    // Asignar permisos form
-    const asignarPermisosForm = this.container.querySelector('#asignarPermisosForm');
-    if (asignarPermisosForm) {
-      asignarPermisosForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.guardarAsignacionPermisos(e.target);
-      });
-    }
+    this.renderPermissionsPanel();
   }
 
-  // Navigation methods
-  showMain() {
-    this.currentView = 'main';
-    this.render();
-    this.setupEventListeners();
-  }
-
-  showNuevoRol() {
-    this.currentView = 'nuevo-rol';
-    this.render();
-    this.setupEventListeners();
-  }
-
-  editarRol(id) {
-    this.currentRoleId = id;
-    this.currentView = 'editar-rol';
-    this.render();
-    this.setupEventListeners();
-  }
-
-  asignarPermisos(id) {
-    this.currentRoleId = id;
-    this.currentView = 'asignar-permisos';
-    this.render();
-    this.setupEventListeners();
-  }
-
-  // CRUD operations
-  async guardarNuevoRol(form) {
-    const formData = new FormData(form);
-    const nuevoRol = {
-      id: Math.max(...this.currentData.roles.map(r => r.id)) + 1,
-      Nombre: formData.get('nombre'),
-      Descripcion: formData.get('descripcion'),
-      Estado: formData.get('estado') === 'activo' ? 1 : 0,
-      usuarios_count: 0
-    };
-
-    this.currentData.roles.push(nuevoRol);
-    this.currentData.asignaciones[nuevoRol.id] = [];
-    
-    this.showMain();
-    this.showSuccess('Rol creado exitosamente');
-  }
-
-  async actualizarRol(form) {
-    const formData = new FormData(form);
-    const id = parseInt(formData.get('id'));
-    
-    const rolIndex = this.currentData.roles.findIndex(r => r.id === id);
-    if (rolIndex !== -1) {
-      this.currentData.roles[rolIndex] = {
-        ...this.currentData.roles[rolIndex],
-        Nombre: formData.get('nombre'),
-        Descripcion: formData.get('descripcion'),
-        Estado: formData.get('estado') === 'activo' ? 1 : 0
-      };
-    }
-    
-    this.showMain();
-    this.showSuccess('Rol actualizado exitosamente');
-  }
-
-  async guardarAsignacionPermisos(form) {
-    const formData = new FormData(form);
-    const rolId = parseInt(formData.get('rolId'));
-    
-    const permisosSeleccionados = [];
-    const checkboxes = form.querySelectorAll('input[name="permisos"]:checked');
-    checkboxes.forEach(cb => permisosSeleccionados.push(parseInt(cb.value)));
-    
-    this.currentData.asignaciones[rolId] = permisosSeleccionados;
-    
-    this.showMain();
-    this.showSuccess('Permisos asignados exitosamente');
-  }
-
-  async eliminarRol(id) {
-    if (confirm('¿Está seguro de que desea eliminar este rol? Esta acción no se puede deshacer.')) {
-      const rolIndex = this.currentData.roles.findIndex(r => r.id === id);
-      if (rolIndex !== -1) {
-        this.currentData.roles.splice(rolIndex, 1);
-        delete this.currentData.asignaciones[id];
-        this.render();
-        this.setupEventListeners();
-        this.showSuccess('Rol eliminado exitosamente');
+  // Activar/desactivar todos los permisos de un módulo modular
+  toggleModulePermissions(moduloName, isChecked) {
+    this.permisos.forEach(perm => {
+      const pId = perm.IDPermiso || perm.id;
+      const mod = this.getModuloPermiso(perm.NombrePermisos || perm.nombre);
+      if (mod === moduloName) {
+        if (isChecked) {
+          this.tempSelectedPermisos.add(pId);
+        } else {
+          this.tempSelectedPermisos.delete(pId);
+        }
       }
+    });
+    this.renderPermissionsPanel();
+  }
+
+  // Activar/desactivar todos los permisos del panel (global)
+  selectAllPermissions(isChecked) {
+    if (isChecked) {
+      this.permisos.forEach(p => this.tempSelectedPermisos.add(p.IDPermiso || p.id));
+    } else {
+      this.tempSelectedPermisos.clear();
+    }
+    this.renderPermissionsPanel();
+  }
+
+  // Restablecer la selección a los datos de la base de datos
+  resetCurrentSelection() {
+    if (!this.currentRoleId) return;
+    this.selectRole(this.currentRoleId);
+    this.showSuccess('Selección de permisos restablecida.');
+  }
+
+  // Guardar asignaciones de permisos en la base de datos (Real API Sync)
+  async saveCurrentAssignments() {
+    if (!this.currentRoleId) return;
+
+    try {
+      console.log(`💾 Guardando permisos para rol #${this.currentRoleId}...`);
+      
+      // Obtener asignaciones guardadas en BD para este rol
+      const guardados = this.originalAsignaciones.filter(rel => 
+        Number(rel.IDRol || rel.rol_id) === Number(this.currentRoleId)
+      );
+
+      const guardadosPermIds = guardados.map(g => g.IDPermiso || g.permiso_id);
+
+      // 1. Determinar cuáles se deben eliminar: están en BD pero no en tempSelectedPermisos
+      const aEliminar = guardados.filter(g => 
+        !this.tempSelectedPermisos.has(g.IDPermiso || g.permiso_id)
+      );
+
+      // 2. Determinar cuáles se deben crear: están en tempSelectedPermisos pero no en BD
+      const aCrear = Array.from(this.tempSelectedPermisos).filter(id => 
+        !guardadosPermIds.includes(id)
+      );
+
+      console.log('Diff de sincronización:', {
+        totalSeleccionados: this.tempSelectedPermisos.size,
+        aEliminar: aEliminar.length,
+        aCrear: aCrear.length
+      });
+
+      // Si no hay cambios, avisar
+      if (aEliminar.length === 0 && aCrear.length === 0) {
+        alert('No se detectaron cambios en los accesos del rol.');
+        return;
+      }
+
+      // Procesar eliminaciones
+      await Promise.all(aEliminar.map(rel => {
+        const idRolPermiso = rel.IDRolPermiso || rel.id;
+        console.log(`🗑️ Eliminando relación RolPermiso #${idRolPermiso}`);
+        return deleteRolPermiso(idRolPermiso);
+      }));
+
+      // Procesar inserciones
+      await Promise.all(aCrear.map(permId => {
+        console.log(`➕ Añadiendo permiso #${permId} al rol #${this.currentRoleId}`);
+        return createRolPermiso({ 
+          IDRol: this.currentRoleId, 
+          IDPermiso: permId 
+        });
+      }));
+
+      this.showSuccess('Cambios guardados con éxito en la base de datos.');
+      
+      // Recargar datos y renderizar
+      await this.loadData();
+      this.render();
+
+    } catch (error) {
+      console.error('Error guardando asignaciones en API:', error);
+      alert('Error al guardar asignaciones en el servidor: ' + (error.message || 'Error desconocido'));
     }
   }
 
-  // Utility methods
-  refreshRoles() {
-    this.loadData();
-    this.render();
-    this.setupEventListeners();
-  }
-
-  showNuevoPermiso() {
-    this.currentView = 'nuevo-permiso';
-    this.renderNuevoPermiso();
-    this.setupEventListeners();
-  }
-
-  renderNuevoPermiso() {
-    this.container.innerHTML = `
-      <!-- Header -->
-      <header class="module-header">
-        <div class="header-left">
-          <button class="btn-secondary" onclick="window.rolesPermisosModule.showMain()">
-            <span>←</span> Volver
-          </button>
-          <h1>➕ Nuevo Permiso</h1>
-        </div>
-      </header>
-
-      <!-- Form -->
-      <div class="form-card">
-        <form id="nuevoPermisoForm">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="permisoNombre">Nombre del Permiso *</label>
-              <input type="text" id="permisoNombre" name="nombre" required class="form-control" placeholder="Ej: Ver clientes">
+  // Modal para agregar nuevo rol
+  showNewRoleModal() {
+    const modalHTML = `
+      <div id="roleModalOverlay" class="fixed inset-0 bg-ink/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+            <h3 class="text-base font-extrabold text-brand-deep m-0">➕ Crear Nuevo Perfil de Rol</h3>
+            <button onclick="document.getElementById('roleModalOverlay').remove()" class="bg-transparent border-none text-muted hover:text-brand-deep text-lg cursor-pointer">✕</button>
+          </div>
+          <form id="newRoleForm" class="flex flex-col gap-4 m-0 p-0">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Nombre del Rol *</label>
+              <input type="text" id="roleName" class="h-10 px-3 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand/20 text-xs font-semibold" placeholder="Ej: Recepcionista" required>
             </div>
-            <div class="form-group">
-              <label for="permisoModulo">Módulo *</label>
-              <select id="permisoModulo" name="modulo" required class="form-control">
-                <option value="">Seleccionar módulo</option>
-                <option value="clientes">Clientes</option>
-                <option value="reservas">Reservas</option>
-                <option value="habitaciones">Habitaciones</option>
-                <option value="pagos">Pagos</option>
-                <option value="reportes">Reportes</option>
-                <option value="usuarios">Usuarios</option>
-                <option value="sistema">Sistema</option>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Descripción del Rol *</label>
+              <textarea id="roleDesc" rows="3" class="p-3 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand/20 text-xs font-semibold resize-none" placeholder="Breve resumen de atribuciones..." required></textarea>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Estado Inicial</label>
+              <select id="roleStatus" class="h-10 px-3 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none text-xs font-semibold cursor-pointer">
+                <option value="1">🟢 Activo</option>
+                <option value="0">🔴 Inactivo</option>
               </select>
             </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="permisoDescripcion">Descripción *</label>
-              <textarea id="permisoDescripcion" name="descripcion" required class="form-control" rows="3" placeholder="Descripción del permiso"></textarea>
+            <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
+              <button type="button" onclick="document.getElementById('roleModalOverlay').remove()" class="px-4 py-2 border border-gray-200 bg-white rounded-lg font-bold text-[11px] text-muted hover:bg-gray-50 cursor-pointer">Cancelar</button>
+              <button type="submit" class="px-5 py-2 bg-brand text-white border-none rounded-lg font-extrabold text-[11px] hover:bg-brand-deep shadow-md shadow-brand/10 cursor-pointer">Crear Rol</button>
             </div>
-          </div>
-          
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" onclick="window.rolesPermisosModule.showMain()">
-              <span>✖</span> Cancelar
-            </button>
-            <button type="submit" class="btn-success">
-              <span>💾</span> Guardar Permiso
-            </button>
-          </div>
-        </form>
-      </div>
-    `;
-  }
-
-  editarPermiso(id) {
-    const permiso = this.currentData.permisos.find(p => p.id === id);
-    if (!permiso) return;
-
-    this.currentPermisoId = id;
-    this.currentView = 'editar-permiso';
-    this.renderEditarPermiso();
-    this.setupEventListeners();
-  }
-
-  renderEditarPermiso() {
-    const permiso = this.currentData.permisos.find(p => p.id === this.currentPermisoId);
-    if (!permiso) return;
-
-    this.container.innerHTML = `
-      <!-- Header -->
-      <header class="module-header">
-        <div class="header-left">
-          <button class="btn-secondary" onclick="window.rolesPermisosModule.showMain()">
-            <span>←</span> Volver
-          </button>
-          <h1>✏️ Editar Permiso: ${permiso.nombre}</h1>
+          </form>
         </div>
-      </header>
-
-      <!-- Form -->
-      <div class="form-card">
-        <form id="editarPermisoForm">
-          <input type="hidden" name="id" value="${permiso.id}">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="permisoNombre">Nombre del Permiso *</label>
-              <input type="text" id="permisoNombre" name="nombre" value="${permiso.nombre}" required class="form-control">
-            </div>
-            <div class="form-group">
-              <label for="permisoModulo">Módulo *</label>
-              <select id="permisoModulo" name="modulo" required class="form-control">
-                <option value="clientes" ${permiso.modulo === 'clientes' ? 'selected' : ''}>Clientes</option>
-                <option value="reservas" ${permiso.modulo === 'reservas' ? 'selected' : ''}>Reservas</option>
-                <option value="habitaciones" ${permiso.modulo === 'habitaciones' ? 'selected' : ''}>Habitaciones</option>
-                <option value="pagos" ${permiso.modulo === 'pagos' ? 'selected' : ''}>Pagos</option>
-                <option value="reportes" ${permiso.modulo === 'reportes' ? 'selected' : ''}>Reportes</option>
-                <option value="usuarios" ${permiso.modulo === 'usuarios' ? 'selected' : ''}>Usuarios</option>
-                <option value="sistema" ${permiso.modulo === 'sistema' ? 'selected' : ''}>Sistema</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="permisoDescripcion">Descripción *</label>
-              <textarea id="permisoDescripcion" name="descripcion" required class="form-control" rows="3">${permiso.descripcion}</textarea>
-            </div>
-          </div>
-          
-          <div class="form-actions">
-            <button type="button" class="btn-secondary" onclick="window.rolesPermisosModule.showMain()">
-              <span>✖</span> Cancelar
-            </button>
-            <button type="submit" class="btn-success">
-              <span>💾</span> Actualizar Permiso
-            </button>
-          </div>
-        </form>
       </div>
     `;
-  }
 
-  async guardarNuevoPermiso(form) {
-    const formData = new FormData(form);
-    const nuevoPermiso = {
-      id: Math.max(...this.currentData.permisos.map(p => p.id)) + 1,
-      NombrePermisos: formData.get('nombre'),
-      Descripcion: formData.get('descripcion'),
-      EstadoPermisos: 'Activo',
-      IsActive: 1,
-      Modulo: formData.get('modulo')
-    };
+    const overlay = document.createElement('div');
+    overlay.innerHTML = modalHTML;
+    document.body.appendChild(overlay.firstElementChild);
 
-    this.currentData.permisos.push(nuevoPermiso);
-    
-    this.showMain();
-    this.showSuccess('Permiso creado exitosamente');
-  }
-
-  async actualizarPermiso(form) {
-    const formData = new FormData(form);
-    const id = parseInt(formData.get('id'));
-    
-    const permisoIndex = this.currentData.permisos.findIndex(p => p.id === id);
-    if (permisoIndex !== -1) {
-      this.currentData.permisos[permisoIndex] = {
-        ...this.currentData.permisos[permisoIndex],
-        NombrePermisos: formData.get('nombre'),
-        Descripcion: formData.get('descripcion'),
-        Modulo: formData.get('modulo')
+    const form = document.getElementById("newRoleForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const payload = {
+        Nombre: document.getElementById("roleName").value,
+        Descripcion: document.getElementById("roleDesc").value,
+        Estado: document.getElementById("roleStatus").value
       };
-    }
-    
-    this.showMain();
-    this.showSuccess('Permiso actualizado exitosamente');
+
+      try {
+        console.log('Enviando creación de rol:', payload);
+        await createRol(payload);
+        this.showSuccess('Rol creado exitosamente.');
+        document.getElementById('roleModalOverlay').remove();
+        await this.loadData();
+        this.render();
+      } catch (err) {
+        console.error('Error creando rol:', err);
+        alert('Error al crear el rol: ' + (err.message || 'Error en servidor'));
+      }
+    });
   }
 
-  // Render vista detalle rol
-  renderDetalleRol() {
-    const rol = this.currentData.roles.find(r => r.id === this.currentRoleId);
+  // Modal para agregar nuevo permiso
+  showNewPermissionModal() {
+    const modalHTML = `
+      <div id="permModalOverlay" class="fixed inset-0 bg-ink/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+            <h3 class="text-base font-extrabold text-brand-deep m-0">🔑 Crear Nuevo Permiso</h3>
+            <button onclick="document.getElementById('permModalOverlay').remove()" class="bg-transparent border-none text-muted hover:text-brand-deep text-lg cursor-pointer">✕</button>
+          </div>
+          <form id="newPermForm" class="flex flex-col gap-4 m-0 p-0">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Nombre del Permiso *</label>
+              <input type="text" id="permName" class="h-10 px-3 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand/20 text-xs font-semibold" placeholder="Ej: Consultar facturas" required>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Descripción del Permiso *</label>
+              <textarea id="permDesc" rows="3" class="p-3 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand/20 text-xs font-semibold resize-none" placeholder="Explique qué privilegios otorga..." required></textarea>
+            </div>
+            <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
+              <button type="button" onclick="document.getElementById('permModalOverlay').remove()" class="px-4 py-2 border border-gray-200 bg-white rounded-lg font-bold text-[11px] text-muted hover:bg-gray-50 cursor-pointer">Cancelar</button>
+              <button type="submit" class="px-5 py-2 bg-brand text-white border-none rounded-lg font-extrabold text-[11px] hover:bg-brand-deep shadow-md shadow-brand/10 cursor-pointer">Crear Permiso</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    const overlay = document.createElement('div');
+    overlay.innerHTML = modalHTML;
+    document.body.appendChild(overlay.firstElementChild);
+
+    const form = document.getElementById("newPermForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const payload = {
+        NombrePermisos: document.getElementById("permName").value,
+        Descripcion: document.getElementById("permDesc").value,
+        EstadoPermisos: "Activo",
+        IsActive: 1
+      };
+
+      try {
+        console.log('Enviando creación de permiso:', payload);
+        await createPermiso(payload);
+        this.showSuccess('Permiso del sistema creado con éxito.');
+        document.getElementById('permModalOverlay').remove();
+        await this.loadData();
+        this.render();
+      } catch (err) {
+        console.error('Error creando permiso:', err);
+        alert('Error al crear el permiso: ' + (err.message || 'Error en servidor'));
+      }
+    });
+  }
+
+  // Modal para editar rol existente
+  showEditRoleModal(id) {
+    const rol = this.roles.find(r => r.IDRol === id);
     if (!rol) return;
 
-    const permisosAsignados = this.currentData.asignaciones[rol.id] || [];
-    const permisosDetails = permisosAsignados.map(pId => 
-      this.currentData.permisos.find(p => p.id === pId)
-    ).filter(p => p);
-
-    this.container.innerHTML = `
-      <!-- Header -->
-      <header class="module-header">
-        <div class="header-left">
-          <button class="btn-secondary" onclick="window.rolesPermisosModule.showMain()">
-            <span>←</span> Volver
-          </button>
-          <h1>👁️ Detalle del Rol: ${rol.nombre}</h1>
-        </div>
-      </header>
-
-      <!-- Detail Card -->
-      <div class="detail-card">
-        <div class="detail-header">
-          <div class="detail-info">
-            <h2>${rol.nombre}</h2>
-            <p>${rol.descripcion}</p>
-            <div class="detail-meta">
-              <span class="badge ${rol.estado === 'activo' ? 'badge-success' : 'badge-warning'}">
-                ${rol.estado === 'activo' ? '🟢 Activo' : '🔴 Inactivo'}
-              </span>
-              <span class="badge badge-info">${rol.usuarios_count} usuarios</span>
+    const modalHTML = `
+      <div id="editRoleModalOverlay" class="fixed inset-0 bg-ink/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
+            <h3 class="text-base font-extrabold text-brand-deep m-0">✏️ Editar Perfil de Rol: ${rol.Nombre}</h3>
+            <button onclick="document.getElementById('editRoleModalOverlay').remove()" class="bg-transparent border-none text-muted hover:text-brand-deep text-lg cursor-pointer">✕</button>
+          </div>
+          <form id="editRoleForm" class="flex flex-col gap-4 m-0 p-0">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Nombre del Rol *</label>
+              <input type="text" id="editRoleName" class="h-10 px-3 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand/20 text-xs font-semibold" value="${rol.Nombre}" required>
             </div>
-          </div>
-          <div class="detail-actions">
-            <button class="btn-secondary" onclick="window.rolesPermisosModule.editarRol(${rol.id})">
-              <span>✏️</span> Editar
-            </button>
-          </div>
-        </div>
-
-        <div class="detail-section">
-          <h3>🔐 Permisos Asignados</h3>
-          <div class="permissions-grid">
-            ${permisosDetails.length > 0 ? permisosDetails.map(permiso => `
-              <div class="permission-item">
-                <div class="permission-info">
-                  <strong>${permiso.nombre}</strong>
-                  <small>${permiso.descripcion}</small>
-                  <span class="badge badge-info">${permiso.modulo}</span>
-                </div>
-              </div>
-            `).join('') : '<p class="text-muted">Este rol no tiene permisos asignados</p>'}
-          </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Descripción del Rol *</label>
+              <textarea id="editRoleDesc" rows="3" class="p-3 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand/20 text-xs font-semibold resize-none" required>${rol.Descripcion || ''}</textarea>
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Estado</label>
+              <select id="editRoleStatus" class="h-10 px-3 rounded-lg border border-gray-200 bg-gray-50 focus:outline-none text-xs font-semibold cursor-pointer">
+                <option value="1" ${String(rol.Estado) === '1' || rol.Estado === 'activo' ? 'selected' : ''}>🟢 Activo</option>
+                <option value="0" ${String(rol.Estado) === '0' || rol.Estado === 'inactivo' ? 'selected' : ''}>🔴 Inactivo</option>
+              </select>
+            </div>
+            <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
+              <button type="button" onclick="document.getElementById('editRoleModalOverlay').remove()" class="px-4 py-2 border border-gray-200 bg-white rounded-lg font-bold text-[11px] text-muted hover:bg-gray-50 cursor-pointer">Cancelar</button>
+              <button type="submit" class="px-5 py-2 bg-brand text-white border-none rounded-lg font-extrabold text-[11px] hover:bg-brand-deep shadow-md shadow-brand/10 cursor-pointer">Guardar Cambios</button>
+            </div>
+          </form>
         </div>
       </div>
     `;
-    this.setupEventListeners();
-  }
 
-  // Render vista detalle permiso
-  renderDetallePermiso() {
-    const permiso = this.currentData.permisos.find(p => p.id === this.currentPermisoId);
-    if (!permiso) return;
+    const overlay = document.createElement('div');
+    overlay.innerHTML = modalHTML;
+    document.body.appendChild(overlay.firstElementChild);
 
-    // Encontrar roles que tienen este permiso
-    const rolesConPermiso = Object.keys(this.currentData.asignaciones)
-      .filter(rolId => this.currentData.asignaciones[rolId].includes(permiso.id))
-      .map(rolId => this.currentData.roles.find(r => r.id === parseInt(rolId)))
-      .filter(r => r);
+    const form = document.getElementById("editRoleForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const payload = {
+        Nombre: document.getElementById("editRoleName").value,
+        Descripcion: document.getElementById("editRoleDesc").value,
+        Estado: document.getElementById("editRoleStatus").value
+      };
 
-    this.container.innerHTML = `
-      <!-- Header -->
-      <header class="module-header">
-        <div class="header-left">
-          <button class="btn-secondary" onclick="window.rolesPermisosModule.showMain()">
-            <span>←</span> Volver
-          </button>
-          <h1>👁️ Detalle del Permiso: ${permiso.nombre}</h1>
-        </div>
-      </header>
-
-      <!-- Detail Card -->
-      <div class="detail-card">
-        <div class="detail-header">
-          <div class="detail-info">
-            <h2>${permiso.nombre}</h2>
-            <p>${permiso.descripcion}</p>
-            <div class="detail-meta">
-              <span class="badge badge-info">${permiso.modulo}</span>
-              <span class="badge ${permiso.estado === 'activo' ? 'badge-success' : 'badge-warning'}">
-                ${permiso.estado === 'activo' ? '🟢 Activo' : '🔴 Inactivo'}
-              </span>
-            </div>
-          </div>
-          <div class="detail-actions">
-            <button class="btn-secondary" onclick="window.rolesPermisosModule.editarPermiso(${permiso.id})">
-              <span>✏️</span> Editar
-            </button>
-          </div>
-        </div>
-
-        <div class="detail-section">
-          <h3>👥 Roles Asociados</h3>
-          <div class="roles-list">
-            ${rolesConPermiso.length > 0 ? rolesConPermiso.map(rol => `
-              <div class="role-item">
-                <div class="role-info">
-                  <strong>${rol.nombre}</strong>
-                  <small>${rol.descripcion}</small>
-                  <span class="badge ${rol.estado === 'activo' ? 'badge-success' : 'badge-warning'}">
-                    ${rol.estado === 'activo' ? '🟢 Activo' : '🔴 Inactivo'}
-                  </span>
-                </div>
-              </div>
-            `).join('') : '<p class="text-muted">Este permiso no está asignado a ningún rol</p>'}
-          </div>
-        </div>
-      </div>
-    `;
-    this.setupEventListeners();
-  }
-
-  // Métodos para mostrar detalles
-  verDetalleRol(id) {
-    this.currentRoleId = id;
-    this.currentView = 'detalle-rol';
-    this.render();
-    this.setupEventListeners();
-  }
-
-  verDetallePermiso(id) {
-    this.currentPermisoId = id;
-    this.currentView = 'detalle-permiso';
-    this.render();
-    this.setupEventListeners();
-  }
-
-  // Métodos para toggle de estado
-  async toggleEstadoRol(id, estado) {
-    const rol = this.currentData.roles.find(r => r.id === id);
-    if (rol) {
-      rol.estado = estado ? 'activo' : 'inactivo';
-      this.render(); // Re-renderizar para actualizar el estado visual
-      this.setupEventListeners(); // Re-attach event listeners
-      this.showSuccess(`Rol ${estado ? 'activado' : 'desactivado'} exitosamente`);
-    }
-  }
-
-  async toggleEstadoPermiso(id, estado) {
-    const permiso = this.currentData.permisos.find(p => p.id === id);
-    if (permiso) {
-      permiso.estado = estado ? 'activo' : 'inactivo';
-      this.render(); // Re-renderizar para actualizar el estado visual
-      this.setupEventListeners(); // Re-attach event listeners
-      this.showSuccess(`Permiso ${estado ? 'activado' : 'desactivado'} exitosamente`);
-    }
-  }
-
-  async eliminarPermiso(id) {
-    if (confirm('¿Está seguro de que desea eliminar este permiso? Esta acción no se puede deshacer.')) {
-      const permisoIndex = this.currentData.permisos.findIndex(p => p.id === id);
-      if (permisoIndex !== -1) {
-        this.currentData.permisos.splice(permisoIndex, 1);
-        // Remover de todas las asignaciones
-        Object.keys(this.currentData.asignaciones).forEach(rolId => {
-          this.currentData.asignaciones[rolId] = this.currentData.asignaciones[rolId].filter(pId => pId !== id);
-        });
+      try {
+        console.log(`Enviando edición para rol #${id}:`, payload);
+        await updateRol(id, payload);
+        this.showSuccess('Rol actualizado correctamente.');
+        document.getElementById('editRoleModalOverlay').remove();
+        await this.loadData();
         this.render();
-        this.setupEventListeners();
-        this.showSuccess('Permiso eliminado exitosamente');
+      } catch (err) {
+        console.error('Error editando rol:', err);
+        alert('Error al guardar cambios del rol: ' + (err.message || 'Error en servidor'));
       }
+    });
+  }
+
+  // Eliminar un rol de la base de datos
+  async deleteRole(id) {
+    const rol = this.roles.find(r => r.IDRol === id);
+    if (!rol) return;
+
+    if (!confirm(`¿Está seguro de eliminar el rol "${rol.Nombre}"? Todos los usuarios vinculados perderán su asignación y las relaciones de permisos se borrarán. Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      console.log(`🗑️ Eliminando rol #${id}...`);
+      await deleteRol(id);
+      this.showSuccess('Rol eliminado con éxito.');
+      
+      // Deseleccionar si el rol eliminado era el seleccionado
+      if (this.currentRoleId === id) {
+        this.currentRoleId = null;
+        
+        // Ocultar controles del panel derecho
+        const controls = this.container.querySelector("#panelHeaderControls");
+        const footer = this.container.querySelector("#panelFooterActions");
+        if (controls) controls.classList.add("hidden");
+        if (footer) footer.classList.add("hidden");
+        
+        const indicator = this.container.querySelector("#selectedRoleIndicator");
+        if (indicator) indicator.textContent = 'Seleccione un rol de la lista para gestionar sus accesos.';
+        
+        const panelBody = this.container.querySelector("#permissionsPanelBody");
+        if (panelBody) {
+          panelBody.innerHTML = `
+            <div class="flex flex-col items-center justify-center p-12 text-center text-muted">
+              <span class="text-4xl mb-2">👈</span>
+              <p class="m-0 font-bold text-brand-deep text-sm">Selecciona un Rol</p>
+              <p class="m-0 text-xs mt-1 text-muted max-w-[240px]">Para editar, otorgar o denegar accesos en tiempo real, elige uno de los roles del panel izquierdo.</p>
+            </div>
+          `;
+        }
+      }
+
+      await this.loadData();
+      this.render();
+    } catch (err) {
+      console.error('Error al eliminar rol:', err);
+      alert('Error al eliminar el rol: ' + (err.message || 'Error del servidor. Asegúrese de que no tenga llaves foráneas activas.'));
     }
   }
 
+  // Notificación de éxito flotante y elegante
   showSuccess(message) {
-    // Mostrar notificación de éxito
     const notification = document.createElement('div');
-    notification.className = 'notification notification-success';
-    notification.innerHTML = `
-      <span>✅</span> ${message}
-    `;
-    this.container.appendChild(notification);
+    notification.className = 'fixed bottom-5 right-5 bg-brand text-white font-semibold py-3.5 px-6 rounded-2xl shadow-xl flex items-center gap-2 border border-brand-light/20 animate-in slide-in-from-bottom duration-300 z-50 text-xs';
+    notification.innerHTML = `<span>✅</span> ${message}`;
+    document.body.appendChild(notification);
     
     setTimeout(() => {
-      notification.remove();
+      notification.classList.add('animate-out', 'fade-out', 'duration-300');
+      setTimeout(() => notification.remove(), 300);
     }, 3000);
   }
 
+  // Notificación de error en la UI
   showError(title, message) {
     this.container.innerHTML = `
-      <div class="error-container">
-        <div class="error-card">
-          <h2>${title}</h2>
-          <p>${message}</p>
-          <button onclick="location.reload()" class="btn-primary">
-            Recargar página
-          </button>
-        </div>
+      <div class="flex flex-col items-center justify-center p-12 text-center bg-white border border-gray-100 rounded-3xl shadow-sm">
+        <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center text-3xl mb-4 shadow-inner">❌</div>
+        <h2 class="text-xl font-bold text-brand-deep mb-2">${title}</h2>
+        <p class="text-muted text-sm mb-6 max-w-md">${message}</p>
+        <button onclick="location.reload()" class="px-6 py-3 bg-brand hover:bg-brand-deep text-white font-semibold rounded-xl transition cursor-pointer border-none text-sm shadow-md shadow-brand/10">
+          🔄 Recargar página
+        </button>
       </div>
     `;
   }
 
-  // Datos de ejemplo para fallback
+  // Fallbacks de roles
   getRolesEjemplo() {
     return [
       { IDRol: 1, Nombre: 'Administrador', Descripcion: 'Acceso total al sistema', Estado: 1 },
-      { IDRol: 2, Nombre: 'Cliente', Descripcion: 'Usuario estándar', Estado: 1 },
-      { IDRol: 3, Nombre: 'Recepcionista', Descripcion: 'Gestión de reservas', Estado: 1 }
+      { IDRol: 2, Nombre: 'Cliente', Descripcion: 'Acceso limitado a funciones de cliente', Estado: 1 }
     ];
   }
 
+  // Fallbacks de permisos
   getPermisosEjemplo() {
     return [
-      { IDPermiso: 1, NombrePermisos: 'Ver Dashboard', Descripcion: 'Acceso al panel principal', IsActive: 1, Modulo: 'dashboard' },
-      { IDPermiso: 2, NombrePermisos: 'Gestionar Usuarios', Descripcion: 'Crear, editar usuarios', IsActive: 1, Modulo: 'usuarios' },
-      { IDPermiso: 3, NombrePermisos: 'Gestionar Reservas', Descripcion: 'Crear, editar reservas', IsActive: 1, Modulo: 'reservas' },
-      { IDPermiso: 4, NombrePermisos: 'Gestionar Habitaciones', Descripcion: 'Administrar habitaciones', IsActive: 1, Modulo: 'habitaciones' }
+      { IDPermiso: 1, NombrePermisos: 'Gestionar dashboard', Descripcion: 'Visualizar y administrar el dashboard', IsActive: 1 },
+      { IDPermiso: 2, NombrePermisos: 'Gestionar usuarios', Descripcion: 'Crear, editar y eliminar usuarios', IsActive: 1 },
+      { IDPermiso: 3, NombrePermisos: 'Gestionar roles', Descripcion: 'Administrar roles del sistema', IsActive: 1 },
+      { IDPermiso: 4, NombrePermisos: 'Gestionar permisos', Descripcion: 'Administrar permisos y asignaciones', IsActive: 1 },
+      { IDPermiso: 5, NombrePermisos: 'Gestionar reservas', Descripcion: 'Crear, editar y cancelar reservas', IsActive: 1 },
+      { IDPermiso: 6, NombrePermisos: 'Consultar habitaciones', Descripcion: 'Visualizar habitaciones disponibles', IsActive: 1 },
+      { IDPermiso: 7, NombrePermisos: 'Editar perfil cliente', Descripcion: 'Actualizar datos del cliente', IsActive: 1 }
     ];
   }
 }
 
-// Export function for SPA integration
+// Función exportada de carga para el SPA
 export function renderRolesPermisos(container) {
+  console.log('🎯 renderRolesPermisos llamado con container:', container);
   window.rolesPermisosModule = new RolesPermisosModule(container);
   window.rolesPermisosModule.initialize();
 }

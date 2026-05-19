@@ -45,9 +45,9 @@ function verificarAutenticacion() {
 
 // Mapping of views to their respective modules for the client dashboard
 const modules = {
-  'dashboard': () => import('../dashboard/dashboard.js').then(m => m.renderDashboard), // or a client-specific dashboard module
-  'reservas': () => import('../dashboard/modules/reservas-admin.js').then(m => m.renderReservas), // TODO: create a client specific reservations module
-  'nueva-reserva': () => import('../dashboard/modules/reservas-admin.js').then(m => m.renderReservas) // Reuse admin module but hide client selection
+  'dashboard': () => import('../dashboard/dashboard.js').then(m => m.renderDashboard),
+  'reservas': () => import('../dashboard/modules/reservas-admin.js').then(m => m.renderReservas),
+  'nueva-reserva': () => import('../dashboard/modules/reservas-admin.js').then(m => m.renderReservas)
 };
 
 // Mapping of HTML templates
@@ -63,37 +63,23 @@ export async function cargarVista(vista) {
 
   try {
     // 1. Fetch the HTML partial
-    // For now, reuse the same partials. For a real app, you might have specific partials for clients.
     const html = await htmlTemplates[vista]();
     
     // 2. Inject HTML
     container.innerHTML = html;
 
-    // 3. Hide client selection for nueva-reserva view
+    // 3. Configure options based on view
+    let options = {};
     if (vista === 'nueva-reserva') {
-      // Hide the reservations list section and show only the form
-      const listSection = document.getElementById('reservationsListSection');
-      const formSection = document.getElementById('reservationFormSection');
-      const clientSelect = document.getElementById('clienteSelect');
-      const documentoInput = document.getElementById('documentoInput');
-      
-      if (listSection) listSection.style.display = 'none';
-      if (formSection) formSection.style.display = 'block';
-      if (clientSelect) {
-        clientSelect.parentElement.style.display = 'none';
-        clientSelect.required = false;
-      }
-      if (documentoInput) {
-        documentoInput.parentElement.style.display = 'none';
-      }
-      
-      // Add cancel button handler
-      const cancelBtn = document.getElementById('cancelNewReservationBtn');
-      if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
-          window.location.hash = 'reservas';
-        });
-      }
+      options = {
+        isClientMode: true,
+        showFormOnly: true
+      };
+    } else if (vista === 'reservas') {
+      options = {
+        isClientMode: true,
+        showListOnly: true
+      };
     }
 
     // 4. Update active nav link
@@ -108,7 +94,7 @@ export async function cargarVista(vista) {
     if (modules[vista]) {
       try {
         const renderFn = await modules[vista]();
-        await renderFn(container);
+        await renderFn(container, options);
       } catch (moduleError) {
         console.error('Error ejecutando módulo:', moduleError);
         // No mostrar error, solo dejar el HTML cargado
@@ -149,6 +135,59 @@ document.addEventListener('DOMContentLoaded', () => {
     const hash = window.location.hash.slice(1) || 'dashboard';
     const vista = hash.split('?')[0];
     cargarVista(vista);
+  });
+
+  // Sidebar Toggle Functionality
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  
+  function toggleSidebar() {
+    const isActive = sidebar.classList.contains('active');
+    
+    if (isActive) {
+      sidebar.classList.remove('active');
+      sidebarToggle.classList.remove('active');
+      sidebarOverlay.classList.remove('active');
+      document.body.style.overflow = '';
+    } else {
+      sidebar.classList.add('active');
+      sidebarToggle.classList.add('active');
+      sidebarOverlay.classList.add('active');
+      document.body.style.overflow = 'hidden'; // Prevent background scroll
+    }
+  }
+  
+  function closeSidebar() {
+    sidebar.classList.remove('active');
+    sidebarToggle.classList.remove('active');
+    sidebarOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  
+  // Event listeners for sidebar toggle
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', toggleSidebar);
+  }
+  
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', closeSidebar);
+  }
+  
+  // Close sidebar when clicking outside on mobile
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 1024) {
+      if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+        closeSidebar();
+      }
+    }
+  });
+  
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 1024) {
+      closeSidebar();
+    }
   });
 
   // Botón de logout

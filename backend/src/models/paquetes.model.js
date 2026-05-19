@@ -8,18 +8,16 @@ const obtener = () => {
         h.Descripcion AS HabitacionIncluidaDescripcion,
         h.Costo AS HabitacionIncluidaCosto,
         CASE h.NombreHabitacion
-          WHEN 'Suite' THEN 3
           WHEN 'Doble' THEN 2
           WHEN 'Sencilla' THEN 1
           WHEN 'Familiar Deluxe' THEN 5
           ELSE 2
         END AS HabitacionIncluidaCapacidad,
         CASE h.NombreHabitacion
-          WHEN 'Suite' THEN 'suite-ejecutiva.svg'
           WHEN 'Doble' THEN 'doble-confort.svg'
           WHEN 'Sencilla' THEN 'sencilla-serena.svg'
           WHEN 'Familiar Deluxe' THEN 'familiar-deluxe.svg'
-          ELSE 'suite-ejecutiva.svg'
+          ELSE 'doble-confort.svg'
         END AS HabitacionIncluidaImagen,
       s.NombreServicio AS ServicioIncluidoNombre,
       s.Descripcion AS ServicioIncluidoDescripcion
@@ -43,18 +41,16 @@ const obtenerPorId = (id) => {
         h.Descripcion AS HabitacionIncluidaDescripcion,
         h.Costo AS HabitacionIncluidaCosto,
         CASE h.NombreHabitacion
-          WHEN 'Suite' THEN 3
           WHEN 'Doble' THEN 2
           WHEN 'Sencilla' THEN 1
           WHEN 'Familiar Deluxe' THEN 5
           ELSE 2
         END AS HabitacionIncluidaCapacidad,
         CASE h.NombreHabitacion
-          WHEN 'Suite' THEN 'suite-ejecutiva.svg'
           WHEN 'Doble' THEN 'doble-confort.svg'
           WHEN 'Sencilla' THEN 'sencilla-serena.svg'
           WHEN 'Familiar Deluxe' THEN 'familiar-deluxe.svg'
-          ELSE 'suite-ejecutiva.svg'
+          ELSE 'doble-confort.svg'
         END AS HabitacionIncluidaImagen
       FROM paquetes p
       LEFT JOIN habitacion h

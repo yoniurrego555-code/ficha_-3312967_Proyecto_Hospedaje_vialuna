@@ -44,7 +44,8 @@ const modules = {
   'paquetes': () => import('../dashboard/modules/paquetes.js').then(m => m.renderPaquetes),
   'pagos': () => import('../dashboard/modules/pagos.js').then(m => m.renderPagos),
   'reservas': () => import('../dashboard/modules/reservas-admin.js').then(m => m.renderReservas),
-  'roles-permisos': () => import('../dashboard/modules/roles-permisos.js').then(m => m.renderRolesPermisos)
+  'roles-permisos': () => import('../dashboard/modules/roles-permisos.js').then(m => m.renderRolesPermisos),
+  'usuarios': () => import('../dashboard/modules/usuarios.js').then(m => m.renderUsuarios)
 };
 
 // HTML templates mapping (fetching from external files)
@@ -56,7 +57,8 @@ const htmlTemplates = {
   'paquetes': () => fetch('../public/paquetes.html').then(r => r.text()),
   'pagos': () => fetch('../public/pagos.html').then(r => r.text()),
   'reservas': () => fetch('../public/reservas.html').then(r => r.text()),
-  'roles-permisos': () => fetch('../public/roles-permisos.html').then(r => r.text())
+  'roles-permisos': () => fetch('../public/roles-permisos.html').then(r => r.text()),
+  'usuarios': () => fetch('../public/usuarios.html').then(r => r.text())
 };
 
 export async function cargarVista(vista) {
@@ -152,6 +154,77 @@ document.addEventListener('DOMContentLoaded', () => {
   const initialHash = window.location.hash.slice(1) || 'dashboard';
   const initialView = initialHash.split('?')[0];
   cargarVista(initialView);
+
+  // Sidebar Toggle Functionality
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  
+  console.log('🔍 Sidebar elements found:');
+  console.log('  - sidebarToggle:', sidebarToggle);
+  console.log('  - sidebar:', sidebar);
+  console.log('  - sidebarOverlay:', sidebarOverlay);
+  
+  function toggleSidebar() {
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile) {
+      const isActive = sidebar.classList.contains('active');
+      if (isActive) {
+        sidebar.classList.remove('active');
+        sidebarToggle.classList.remove('active');
+        sidebarOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+      } else {
+        sidebar.classList.add('active');
+        sidebarToggle.classList.add('active');
+        sidebarOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    } else {
+      // Desktop behavior
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      if (isCollapsed) {
+        sidebar.classList.remove('collapsed');
+        sidebarToggle.classList.remove('active'); // active means crossed (X) for hamburger icon if we want
+      } else {
+        sidebar.classList.add('collapsed');
+        sidebarToggle.classList.add('active');
+      }
+    }
+  }
+  
+  function closeSidebar() {
+    sidebar.classList.remove('active');
+    sidebarToggle.classList.remove('active');
+    sidebarOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  
+  // Event listeners for sidebar toggle
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', toggleSidebar);
+  }
+  
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', closeSidebar);
+  }
+  
+  // Close sidebar when clicking outside on mobile
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768) {
+      if (!sidebar.contains(e.target) && !sidebarToggle.contains(e.target)) {
+        closeSidebar();
+      }
+    }
+  });
+  
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      closeSidebar();
+    }
+  });
 
   // Botón de logout
   const logoutBtn = document.getElementById('logoutBtn');

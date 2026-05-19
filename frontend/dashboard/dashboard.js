@@ -120,16 +120,40 @@ export class DashboardModule {
     recentReservationsTable.innerHTML = recentReservations.map(reserva => {
       const cliente = this.currentData.clientes.find(c => c.id_cliente == reserva.id_cliente);
       const habitacion = this.currentData.habitaciones.find(h => h.id_habitacion == reserva.id_habitacion);
+      const status = String(reserva.Estado || reserva.estado || '1');
       
       return `
         <tr>
-          <td>#${reserva.id_reserva}</td>
-          <td>${cliente ? (cliente.NombreCompleto || `${cliente.Nombres || ''} ${cliente.Apellidos || ''}`.trim() || 'Cliente sin nombre') : reserva.nr_documento || "Sin cliente"}</td>
-          <td>${habitacion ? (habitacion.numero || habitacion.Numero || 'N/A') : "Sin habitación"}</td>
-          <td>${reserva.fecha_inicio || "N/A"}</td>
-          <td>${reserva.fecha_fin || "N/A"}</td>
-          <td><span class="status-badge ${this.getStatusClass(reserva.Estado)}">${this.getStatusText(reserva.Estado)}</span></td>
-          <td>$${this.formatCurrency(reserva.total || 0)}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="width: 32px; height: 32px; background: rgba(61, 124, 98, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--brand-deep); font-weight: 700; font-size: 0.8rem;">
+                ${cliente ? (cliente.NombreCompleto || cliente.Nombres || 'C').charAt(0).toUpperCase() : 'C'}
+              </div>
+              <div>
+                <div style="font-weight: 600; font-size: 0.9rem;">${cliente ? (cliente.NombreCompleto || `${cliente.Nombres || ''} ${cliente.Apellidos || ''}`.trim() || 'Cliente sin nombre') : reserva.nr_documento || "Sin cliente"}</div>
+                <div style="font-size: 0.75rem; color: var(--muted);">${cliente ? cliente.Email : ''}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="status-pill pill-info" style="font-size: 0.75rem;">${habitacion ? (habitacion.numero || habitacion.Numero || 'N/A') : "---"}</span>
+          </td>
+          <td style="font-size: 0.85rem;">${reserva.fecha_inicio || "N/A"}</td>
+          <td style="font-size: 0.85rem;">${reserva.fecha_fin || "N/A"}</td>
+          <td>
+            <div class="status-toggle-wrapper">
+              <label class="switch">
+                <input type="checkbox" ${status == '1' ? 'checked' : ''} 
+                       ${status == '3' ? 'disabled' : ''}
+                       onchange="const resId = ${reserva.id_reserva || reserva.IDReserva || reserva.IdReserva || reserva.id || 'null'}; if(resId) window.dashboardModule.changeStatusFromTable(resId, this.checked ? 1 : 2)">
+                <span class="slider"></span>
+              </label>
+              <span class="status-pill ${status == '1' ? 'pill-active' : status == '2' ? 'pill-inactive' : 'pill-info'}">
+                ${this.getStatusText(status)}
+              </span>
+            </div>
+          </td>
+          <td style="font-weight: 700; color: var(--brand);">$${this.formatCurrency(reserva.total || 0)}</td>
         </tr>
       `;
     }).join('');
@@ -158,16 +182,14 @@ export class DashboardModule {
   getStatusText(estado) {
     const statusMap = {
       '1': 'Activa',
-      '2': 'Completada',
-      '3': 'Cancelada',
+      '2': 'Cancelada',
+      '3': 'Finalizada',
       'activo': 'Activa',
-      'completada': 'Completada',
-      'cancelada': 'Cancelada',
-      'active': 'Activa',
-      'completed': 'Completada',
-      'cancelled': 'Cancelada'
+      'completada': 'Finalizada',
+      'finalizada': 'Finalizada',
+      'cancelada': 'Cancelada'
     };
-    return statusMap[String(estado).toLowerCase()] || 'Activa';
+    return statusMap[String(estado).toLowerCase()] || estado || 'Desconocido';
   }
 
   // Update current date
@@ -176,6 +198,48 @@ export class DashboardModule {
     if (dateEl) {
       const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
       dateEl.textContent = new Date().toLocaleDateString('es-ES', options);
+    }
+  }
+
+  // Change status directly from table
+  async changeStatusFromTable(id, newStatus) {
+    try {
+      const { actualizarReserva, getReservas } = await import("./core/api.js");
+      if (!id || id === 'undefined' || id === 'null') {
+        throw new Error('ID de reserva no válido');
+      }
+      
+      const reserva = this.currentData.reservas.find(r => (r.id_reserva || r.IDReserva || r.IdReserva || r.id) == id);
+      if (!reserva) throw new Error('Reserva no encontrada localmente');
+
+      console.log(`[Dashboard] Cambiando estado de reserva ${id} a ${newStatus}`);
+      
+      const formData = {
+        id_cliente: reserva.id_cliente || reserva.IDCliente || (reserva.cliente ? reserva.cliente.id : null),
+        id_habitacion: reserva.id_habitacion || reserva.IDHabitacion || (reserva.habitacion ? reserva.habitacion.id : null),
+        fecha_inicio: reserva.fecha_inicio || reserva.FechaInicio,
+        fecha_fin: reserva.fecha_fin || reserva.FechaFin,
+        hora_entrada: reserva.hora_entrada || reserva.HoraEntrada || '14:00',
+        hora_salida: reserva.hora_salida || reserva.HoraSalida || '12:00',
+        id_metodo_pago: reserva.id_metodo_pago || reserva.IDMetodoPago || (reserva.metodoPago ? reserva.metodoPago.id : 1),
+        id_estado_reserva: parseInt(newStatus),
+        total: reserva.total || reserva.Total
+      };
+
+      await actualizarReserva(id, formData);
+      
+      // Recargar datos y re-renderizar la vista actual
+      const nuevasReservas = await getReservas();
+      this.currentData.reservas = nuevasReservas;
+      
+      this.updateMetrics(this.currentData.clientes, this.currentData.habitaciones, this.currentData.paquetes, this.currentData.servicios, nuevasReservas);
+      this.renderRecentReservationsTable();
+      
+      console.log('Estado actualizado correctamente en Dashboard');
+    } catch (error) {
+      console.error('Error al cambiar estado desde Dashboard:', error);
+      alert('No se pudo actualizar el estado de la reserva');
+      this.renderRecentReservationsTable();
     }
   }
 

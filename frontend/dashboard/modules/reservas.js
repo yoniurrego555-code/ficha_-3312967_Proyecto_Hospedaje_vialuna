@@ -176,7 +176,7 @@ function getRoomStayTotal(room = getSelectedRoom()) {
 
 function resolveRoomImage(imageName) {
   if (!imageName) {
-    return getAppUrl("assets/images/rooms/suite-ejecutiva.svg");
+    return getAppUrl("assets/images/rooms/doble-confort.svg");
   }
 
   if (String(imageName).startsWith("http")) {

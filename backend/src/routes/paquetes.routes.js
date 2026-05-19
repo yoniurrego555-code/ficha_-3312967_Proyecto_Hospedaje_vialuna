@@ -3,10 +3,10 @@ const router = express.Router();
 const controller = require("../controllers/paquetes.controller");
 const { authenticateToken } = require("../middlewares/auth.Middleware");
 
-router.get("/", authenticateToken, controller.listar);
+router.get("/", controller.listar);
 
 // 🔥 ESTA LÍNEA ES LA QUE FALTA
-router.get("/:id", authenticateToken, controller.obtener);
+router.get("/:id", controller.obtener);
 
 router.post("/", authenticateToken, controller.crear);
 router.put("/:id", authenticateToken, controller.actualizar);

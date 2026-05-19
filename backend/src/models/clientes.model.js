@@ -79,10 +79,11 @@ const crear = async (data) => {
 
   return db.query(
     `INSERT INTO clientes
-      (NroDocumento, Nombre, Apellido, Direccion, Email, Telefono, Contrasena, Estado, IDRol)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (NroDocumento, TipoDocumento, Nombre, Apellido, Direccion, Email, Telefono, Contrasena, Estado, IDRol)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.NroDocumento,
+      data.TipoDocumento || "CC",
       data.Nombre,
       data.Apellido,
       data.Direccion,
@@ -99,9 +100,10 @@ const crear = async (data) => {
 const actualizar = (id, data) => {
   return db.query(
     `UPDATE clientes SET
-      Nombre = ?, Apellido = ?, Direccion = ?, Email = ?, Telefono = ?, Estado = ?, IDRol = ?
+      TipoDocumento = ?, Nombre = ?, Apellido = ?, Direccion = ?, Email = ?, Telefono = ?, Estado = ?, IDRol = ?
      WHERE NroDocumento = ?`,
     [
+      data.TipoDocumento || "CC",
       data.Nombre,
       data.Apellido,
       data.Direccion,

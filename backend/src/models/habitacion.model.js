@@ -1,28 +1,55 @@
 const db = require("../config/db");
 
+function normalizeEstado(value) {
+  const map = {
+    disponible: 1,
+    reservada: 2,
+    ocupada: 3,
+    mantenimiento: 4,
+    activo: 1,
+    inactivo: 0,
+    '1': 1,
+    '0': 0
+  };
+
+  if (value == null) {
+    return 1;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+  const parsed = Number(normalized);
+
+  if (!Number.isNaN(parsed) && normalized !== '') {
+    return parsed;
+  }
+
+  return map[normalized] ?? 1;
+}
+
+function normalizeCapacidad(data) {
+  const capacidadValue = data.CapacidadMaximaPersonas ?? data.capacidad ?? data.capacidadMaximaPersonas ?? data.Capacidad;
+  const parsed = Number(capacidadValue);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+}
+
 const obtener = () => {
   return db.query(
     `SELECT
       IDHabitacion,
       NombreHabitacion,
       ImagenHabitacion,
-      CASE NombreHabitacion
-        WHEN 'Suite' THEN 'suite-ejecutiva.svg'
-        WHEN 'Doble' THEN 'doble-confort.svg'
-        WHEN 'Sencilla' THEN 'sencilla-serena.svg'
-        WHEN 'Familiar Deluxe' THEN 'familiar-deluxe.svg'
-        ELSE 'suite-ejecutiva.svg'
-      END AS ImagenUrl,
+      ImagenUrl,
       Descripcion,
       Costo,
-      CASE NombreHabitacion
-        WHEN 'Suite' THEN 3
-        WHEN 'Doble' THEN 2
-        WHEN 'Sencilla' THEN 1
-        WHEN 'Familiar Deluxe' THEN 5
-        ELSE 2
-      END AS CapacidadMaximaPersonas,
-      Estado
+      CapacidadMaximaPersonas,
+      Estado,
+      CASE Estado
+        WHEN 1 THEN 'disponible'
+        WHEN 2 THEN 'reservada'
+        WHEN 3 THEN 'ocupada'
+        WHEN 4 THEN 'mantenimiento'
+        ELSE 'desconocido'
+      END AS estado
     FROM habitacion
     ORDER BY Costo DESC`
   )
@@ -35,23 +62,18 @@ const obtenerPorId = (id) => {
       IDHabitacion,
       NombreHabitacion,
       ImagenHabitacion,
-      CASE NombreHabitacion
-        WHEN 'Suite' THEN 'suite-ejecutiva.svg'
-        WHEN 'Doble' THEN 'doble-confort.svg'
-        WHEN 'Sencilla' THEN 'sencilla-serena.svg'
-        WHEN 'Familiar Deluxe' THEN 'familiar-deluxe.svg'
-        ELSE 'suite-ejecutiva.svg'
-      END AS ImagenUrl,
+      ImagenUrl,
       Descripcion,
       Costo,
-      CASE NombreHabitacion
-        WHEN 'Suite' THEN 3
-        WHEN 'Doble' THEN 2
-        WHEN 'Sencilla' THEN 1
-        WHEN 'Familiar Deluxe' THEN 5
-        ELSE 2
-      END AS CapacidadMaximaPersonas,
-      Estado
+      CapacidadMaximaPersonas,
+      Estado,
+      CASE Estado
+        WHEN 1 THEN 'disponible'
+        WHEN 2 THEN 'reservada'
+        WHEN 3 THEN 'ocupada'
+        WHEN 4 THEN 'mantenimiento'
+        ELSE 'desconocido'
+      END AS estado
     FROM habitacion
     WHERE IDHabitacion = ?`,
     [id]
@@ -62,14 +84,15 @@ const obtenerPorId = (id) => {
 const crear = (data) => {
   return db.query(
     `INSERT INTO habitacion
-    (NombreHabitacion, ImagenHabitacion, Descripcion, Costo, Estado)
-    VALUES (?, ?, ?, ?, ?)`,
+    (NombreHabitacion, ImagenHabitacion, Descripcion, Costo, CapacidadMaximaPersonas, Estado)
+    VALUES (?, ?, ?, ?, ?, ?)`,
     [
       data.NombreHabitacion,
       data.ImagenHabitacion || null,
       data.Descripcion,
       data.Costo,
-      data.Estado
+      normalizeCapacidad(data),
+      normalizeEstado(data.Estado)
     ]
   )
   .then(([result]) => result);
@@ -78,14 +101,15 @@ const crear = (data) => {
 const actualizar = (id, data) => {
   return db.query(
     `UPDATE habitacion SET 
-    NombreHabitacion = ?, ImagenHabitacion = ?, Descripcion = ?, Costo = ?, Estado = ?
+    NombreHabitacion = ?, ImagenHabitacion = ?, Descripcion = ?, Costo = ?, CapacidadMaximaPersonas = ?, Estado = ?
     WHERE IDHabitacion = ?`,
     [
       data.NombreHabitacion,
       data.ImagenHabitacion || null,
       data.Descripcion,
       data.Costo,
-      data.Estado,
+      normalizeCapacidad(data),
+      normalizeEstado(data.Estado),
       id
     ]
   )

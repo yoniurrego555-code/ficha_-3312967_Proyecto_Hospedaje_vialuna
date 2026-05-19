@@ -1,133 +1,99 @@
-      <!-- Dashboard Header -->
-      <header class="module-header">
-        <div class="header-left">
-          <h1>Dashboard</h1>
-          <p>Panel de control del hotel</p>
-        </div>
-        <div class="header-right">
-          <span id="currentDate" class="current-date"></span>
-        </div>
-      </header>
+<div class="welcome-banner">
+  <div class="welcome-content">
+    <h2>¡Bienvenido, Administrador!</h2>
+    <p>Aquí tienes un resumen de la actividad de Via Luna para el día de hoy. Gestiona tus reservas y huéspedes con facilidad.</p>
+  </div>
+</div>
 
-      <!-- Metrics Grid -->
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Total Reservas</div>
-            <div class="metric-icon blue">📋</div>
-          </div>
-          <div class="metric-value" id="totalReservations">0</div>
-          <div class="metric-change">
-            <span>📊</span> Total del sistema
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Reservas Activas</div>
-            <div class="metric-icon green">✅</div>
-          </div>
-          <div class="metric-value" id="activeReservations">0</div>
-          <div class="metric-change positive">
-            <span>↑</span> En curso
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Habitaciones Ocupadas</div>
-            <div class="metric-icon amber">🛏️</div>
-          </div>
-          <div class="metric-value" id="occupiedRooms">0</div>
-          <div class="metric-change">
-            <span>🏨</span> Ocupación actual
-          </div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Ingresos Mensuales</div>
-            <div class="metric-icon purple">💰</div>
-          </div>
-          <div class="metric-value" id="monthlyRevenue">$0</div>
-          <div class="metric-change positive">
-            <span>📈</span> Este mes
-          </div>
-        </div>
-      </div>
+<!-- Metrics Grid with Glassmorphism -->
+<div class="metrics-grid">
+  <div class="glass-card metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Ocupación Total</div>
+      <div class="metric-icon" style="color: #3b82f6; background: rgba(59, 130, 246, 0.1); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">📊</div>
+    </div>
+    <div class="metric-value" id="totalReservations" style="font-size: 2rem; font-weight: 800; margin: 10px 0;">0</div>
+    <div class="metric-change" style="font-size: 0.8rem; color: var(--muted);">Capacidad actual del hotel</div>
+  </div>
+  
+  <div class="glass-card metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Check-ins Hoy</div>
+      <div class="metric-icon" style="color: #10b981; background: rgba(16, 185, 129, 0.1); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">✅</div>
+    </div>
+    <div class="metric-value" id="activeReservations" style="font-size: 2rem; font-weight: 800; margin: 10px 0;">0</div>
+    <div class="metric-change positive" style="font-size: 0.8rem; color: #059669;">Llegadas programadas</div>
+  </div>
 
-      <!-- Charts Section -->
-      <div class="charts-section">
-        <div class="chart-container">
-          <div class="chart-placeholder">
-            <div class="chart-placeholder-icon">📊</div>
-            <h3>Ingresos Mensuales</h3>
-            <p>Gráfico de ingresos de los últimos 6 meses</p>
-          </div>
-        </div>
-        <div class="chart-container">
-          <div class="chart-placeholder">
-            <div class="chart-placeholder-icon">📈</div>
-            <h3>Tendencia de Reservas</h3>
-            <p>Gráfico de reservas por semana</p>
-          </div>
-        </div>
-      </div>
+  <div class="glass-card metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Disponibilidad</div>
+      <div class="metric-icon" style="color: #f59e0b; background: rgba(245, 158, 11, 0.1); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">🏨</div>
+    </div>
+    <div class="metric-value" id="occupiedRooms" style="font-size: 2rem; font-weight: 800; margin: 10px 0;">0</div>
+    <div class="metric-change" style="font-size: 0.8rem; color: var(--muted);">Habitaciones libres</div>
+  </div>
 
-      <!-- Recent Reservations -->
-      <div class="recent-reservations">
-        <div class="table-card">
-          <div class="table-header">
-            <h3 class="table-title">Reservas Recientes</h3>
-            <div class="table-actions">
-              <button class="btn-secondary" onclick="window.location.hash='reservas'">
-                <span>📋</span> Ver Todas
-              </button>
-            </div>
-          </div>
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Cliente</th>
-                  <th>Habitación</th>
-                  <th>Check-in</th>
-                  <th>Check-out</th>
-                  <th>Estado</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody id="recentReservationsTable">
-                <tr><td colspan="7" class="text-center">Cargando...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+  <div class="glass-card metric-card">
+    <div class="metric-header">
+      <div class="metric-title">Ingresos Mensuales</div>
+      <div class="metric-icon" style="color: #8b5cf6; background: rgba(139, 92, 246, 0.1); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">💰</div>
+    </div>
+    <div class="metric-value" id="monthlyRevenue" style="font-size: 2rem; font-weight: 800; margin: 10px 0;">$0</div>
+    <div class="metric-change positive" style="font-size: 0.8rem; color: #059669;">↑ 12% vs mes anterior</div>
+  </div>
+</div>
 
-      <!-- Quick Actions -->
-      <div class="quick-actions">
-        <div class="section-header">
-          <h3>Accesos Rápidos</h3>
-        </div>
-        <div class="actions-grid">
-          <div class="action-card" onclick="window.location.hash='reservas'">
-            <div class="action-icon">📋</div>
-            <div class="action-title">Ver Reservas</div>
-            <div class="action-description">Gestionar todas las reservas</div>
-          </div>
-          <div class="action-card" onclick="window.location.hash='habitaciones'">
-            <div class="action-icon">🏨</div>
-            <div class="action-title">Habitaciones</div>
-            <div class="action-description">Gestionar habitaciones</div>
-          </div>
-          <div class="action-card" onclick="window.location.hash='clientes'">
-            <div class="action-icon">👥</div>
-            <div class="action-title">Clientes</div>
-            <div class="action-description">Ver lista de clientes</div>
-          </div>
-          <div class="action-card" onclick="window.location.hash='servicios'">
-            <div class="action-icon">🔧</div>
-            <div class="action-title">Servicios</div>
-            <div class="action-description">Administrar servicios</div>
-          </div>
-        </div>
+<div class="dashboard-grid" style="margin-top: 2rem;">
+  <!-- Recent Reservations Table -->
+  <div class="table-card-modern" style="grid-column: span 2;">
+    <div class="section-panel-header" style="padding: 20px; border-bottom: 1px solid #f1f5f9;">
+      <h3 style="margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--brand-deep);">Reservas Recientes</h3>
+      <button class="btn-secondary" onclick="window.location.hash='reservas'" style="padding: 8px 16px; border-radius: 10px;">Ver Todas</button>
+    </div>
+    <table class="data-table-modern">
+      <thead>
+        <tr>
+          <th>Huésped</th>
+          <th>Habitación</th>
+          <th>Check-in</th>
+          <th>Check-out</th>
+          <th>Estado</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="recentReservationsTable">
+        <tr><td colspan="6" class="text-center" style="padding: 40px; color: var(--muted);">Cargando últimas reservas...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Quick Actions Side -->
+  <div class="glass-card" style="display: flex; flex-direction: column; gap: 1rem;">
+    <h3 style="margin: 0 0 10px 0; font-size: 1.1rem; font-weight: 700; color: var(--brand-deep);">Acciones Rápidas</h3>
+    
+    <div class="action-card-mini" onclick="window.location.hash='reservas'" style="display: flex; align-items: center; gap: 15px; padding: 15px; background: white; border-radius: 12px; border: 1px solid var(--line); cursor: pointer; transition: all 0.2s ease;">
+      <div style="font-size: 1.2rem;">📅</div>
+      <div>
+        <div style="font-weight: 600; font-size: 0.9rem;">Nueva Reserva</div>
+        <div style="font-size: 0.75rem; color: var(--muted);">Registrar huésped</div>
       </div>
+    </div>
+
+    <div class="action-card-mini" onclick="window.location.hash='habitaciones'" style="display: flex; align-items: center; gap: 15px; padding: 15px; background: white; border-radius: 12px; border: 1px solid var(--line); cursor: pointer; transition: all 0.2s ease;">
+      <div style="font-size: 1.2rem;">🏨</div>
+      <div>
+        <div style="font-weight: 600; font-size: 0.9rem;">Estado Habitaciones</div>
+        <div style="font-size: 0.75rem; color: var(--muted);">Ver disponibilidad</div>
+      </div>
+    </div>
+
+    <div class="action-card-mini" onclick="window.location.hash='reportes'" style="display: flex; align-items: center; gap: 15px; padding: 15px; background: white; border-radius: 12px; border: 1px solid var(--line); cursor: pointer; transition: all 0.2s ease;">
+      <div style="font-size: 1.2rem;">📈</div>
+      <div>
+        <div style="font-weight: 600; font-size: 0.9rem;">Reporte Mensual</div>
+        <div style="font-size: 0.75rem; color: var(--muted);">Descargar PDF</div>
+      </div>
+    </div>
+  </div>
+</div>

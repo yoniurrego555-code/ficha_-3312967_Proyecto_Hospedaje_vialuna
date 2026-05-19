@@ -1,29 +1,115 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Via Luna | Crear cuenta</title>
     <link rel="stylesheet" href="../css/public-theme.css">
+    <style>
+        .auth-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .auth-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .auth-field.full-width {
+            grid-column: span 2;
+        }
+
+        .auth-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .auth-icon-prefix {
+            position: absolute;
+            left: 15px;
+            color: var(--brand);
+            font-weight: 700;
+            font-size: 1rem;
+            pointer-events: none;
+            width: 20px;
+            text-align: center;
+        }
+
+        .auth-input-wrapper input {
+            padding-left: 45px;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .password-toggle:hover {
+            color: var(--brand);
+        }
+
+        .required-mark {
+            color: var(--danger);
+            margin-left: 2px;
+        }
+
+        .field-warning {
+            font-size: 0.75rem;
+            color: var(--danger);
+            margin-top: 2px;
+            display: none;
+        }
+
+        .auth-input-wrapper input:invalid:not(:placeholder-shown) {
+            border-color: var(--danger);
+        }
+
+        .auth-input-wrapper input:invalid:not(:placeholder-shown) + .field-warning {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .auth-grid {
+                grid-template-columns: 1fr;
+            }
+            .auth-field.full-width {
+                grid-column: span 1;
+            }
+        }
+    </style>
 </head>
+
 <body>
     <main class="auth-shell">
         <div class="auth-header">
-            <a class="button back-btn" href="index.html">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+            <a class="button back-btn" href="../index.html">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
                 Volver al inicio
             </a>
         </div>
-        
+
         <section class="split-card">
             <aside class="side-panel">
                 <div>
-                    <div class="badge">Registro</div>
-                    <h1>Crea tu cuenta y comienza tu experiencia</h1>
+                    <div class="badge">Registro de Clientes</div>
+                    <h1>Crea tu cuenta</h1>
                     <p>
-                        Únete a la comunidad de Via Luna para disfrutar de reservas rápidas, ofertas exclusivas y un servicio personalizado.
+                        Completa tus datos para reservar y acceder al portal de cliente.
                     </p>
                 </div>
 
@@ -51,222 +137,182 @@
 
                 <div class="side-actions">
                     <a class="button light" href="login.html">Ya tengo cuenta</a>
-                    <a class="button ghost" href="reservar.html">Explorar habitaciones</a>
+                    <a class="button ghost" href="../index.html#habitaciones">Explorar habitaciones</a>
                 </div>
             </aside>
 
             <section class="form-panel">
-                <h2>Crear nueva cuenta</h2>
-                <p>Completa tus datos para registrarte como cliente de Via Luna.</p>
+                <h2>Crear cuenta</h2>
+                <p>Completa tus datos para reservar y acceder al portal de cliente.</p>
 
                 <div class="form-card">
                     <form id="registerForm">
-                        <div class="field">
-                            <label for="nombre">Nombre completo</label>
-                            <input id="nombre" name="nombre" type="text" placeholder="Nombre y apellido" required>
-                        </div>
-
-                        <div class="field">
-                            <label for="email">Correo electrónico</label>
-                            <input id="email" name="email" type="email" placeholder="tu@ejemplo.com" required>
-                        </div>
-
-                        <div class="field-grid">
-                            <div class="field">
-                                <label for="password">Contraseña</label>
-                                <input id="password" name="password" type="password" placeholder="Mínimo 6 caracteres" required minlength="6">
+                        <div class="auth-grid">
+                            <div class="auth-field">
+                                <label for="nombre">Nombre <span class="required-mark">*</span></label>
+                                <div class="auth-input-wrapper">
+                                    <span class="auth-icon-prefix">N</span>
+                                    <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" required>
+                                </div>
+                                <span class="field-warning">El nombre es obligatorio</span>
                             </div>
-                            <div class="field">
-                                <label for="confirmPassword">Confirmar contraseña</label>
-                                <input id="confirmPassword" name="confirmPassword" type="password" placeholder="Repite la contraseña" required minlength="6">
+
+                            <div class="auth-field">
+                                <label for="apellido">Apellido <span class="required-mark">*</span></label>
+                                <div class="auth-input-wrapper">
+                                    <span class="auth-icon-prefix">A</span>
+                                    <input type="text" id="apellido" name="apellido" placeholder="Tu apellido" required>
+                                </div>
+                                <span class="field-warning">El apellido es obligatorio</span>
+                            </div>
+
+                            <div class="auth-field">
+                                <label for="tipo_documento">Tipo de Documento <span class="required-mark">*</span></label>
+                                <div class="auth-input-wrapper">
+                                    <span class="auth-icon-prefix">ID</span>
+                                    <select id="tipo_documento" name="tipo_documento" required style="padding-left: 45px; height: 45px; width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; appearance: none; background: white;">
+                                        <option value="CC">Cédula de Ciudadanía</option>
+                                        <option value="TI">Tarjeta de Identidad</option>
+                                        <option value="CE">Cédula de Extranjería</option>
+                                        <option value="Pasaporte">Pasaporte</option>
+                                    </select>
+                                </div>
+                                <span class="field-warning">El tipo de documento es obligatorio</span>
+                            </div>
+
+                            <div class="auth-field">
+                                <label for="documento">Documento <span class="required-mark">*</span></label>
+                                <div class="auth-input-wrapper">
+                                    <span class="auth-icon-prefix">#</span>
+                                    <input type="text" id="documento" name="documento" placeholder="Número de documento" required>
+                                </div>
+                                <span class="field-warning">El documento es obligatorio</span>
+                            </div>
+
+                            <div class="auth-field">
+                                <label for="telefono">Teléfono <span class="required-mark">*</span></label>
+                                <div class="auth-input-wrapper">
+                                    <span class="auth-icon-prefix">T</span>
+                                    <input type="tel" id="telefono" name="telefono" placeholder="300 123 4567" required>
+                                </div>
+                                <span class="field-warning">El teléfono es obligatorio</span>
+                            </div>
+
+                            <div class="auth-field full-width">
+                                <label for="direccion">Dirección</label>
+                                <div class="auth-input-wrapper">
+                                    <span class="auth-icon-prefix">D</span>
+                                    <input type="text" id="direccion" name="direccion" placeholder="Calle, Carrera, Ciudad">
+                                </div>
+                            </div>
+
+                            <div class="auth-field full-width">
+                                <label for="email">Correo electrónico <span class="required-mark">*</span></label>
+                                <div class="auth-input-wrapper">
+                                    <span class="auth-icon-prefix">@</span>
+                                    <input type="email" id="email" name="email" placeholder="tu@ejemplo.com" required>
+                                </div>
+                                <span class="field-warning">Ingresa un correo válido</span>
+                            </div>
+
+                            <div class="auth-field full-width">
+                                <label for="password">Contraseña <span class="required-mark">*</span></label>
+                                <div class="auth-input-wrapper">
+                                    <span class="auth-icon-prefix">*</span>
+                                    <input type="password" id="password" name="password" placeholder="Mínimo 6 caracteres" required minlength="6">
+                                    <button type="button" class="password-toggle" id="togglePassword">Mostrar</button>
+                                </div>
+                                <span class="field-warning">La contraseña debe tener al menos 6 caracteres</span>
                             </div>
                         </div>
 
-                        <p class="helper">Tu cuenta se registrará con rol de usuario para el flujo público de reserva.</p>
+                        <div id="message" class="message"></div>
 
-                        <button class="button primary" id="submitButton" type="submit">
+                        <button class="button primary" id="submitButton" type="submit" style="width: 100%; margin-top: 25px;">
                             Crear cuenta
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                <circle cx="8.5" cy="7" r="4"/>
-                                <line x1="20" y1="8" x2="20" y2="14"/>
-                                <line x1="23" y1="11" x2="17" y2="11"/>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                <circle cx="8.5" cy="7" r="4" />
+                                <line x1="20" y1="8" x2="20" y2="14" />
+                                <line x1="23" y1="11" x2="17" y2="11" />
                             </svg>
                         </button>
                     </form>
 
-                    <div id="message" class="message"></div>
-
                     <div class="support-links">
                         <a href="login.html">Ya tengo cuenta</a>
                         <a href="recuperar.html">Olvidé mi contraseña</a>
-                        <a href="eliminar-cuenta.html">Eliminar cuenta</a>
                     </div>
-                </div>
-
-                <div class="auth-banner">
-                    <strong>¿Por qué registrarte?</strong>
-                    <p>Como miembro de Via Luna, obtienes acceso a precios especiales, notificaciones anticipadas de promociones y un equipo de atención dedicado para hacer de cada estancia una experiencia inolvidable.</p>
                 </div>
             </section>
         </section>
     </main>
 
     <script type="module">
-        import { apiUrl, getConnectionErrorMessage } from '../js/shared/api-config.js';
+        import { registrarUsuario } from '../js/usuarios.js';
 
-        const redirectParam = new URLSearchParams(window.location.search).get('redirect');
         const form = document.getElementById('registerForm');
         const message = document.getElementById('message');
         const submitButton = document.getElementById('submitButton');
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
 
         function showMessage(text, type) {
             message.textContent = text;
             message.className = `message show ${type}`;
         }
 
+        // Toggle Password Visibility
+        togglePassword.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            togglePassword.textContent = isPassword ? 'Ocultar' : 'Mostrar';
+        });
+
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
-            message.className = 'message';
-            message.textContent = '';
-
-            if (form.password.value !== form.confirmPassword.value) {
-                showMessage('Las contrasenas no coinciden.', 'error');
+            
+            // Basic validation
+            if (!form.checkValidity()) {
+                showMessage('Por favor, completa todos los campos requeridos correctamente.', 'error');
                 return;
             }
 
             submitButton.disabled = true;
-            submitButton.textContent = 'Creando cuenta...';
+            submitButton.innerHTML = 'Creando cuenta... <span class="spinner"></span>';
+            message.className = 'message';
+            message.textContent = '';
 
             try {
-                let response;
+                const payload = {
+                    nombre: form.nombre.value.trim(),
+                    apellido: form.apellido.value.trim(),
+                    tipo_documento: form.tipo_documento.value,
+                    documento: form.documento.value.trim(),
+                    telefono: form.telefono.value.trim(),
+                    direccion: form.direccion.value.trim(),
+                    email: form.email.value.trim(),
+                    password: form.password.value,
+                    IDRol: 2
+                };
 
-                try {
-                    response = await fetch(apiUrl('usuarios'), {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            nombre: form.nombre.value.trim(),
-                            email: form.email.value.trim(),
-                            password: form.password.value,
-                            rol: 'usuario'
-                        })
-                    });
-                } catch (error) {
-                    if (error instanceof TypeError) {
-                        throw new Error(getConnectionErrorMessage('la API de usuarios'));
-                    }
-                    throw error;
-                }
+                await registrarUsuario(payload);
 
-                const data = await response.json().catch(() => ({}));
-
-                if (!response.ok || !data.ok) {
-                    throw new Error(data.mensaje || data.error || 'No fue posible crear la cuenta');
-                }
-
-                showMessage('Cuenta creada correctamente. Te llevaremos a iniciar sesion.', 'success');
+                showMessage('¡Cuenta creada con éxito! Redirigiendo al inicio de sesión...', 'success');
                 form.reset();
 
-                window.setTimeout(() => {
-                    window.location.href = redirectParam
-                        ? `login.html?redirect=${encodeURIComponent(redirectParam)}`
-                        : 'login.html';
-                }, 1200);
+                setTimeout(() => {
+                    window.location.href = 'login.html?registered=true';
+                }, 2000);
+
             } catch (error) {
-                showMessage(error.message || 'Ocurrio un error al crear la cuenta.', 'error');
-            } finally {
+                showMessage(error.message || 'Error al crear la cuenta. Inténtalo de nuevo.', 'error');
                 submitButton.disabled = false;
                 submitButton.textContent = 'Crear cuenta';
             }
         });
     </script>
-=======
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registro | ViaLuna</title>
-  <link rel="stylesheet" href="../styles/login.css">
-</head>
-<body>
-  <main class="auth-shell">
-    <section class="auth-panel auth-panel--wide">
-      <div class="auth-brand">
-        <span class="auth-chip">Registro de clientes</span>
-        <h1>Crear cuenta</h1>
-        <p>Completa tus datos para reservar y acceder al portal de cliente.</p>
-      </div>
-
-      <form id="registroForm" class="auth-form">
-        <div class="auth-grid">
-          <div class="auth-field">
-            <label for="nombre">Nombre</label>
-            <div class="auth-input">
-              <span class="auth-icon">N</span>
-              <input type="text" id="nombre" required>
-            </div>
-          </div>
-
-          <div class="auth-field">
-            <label for="apellido">Apellido</label>
-            <div class="auth-input">
-              <span class="auth-icon">A</span>
-              <input type="text" id="apellido" required>
-            </div>
-          </div>
-
-          <div class="auth-field">
-            <label for="documento">Documento</label>
-            <div class="auth-input">
-              <span class="auth-icon">#</span>
-              <input type="text" id="documento" required>
-            </div>
-          </div>
-
-          <div class="auth-field">
-            <label for="telefono">Teléfono</label>
-            <div class="auth-input">
-              <span class="auth-icon">T</span>
-              <input type="tel" id="telefono" required>
-            </div>
-          </div>
-
-          <div class="auth-field auth-field--full">
-            <label for="direccion">Dirección</label>
-            <div class="auth-input">
-              <span class="auth-icon">D</span>
-              <input type="text" id="direccion">
-            </div>
-          </div>
-
-          <div class="auth-field">
-            <label for="email">Correo electrónico</label>
-            <div class="auth-input">
-              <span class="auth-icon">@</span>
-              <input type="email" id="email" autocomplete="email" required>
-            </div>
-          </div>
-
-          <div class="auth-field">
-            <label for="password">Contraseña</label>
-            <div class="auth-input">
-              <span class="auth-icon">*</span>
-              <input type="password" id="password" minlength="6" autocomplete="new-password" required>
-              <button type="button" id="toggleRegisterPassword">Mostrar</button>
-            </div>
-          </div>
-        </div>
-
-        <p id="registroFeedback" class="feedback" aria-live="polite"></p>
-
-        <div class="auth-actions">
-          <button type="submit" class="btn btn-primary">Registrarse</button>
-          <a class="btn btn-secondary" href="login.html">Volver al login</a>
-        </div>
-      </form>
-    </section>
-  </main>
-
-  <script type="module" src="../dashboard/core/auth.js"></script>
->>>>>>> 0e0a6ca006747a8b66194f972a2a4bebc4c44336
 </body>
+
 </html>

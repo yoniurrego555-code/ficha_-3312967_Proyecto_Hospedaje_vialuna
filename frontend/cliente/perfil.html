@@ -51,6 +51,19 @@
           </div>
           <form id="perfilForm">
             <div class="field">
+              <label>Tipo de Documento</label>
+              <select id="tipo_documento" name="tipo_documento" required>
+                <option value="CC">Cédula de Ciudadanía</option>
+                <option value="TI">Tarjeta de Identidad</option>
+                <option value="CE">Cédula de Extranjería</option>
+                <option value="Pasaporte">Pasaporte</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Número de Documento (No editable)</label>
+              <input type="text" id="documento" readonly style="background: #f0f0f0;">
+            </div>
+            <div class="field">
               <label>Nombres</label>
               <input type="text" id="nombres" name="nombres" required>
             </div>

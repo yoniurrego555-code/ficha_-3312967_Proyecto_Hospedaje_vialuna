@@ -1,61 +1,358 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ViaLuna</title>
-  <link rel="stylesheet" href="./styles/dashboard-visily.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Via Luna | Hospedaje Boutique</title>
+    <!-- Redirección inteligente -->
+    <script type="module">
+        import { getSession, isAdminSession, isClientSession } from "./dashboard/core/api.js";
+        const session = getSession();
+        if (session) {
+            if (isAdminSession(session)) window.location.replace("./pages/dashboard-admin.html");
+            else if (isClientSession(session)) window.location.replace("./cliente/dashboard.html");
+        }
+    </script>
+    <link rel="stylesheet" href="./css/public-theme.css">
+    <style>
+        .parallax-section {
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('./vialuna_boutique_banner_1778856256813.png');
+            height: 400px;
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            margin: 4rem 0;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .parallax-content h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .parallax-content p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+
+        .room-card p,
+        .service-card p,
+        .package-card p {
+            height: auto !important;
+            -webkit-line-clamp: unset !important;
+            line-clamp: unset !important;
+            display: block !important;
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
+
 <body>
-  <main class="auth-layout">
-    <section class="auth-card">
-      <div class="auth-card__header">
-        <span class="badge">ViaLuna</span>
-        <h2>Preparando acceso</h2>
-        <p>Redirigiendo al panel correspondiente según tu rol.</p>
-      </div>
-    </section>
-  </main>
+    <header class="topbar">
+        <div class="page-shell topbar-inner">
+            <a class="brand" href="index.html">
+                <div class="brand-mark">VL</div>
+                <div class="brand-text">
+                    <strong>Via Luna</strong>
+                    <small>Hospedaje boutique para una estancia serena</small>
+                </div>
+            </a>
 
-  <script type="module">
-    import { getSession, isAdminSession, isClientSession } from "./dashboard/core/api.js";
-    import { LOGIN_URL } from "./dashboard/core/authGuard.js";
+            <nav class="nav" id="mainNav">
+                <a href="#habitaciones">Habitaciones</a>
+                <a href="#paquetes">Paquetes</a>
+                <a href="#servicios">Servicios</a>
+                <a href="pages/registro.html">Crear cuenta</a>
+                <a class="nav-cta" href="pages/login.html">Iniciar sesión</a>
+            </nav>
+        </div>
+    </header>
 
-    /**
-     * Redirección segura por rol
-     */
-    function redirectByRole(session) {
-      // 🔐 ADMIN
-      if (isAdminSession(session)) {
-        window.location.replace("./pages/dashboard-admin.html");
-        return;
-      }
+    <main class="page-shell">
+        <section class="hero">
+            <div class="hero-grid">
+                <article class="hero-copy">
+                    <div class="eyebrow">Experiencia de hospedaje</div>
+                    <h1>Una estancia real <em>con reserva guiada y segura</em></h1>
+                    <p>
+                        Via Luna presenta un hospedaje rural con catálogo real de habitaciones, paquetes y servicios.
+                        Puedes ver el detalle de cada opción y, cuando decidas reservar, inicia sesión desde la parte
+                        superior.
+                    </p>
 
-      // 👤 CLIENTE
-      if (isClientSession(session)) {
-        window.location.replace("./cliente/dashboard.html");
-        return;
-      }
+                    <div class="auth-banner" id="clientBanner" style="display:none; margin-bottom:18px;"></div>
 
-      // 🚫 Sin sesión válida, redirigir a la landing page
-      window.location.replace("./pages/index.html");
-    }
+                    <div class="hero-actions">
+                        <a class="button primary" href="pages/reservar.html">Ver disponibilidad</a>
+                        <a class="button secondary" href="pages/registro.html">Crear cuenta</a>
+                        <a class="button secondary" href="#habitaciones">Ver catálogo</a>
+                    </div>
 
-    /**
-     * Inicio seguro
-     */
-    function initRedirect() {
-      const session = getSession();
+                    <div class="stats-grid">
+                        <div class="summary-card visual-stat">
+                            <div class="stat-media stat-media-stay"></div>
+                            <span>Reserva</span>
+                            <strong>1 flujo</strong>
+                            <p>Login, selección, detalle y confirmación en una sola experiencia.</p>
+                        </div>
+                        <div class="summary-card visual-stat">
+                            <div class="stat-media stat-media-catalog"></div>
+                            <span>Catálogo</span>
+                            <strong>Real</strong>
+                            <p>La landing carga datos actuales de habitaciones, paquetes y servicios.</p>
+                        </div>
+                        <div class="summary-card visual-stat">
+                            <div class="stat-media stat-media-secure"></div>
+                            <span>Control</span>
+                            <strong>Seguro</strong>
+                            <p>La reserva se confirma solo después de iniciar sesión.</p>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
 
-      if (!session) {
-        window.location.replace("./pages/index.html");
-        return;
-      }
+        <section id="habitaciones" class="block">
+            <div class="section-head">
+                <div>
+                    <div class="section-tag">Habitaciones</div>
+                    <h2 class="section-title">Habitaciones</h2>
+                    <p class="section-copy">Explora nuestros espacios diseñados para tu máximo confort y desconexión.
+                    </p>
+                </div>
+                <a class="button secondary" href="pages/reservar.html">Ver catálogo completo</a>
+            </div>
 
-      redirectByRole(session);
-    }
+            <div id="roomsGrid" class="room-grid">
+                <div class="loading-card">Cargando habitaciones...</div>
+            </div>
+        </section>
 
-    initRedirect();
-  </script>
+        <!-- Nueva Sección Atractiva -->
+        <section class="parallax-section">
+            <div class="parallax-content">
+                <h2>Naturaleza y Elegancia</h2>
+                <p>Descubre el refugio perfecto donde el lujo rural se encuentra con la paz de las montañas. Una
+                    experiencia boutique diseñada para reconectar con lo esencial.</p>
+            </div>
+        </section>
+
+        <section id="paquetes" class="block">
+            <div class="section-head">
+                <div>
+                    <div class="section-tag">Paquetes</div>
+                    <h2 class="section-title">Paquetes para complementar tu estancia</h2>
+                    <p class="section-copy">Explora nuestros paquetes diseñados para hacer tu estancia inolvidable.</p>
+                </div>
+                <a class="button secondary" href="pages/reservar.html">Ver paquetes</a>
+            </div>
+
+            <div id="packagesGrid" class="package-grid">
+                <div class="loading-card">Cargando paquetes...</div>
+            </div>
+        </section>
+
+        <section id="servicios" class="block">
+            <div class="section-head">
+                <div>
+                    <div class="section-tag">Servicios</div>
+                    <h2 class="section-title">Servicios disponibles</h2>
+                    <p class="section-copy">Experiencias exclusivas cuidadas al detalle para tu satisfacción total.</p>
+                </div>
+                <a class="button secondary" href="pages/reservar.html">Ver servicios</a>
+            </div>
+
+            <div id="servicesGrid" class="service-grid">
+                <div class="loading-card">Cargando servicios...</div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="page-shell">
+        <div class="footer-box">
+            <p>&copy; 2026 Via Luna. Información real para una estancia auténtica.</p>
+            <a class="button secondary" href="pages/reservar.html">Empezar ahora</a>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { apiUrl, getConnectionErrorMessage } from './js/shared/api-config.js';
+
+        const roomsGrid = document.getElementById('roomsGrid');
+        const packagesGrid = document.getElementById('packagesGrid');
+        const servicesGrid = document.getElementById('servicesGrid');
+        const mainNav = document.getElementById('mainNav');
+        const clientBanner = document.getElementById('clientBanner');
+        const storedUser = JSON.parse(localStorage.getItem('usuario') || 'null');
+        const token = localStorage.getItem('token');
+
+        const fallbackRoomImage = 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80';
+        const fallbackPackageImage = 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=1200&q=80';
+        const fallbackServiceImage = 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80';
+
+        function formatMoney(value) {
+            return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Number(value || 0));
+        }
+
+        function slugify(text) {
+            return String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        }
+
+        function reserveLink(params) { return `pages/reservar.html?${params.toString()}`; }
+
+        function imageElement(src, fallback, alt) {
+            return `<img src="${src}" alt="${alt}" loading="lazy" onerror="this.onerror=null;this.src='${fallback}'">`;
+        }
+
+        function normalizeText(text) {
+            return String(text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function imageForRoom(item) {
+            const nombre = item.NombreHabitacion || item.nombre || '';
+            const desc = item.Descripcion || item.descripcion || '';
+            const text = normalizeText(`${nombre} ${desc}`);
+
+            if (text.includes('familiar')) return './assets/images/rooms/familiar.png';
+            if (text.includes('pareja') || text.includes('doble')) return './assets/images/rooms/parejas.png';
+            if (text.includes('individual') || text.includes('sencilla')) return './assets/images/rooms/individual.png';
+            return 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80';
+        }
+
+        function imageForPackage(item) {
+            const nombre = item.NombrePaquete || item.nombre || '';
+            const desc = item.Descripcion || item.descripcion || '';
+            const text = normalizeText(`${nombre} ${desc}`);
+
+            if (text.includes('romant')) return 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=1200&q=80';
+            if (text.includes('spa') || text.includes('bienestar')) return 'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=1200&q=80';
+            return fallbackPackageImage;
+        }
+
+        function imageForService(item) {
+            const nombre = item.NombreServicio || item.nombre || '';
+            const desc = item.Descripcion || item.descripcion || '';
+            const text = normalizeText(`${nombre} ${desc}`);
+
+            if (text.includes('spa') || text.includes('masaje')) return './assets/images/service/SPA.png';
+            if (text.includes('cabalg') || text.includes('caballo')) return './assets/images/service/cabalgata.png';
+            if (text.includes('recorrido') || text.includes('caminata')) return './assets/images/service/caminata.png';
+            return fallbackServiceImage;
+        }
+
+        function onlyAvailable(items, limit) {
+            return Array.isArray(items) ? items.filter((item) => String(item.estado || item.Estado || '').toLowerCase() === 'disponible').slice(0, limit) : [];
+        }
+
+        function renderRooms(items) {
+            if (!items.length) { roomsGrid.innerHTML = '<div class="loading-card">No hay habitaciones disponibles.</div>'; return; }
+            roomsGrid.innerHTML = items.map((item) => {
+                const nombre = item.NombreHabitacion || item.nombre || 'Habitación';
+                const precio = item.Costo || item.precio || 0;
+                const capacidad = item.CapacidadMaximaPersonas || item.capacidad || 1;
+                const dbDesc = item.Descripcion || item.descripcion || '';
+                const desc = `Disfruta de una estancia inolvidable en nuestras habitaciones diseñadas para tu máximo confort. ${dbDesc} Equipadas con amenidades de lujo y vistas panorámicas que capturan la esencia rural con un toque moderno.`;
+
+                return `
+                    <article class="room-card">
+                        <div class="card-media">
+                            ${imageElement(imageForRoom(item), './assets/room-cabin.svg', nombre)}
+                        </div>
+                        <h3>${nombre}</h3>
+                        <p>${desc}</p>
+                        <div class="price-line">
+                            <span>Capacidad: ${capacidad} pers.</span>
+                            <strong>${formatMoney(precio)}</strong>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function renderPackages(items) {
+            if (!items.length) { packagesGrid.innerHTML = '<div class="loading-card">No hay paquetes disponibles.</div>'; return; }
+            packagesGrid.innerHTML = items.map((item) => {
+                const nombre = item.NombrePaquete || item.nombre || 'Paquete';
+                const precio = item.Precio || item.precio || 0;
+                const dbDesc = item.Descripcion || item.descripcion || '';
+                const desc = `Experiencia diseñada para crear momentos únicos. ${dbDesc} Complementa tu estancia con detalles cuidados y servicios exclusivos pensados para tu satisfacción.`;
+
+                return `
+                    <article class="package-card">
+                        <div class="card-media">
+                            ${imageElement(imageForPackage(item), './assets/package-spa.svg', nombre)}
+                        </div>
+                        <h3>${nombre}</h3>
+                        <p>${desc}</p>
+                        <div class="price-line">
+                            <span>Valor paquete</span>
+                            <strong>${formatMoney(precio)}</strong>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function renderServices(items) {
+            if (!items.length) { servicesGrid.innerHTML = '<div class="loading-card">No hay servicios disponibles.</div>'; return; }
+            servicesGrid.innerHTML = items.map((item) => {
+                const nombre = item.NombreServicio || item.nombre || 'Servicio';
+                const precio = item.Costo || item.precio || 0;
+                const dbDesc = item.Descripcion || item.descripcion || '';
+                const desc = `Nuestros servicios están pensados para brindarte una experiencia completa de bienestar y aventura. ${dbDesc} Cada detalle está cuidado para que disfrutes de la serenidad de Via Luna al máximo.`;
+
+                return `
+                    <article class="service-card">
+                        <div class="card-media">
+                            ${imageElement(imageForService(item), './assets/service-adventure.svg', nombre)}
+                        </div>
+                        <h3>${nombre}</h3>
+                        <p>${desc}</p>
+                        <div class="price-line">
+                            <span>Valor servicio</span>
+                            <strong>${formatMoney(precio)}</strong>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        async function loadLandingData() {
+            try {
+                const [roomsRes, packagesRes, servicesRes] = await Promise.all([
+                    fetch(apiUrl('habitaciones')), fetch(apiUrl('paquetes')), fetch(apiUrl('servicios'))
+                ]);
+                const roomsData = await roomsRes.json();
+                const packagesData = await packagesRes.json();
+                const servicesData = await servicesRes.json();
+
+                const rooms = Array.isArray(roomsData) ? roomsData : (roomsData.data || []);
+                const packages = Array.isArray(packagesData) ? packagesData : (packagesData.data || []);
+                const services = Array.isArray(servicesData) ? servicesData : (servicesData.data || []);
+
+                renderRooms(rooms.slice(0, 3));
+                renderPackages(packages.slice(0, 6));
+                renderServices(services.slice(0, 8));
+            } catch (error) {
+                const msg = getConnectionErrorMessage();
+                roomsGrid.innerHTML = packagesGrid.innerHTML = servicesGrid.innerHTML = `<div class="loading-card">${msg}</div>`;
+            }
+        }
+
+        loadLandingData();
+    </script>
 </body>
+
 </html>

@@ -1,71 +1,83 @@
-<!-- Header Ultra Compacto -->
-<header class="module-header" style="margin-bottom: 8px;">
-  <div class="header-left">
-    <h1 style="margin: 0; font-size: 1.5rem; color: #1f2937;">Roles y Permisos</h1>
-    <p style="margin: 2px 0 0 0; color: #6b7280; font-size: 0.8rem;">Gestión de roles y permisos del sistema</p>
+<!-- ==========================================================================
+   VISTA DE ROLES Y PERMISOS - MODERNIZACIÓN DUAL DE 2 COLUMNAS (VIA LUNA)
+   ========================================================================== -->
+
+<!-- Header Section -->
+<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
+  <div>
+    <h1 class="text-2xl font-bold text-brand-deep tracking-tight m-0">Roles y Permisos</h1>
+    <p class="text-sm text-muted mt-1 m-0">Control de perfiles, privilegios y accesos administrativos del hotel.</p>
+  </div>
+  <div class="flex gap-2">
+    <button class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 cursor-pointer border-none text-xs" onclick="window.rolesPermisosModule.showNewRoleModal()">
+      <span>➕</span> Nuevo Rol
+    </button>
+    <button class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-light/10 text-brand-deep font-semibold hover:bg-brand-light/20 transition-all duration-300 cursor-pointer border-none text-xs" onclick="window.rolesPermisosModule.showNewPermissionModal()">
+      <span>🔑</span> Nuevo Permiso
+    </button>
   </div>
 </header>
 
-<!-- Two Column Layout Ultra Compacto -->
-<div class="roles-permisos-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 100%; height: calc(100vh - 120px); overflow: hidden;">
-
-<!-- SECCIÓN IZQUIERDA: ROLES -->
-<div class="roles-section" style="display: flex; flex-direction: column;">
-  <div class="section-card" style="background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); padding: 12px; border: 1px solid #e5e7eb; flex: 1; display: flex; flex-direction: column;">
-    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;">
-      <div style="min-width: 0; flex: 1;">
-        <h2 style="margin: 0; color: #1f2937; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-          👥 Roles
-          <span id="rolesCount" style="background: #3b82f6; color: white; padding: 1px 6px; border-radius: 10px; font-size: 0.65rem; font-weight: 500;">
-            0
-          </span>
-        </h2>
-      </div>
-      <button class="btn-primary-modern" onclick="window.rolesPermisosModule.showNuevoRol()" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; padding: 6px 10px; border-radius: 4px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 3px; font-size: 0.8rem; white-space: nowrap;">
-        <span style="font-size: 0.8rem;">➕</span>
-        Nuevo
-      </button>
+<!-- Dual Panel Grid Layout (2 Columnas) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+  
+  <!-- Columna Izquierda (Roles List): lg:col-span-5 -->
+  <div class="lg:col-span-5 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-4">
+    <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+      <h2 class="m-0 text-base font-extrabold text-brand-deep flex items-center gap-2">
+        <span>👥</span> Perfiles de Rol 
+        <span id="rolesCountBadge" class="text-[10px] bg-brand/10 text-brand-deep px-2 py-0.5 rounded-full font-bold">0</span>
+      </h2>
     </div>
-    <div class="table-container" style="overflow-y: auto; flex: 1;">
-      <table class="data-table-modern" style="width: 100%; border-collapse: separate; border-spacing: 0;">
-        <thead style="position: sticky; top: 0; background: white; z-index: 10;">
-          <tr>
-            <th style="padding: 6px 8px; text-align: left; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Nombre</th>
-            <th style="padding: 6px 8px; text-align: left; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Estado</th>
-            <th style="padding: 6px 8px; text-align: center; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: 600; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="rolesTable">
-          <tr><td colspan="3" class="text-center">Cargando roles...</td></tr>
-        </tbody>
-      </table>
+
+    <!-- Lista de cards de roles dinámicos -->
+    <div id="rolesCardsContainer" class="flex flex-col gap-3 max-h-[600px] overflow-y-auto pr-1">
+      <div class="flex items-center justify-center p-8 text-muted text-xs italic">
+        <span class="animate-spin text-sm mr-2">⏳</span> Cargando roles de seguridad...
+      </div>
     </div>
   </div>
-</div>
 
-<!-- SECCIÓN DERECHA: PERMISOS -->
-<div class="permisos-section" style="display: flex; flex-direction: column;">
-  <div class="section-card" style="background: white; border-radius: 6px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); padding: 12px; border: 1px solid #e5e7eb; flex: 1; display: flex; flex-direction: column;">
-    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;">
-      <div style="min-width: 0; flex: 1;">
-        <h2 style="margin: 0; color: #1f2937; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 6px;">
-          🔐 Permisos
-          <span id="permisosCount" style="background: #10b981; color: white; padding: 1px 6px; border-radius: 10px; font-size: 0.65rem; font-weight: 500;">
-            0
-          </span>
+  <!-- Columna Derecha (Permissions Panel): lg:col-span-7 -->
+  <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-5">
+    <!-- Header del Panel de Permisos -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+      <div>
+        <h2 class="m-0 text-base font-extrabold text-brand-deep flex items-center gap-2">
+          <span>🔐</span> Configurar Permisos
         </h2>
+        <p id="selectedRoleIndicator" class="m-0 text-xs text-muted mt-1 font-semibold">Seleccione un rol de la lista para gestionar sus accesos.</p>
       </div>
-      <div style="margin-right: 6px;">
-        <button class="btn-primary-modern" onclick="window.rolesPermisosModule.showNuevoPermiso()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 6px 10px; border-radius: 4px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 3px; font-size: 0.8rem; white-space: nowrap;">
-          <span style="font-size: 0.8rem;">➕</span>
-          Nuevo
+      
+      <!-- Controles de cabecera rápida -->
+      <div id="panelHeaderControls" class="flex items-center gap-2 hidden">
+        <button class="px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-brand-deep font-bold hover:bg-gray-100 cursor-pointer text-[10px] transition" onclick="window.rolesPermisosModule.selectAllPermissions(true)">
+          Select All
+        </button>
+        <button class="px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-muted font-bold hover:bg-gray-100 cursor-pointer text-[10px] transition" onclick="window.rolesPermisosModule.selectAllPermissions(false)">
+          Deselect All
         </button>
       </div>
     </div>
-    <div class="permisos-list" id="permisosList" style="overflow-y: auto; flex: 1;">
-      <div class="text-center">Cargando permisos...</div>
+
+    <!-- Contenido del Panel de Permisos Agrupados -->
+    <div id="permissionsPanelBody" class="flex flex-col gap-4 max-h-[550px] overflow-y-auto pr-1">
+      <div class="flex flex-col items-center justify-center p-12 text-center text-muted">
+        <span class="text-4xl mb-2">👈</span>
+        <p class="m-0 font-bold text-brand-deep text-sm">Selecciona un Rol</p>
+        <p class="m-0 text-xs mt-1 text-muted max-w-[240px]">Para editar, otorgar o denegar accesos en tiempo real, elige uno de los roles del panel izquierdo.</p>
+      </div>
+    </div>
+
+    <!-- Botones de Acción Finales (Guardar/Restablecer) -->
+    <div id="panelFooterActions" class="flex items-center justify-between border-t border-gray-100 pt-4 mt-2 hidden">
+      <button class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-muted hover:bg-gray-50 font-bold cursor-pointer text-xs transition duration-200" onclick="window.rolesPermisosModule.resetCurrentSelection()">
+        🔄 Restablecer
+      </button>
+      <button class="px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-deep text-white font-extrabold shadow-md shadow-brand/10 cursor-pointer text-xs transition duration-200 border-none" onclick="window.rolesPermisosModule.saveCurrentAssignments()">
+        💾 Guardar Asignaciones
+      </button>
     </div>
   </div>
-</div>
 
 </div>
