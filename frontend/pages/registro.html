@@ -65,7 +65,7 @@
             margin-left: 2px;
         }
 
-        .field-warning {
+        .field-warning, .error-message {
             font-size: 0.75rem;
             color: var(--danger);
             margin-top: 2px;
@@ -76,7 +76,8 @@
             border-color: var(--danger);
         }
 
-        .auth-input-wrapper input:invalid:not(:placeholder-shown) + .field-warning {
+        .auth-input-wrapper input:invalid:not(:placeholder-shown) + .field-warning,
+        .auth-input-wrapper input:invalid:not(:placeholder-shown) + .error-message {
             display: block;
         }
 
@@ -154,7 +155,7 @@
                                     <span class="auth-icon-prefix">N</span>
                                     <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" required>
                                 </div>
-                                <span class="field-warning">El nombre es obligatorio</span>
+                                <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="nombre"></div>
                             </div>
 
                             <div class="auth-field">
@@ -163,7 +164,7 @@
                                     <span class="auth-icon-prefix">A</span>
                                     <input type="text" id="apellido" name="apellido" placeholder="Tu apellido" required>
                                 </div>
-                                <span class="field-warning">El apellido es obligatorio</span>
+                                <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="apellido"></div>
                             </div>
 
                             <div class="auth-field">
@@ -177,7 +178,7 @@
                                         <option value="Pasaporte">Pasaporte</option>
                                     </select>
                                 </div>
-                                <span class="field-warning">El tipo de documento es obligatorio</span>
+                                <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="tipo_documento"></div>
                             </div>
 
                             <div class="auth-field">
@@ -186,7 +187,7 @@
                                     <span class="auth-icon-prefix">#</span>
                                     <input type="text" id="documento" name="documento" placeholder="Número de documento" required>
                                 </div>
-                                <span class="field-warning">El documento es obligatorio</span>
+                                <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="documento"></div>
                             </div>
 
                             <div class="auth-field">
@@ -195,7 +196,7 @@
                                     <span class="auth-icon-prefix">T</span>
                                     <input type="tel" id="telefono" name="telefono" placeholder="300 123 4567" required>
                                 </div>
-                                <span class="field-warning">El teléfono es obligatorio</span>
+                                <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="telefono"></div>
                             </div>
 
                             <div class="auth-field full-width">
@@ -206,13 +207,31 @@
                                 </div>
                             </div>
 
+                            <div class="auth-field">
+                                <label for="pais">País</label>
+                                <div class="auth-input-wrapper">
+                                    <span class="auth-icon-prefix">P</span>
+                                    <input type="text" id="pais" name="pais" placeholder="Colombia">
+                                </div>
+                                <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="pais"></div>
+                            </div>
+
+                            <div class="auth-field">
+                                <label for="departamento">Departamento / Estado</label>
+                                <div class="auth-input-wrapper">
+                                    <span class="auth-icon-prefix">D</span>
+                                    <input type="text" id="departamento" name="departamento" placeholder="Antioquia">
+                                </div>
+                                <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="departamento"></div>
+                            </div>
+
                             <div class="auth-field full-width">
                                 <label for="email">Correo electrónico <span class="required-mark">*</span></label>
                                 <div class="auth-input-wrapper">
                                     <span class="auth-icon-prefix">@</span>
                                     <input type="email" id="email" name="email" placeholder="tu@ejemplo.com" required>
                                 </div>
-                                <span class="field-warning">Ingresa un correo válido</span>
+                                <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="email"></div>
                             </div>
 
                             <div class="auth-field full-width">
@@ -222,7 +241,7 @@
                                     <input type="password" id="password" name="password" placeholder="Mínimo 6 caracteres" required minlength="6">
                                     <button type="button" class="password-toggle" id="togglePassword">Mostrar</button>
                                 </div>
-                                <span class="field-warning">La contraseña debe tener al menos 6 caracteres</span>
+                                <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="password"></div>
                             </div>
                         </div>
 
@@ -259,8 +278,33 @@
         const passwordInput = document.getElementById('password');
 
         function showMessage(text, type) {
+            const t = (type === 'success') ? 'info' : type;
             message.textContent = text;
-            message.className = `message show ${type}`;
+            message.className = `message show ${t}`;
+        }
+
+        function setFieldError(name, text) {
+            const el = document.querySelector(`.error-message[data-for="${name}"]`);
+            if (!el) return;
+            if (!text) { el.classList.add('hidden'); el.textContent = ''; }
+            else { el.classList.remove('hidden'); el.textContent = text; }
+        }
+
+        function clearAllFieldErrors() {
+            document.querySelectorAll('.error-message').forEach(e => { e.classList.add('hidden'); e.textContent = ''; });
+        }
+
+        function validateEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        function hasNumbers(text) { return /\d/.test(text || ''); }
+
+        function randomTempPassword(len = 10) {
+            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%';
+            let s = '';
+            for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
+            return s;
         }
 
         // Toggle Password Visibility
@@ -273,11 +317,29 @@
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
             
-            // Basic validation
+            clearAllFieldErrors();
+
+            // Basic HTML5 validity
             if (!form.checkValidity()) {
                 showMessage('Por favor, completa todos los campos requeridos correctamente.', 'error');
                 return;
             }
+
+            // Custom validations
+            let hasError = false;
+            const nombre = form.nombre.value.trim();
+            const apellido = form.apellido.value.trim();
+            const documento = form.documento.value.trim();
+            const telefono = form.telefono.value.trim();
+            const email = form.email.value.trim();
+
+            if (!nombre || hasNumbers(nombre)) { setFieldError('nombre', 'Nombre inválido. No incluya números.'); hasError = true; }
+            if (!apellido || hasNumbers(apellido)) { setFieldError('apellido', 'Apellido inválido. No incluya números.'); hasError = true; }
+            if (!/^[0-9]+$/.test(documento)) { setFieldError('documento', 'El documento debe contener solo números.'); hasError = true; }
+            if (!/^[0-9]{7,15}$/.test(telefono)) { setFieldError('telefono', 'Teléfono inválido. Entre 7 y 15 dígitos.'); hasError = true; }
+            if (!validateEmail(email)) { setFieldError('email', 'Correo inválido.'); hasError = true; }
+
+            if (hasError) { showMessage('Corrige los campos marcados.', 'error'); return; }
 
             submitButton.disabled = true;
             submitButton.innerHTML = 'Creando cuenta... <span class="spinner"></span>';
@@ -285,6 +347,7 @@
             message.textContent = '';
 
             try {
+                const passwordValue = form.password.value || randomTempPassword(12);
                 const payload = {
                     nombre: form.nombre.value.trim(),
                     apellido: form.apellido.value.trim(),
@@ -292,14 +355,16 @@
                     documento: form.documento.value.trim(),
                     telefono: form.telefono.value.trim(),
                     direccion: form.direccion.value.trim(),
+                    pais: form.pais?.value || null,
+                    departamento: form.departamento?.value || null,
                     email: form.email.value.trim(),
-                    password: form.password.value,
+                    password: passwordValue,
                     IDRol: 2
                 };
 
                 await registrarUsuario(payload);
 
-                showMessage('¡Cuenta creada con éxito! Redirigiendo al inicio de sesión...', 'success');
+                showMessage('¡Cuenta creada con éxito! Redirigiendo al inicio de sesión...', 'info');
                 form.reset();
 
                 setTimeout(() => {

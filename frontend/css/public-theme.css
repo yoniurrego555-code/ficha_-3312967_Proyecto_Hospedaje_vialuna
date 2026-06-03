@@ -30,6 +30,7 @@ html {
 body {
     margin: 0;
     min-height: 100vh;
+    overflow-x: hidden;
     color: var(--ink);
     background:
         radial-gradient(circle at top left, rgba(88, 145, 109, 0.2), transparent 24%),
@@ -55,6 +56,18 @@ textarea {
 .page-shell {
     width: min(1180px, calc(100% - 32px));
     margin: 0 auto;
+}
+
+/* Responsive scroll wrapper: permite scroll horizontal en móviles, evita scroll global */
+.responsive-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 900px) {
+    /* En pantallas grandes preferimos que las tablas se ajusten y no provoquen scroll horizontal */
+    .responsive-scroll { overflow-x: visible; }
+    .responsive-scroll table { width: 100%; table-layout: auto; }
 }
 
 .topbar {
@@ -638,7 +651,7 @@ section.block {
 
 .auth-shell,
 .reserve-shell {
-    width: min(1120px, calc(100% - 32px));
+    width: min(1280px, calc(100% - 32px));
     margin: 30px auto;
 }
 
@@ -653,7 +666,7 @@ section.block {
 .split-card {
     overflow: hidden;
     display: grid;
-    grid-template-columns: minmax(320px, 1fr) minmax(320px, 450px);
+    grid-template-columns: minmax(320px, 1fr) minmax(400px, 650px);
 }
 
 .side-panel {
@@ -737,12 +750,13 @@ input,
 select,
 textarea {
     width: 100%;
-    padding: 14px 16px;
+    padding: 16px 20px;
     border-radius: 16px;
     border: 1px solid rgba(31, 42, 46, 0.14);
     background: rgba(255, 255, 255, 0.84);
     color: var(--ink);
     outline: none;
+    font-size: 1rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 

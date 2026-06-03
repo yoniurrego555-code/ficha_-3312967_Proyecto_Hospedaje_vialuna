@@ -21,7 +21,7 @@
         <!-- Metrics Grid -->
         <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-                <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner">✨</div>
+                <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
                 <div>
                     <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Total servicios</p>
                     <h3 id="metricTotal" class="m-0 text-xl font-bold text-brand-deep mt-0.5">0</h3>
@@ -58,69 +58,131 @@
                 </select>
             </div>
             <button class="px-5 py-2.5 rounded-xl bg-emerald-50 text-brand-deep font-semibold hover:bg-emerald-100 active:scale-95 transition-all duration-300 text-sm border-none shadow-sm cursor-pointer h-[42px] flex items-center justify-center gap-2" id="btnLimpiarFiltros">
-                🔄 Limpiar filtros
+                <i class="fa-solid fa-rotate-right"></i> Limpiar filtros
             </button>
         </section>
 
         <!-- Services Grid -->
         <section id="serviciosContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div class="col-span-full py-12 text-center text-muted font-medium bg-white rounded-2xl border border-gray-100">
-                <span class="inline-block animate-spin mr-2">⏳</span> Cargando servicios de Via Luna...
+                <span class="inline-block animate-spin mr-2"><i class="fa-solid fa-spinner fa-spin"></i></span> Cargando servicios de Via Luna...
             </div>
         </section>
 
         <!-- Service Create/Edit Form Modal -->
-        <div id="servicioModal" class="hidden fixed inset-0 bg-[#173029]/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 transition-all duration-300">
-            <article class="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300">
-                <div class="mb-6 border-b border-gray-100 pb-4 flex justify-between items-start">
+        <div id="servicioModal" class="hidden fixed inset-0 modal-premium-backdrop z-[1000] flex items-center justify-center p-4 transition-all duration-300">
+            <article class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300">
+                
+                <!-- Modal Header (Sticky) -->
+                <div class="flex justify-between items-center p-6 border-b border-gray-100 bg-white z-10 shrink-0">
                     <div>
                         <h3 id="formTitle" class="text-xl font-bold text-brand-deep m-0">Nuevo Servicio</h3>
-                        <p id="formSubtitle" class="text-xs text-muted mt-1 m-0">Completa los datos detallados del servicio hotelero.</p>
+                        <p id="formSubtitle" class="text-xs text-muted mt-1 m-0">Completa la información de esta experiencia.</p>
                     </div>
-                    <button type="button" class="text-muted hover:text-ink text-xl font-bold bg-transparent border-none cursor-pointer p-1" onclick="document.getElementById('servicioModal').classList.add('hidden')">&times;</button>
+                    <div class="flex items-center gap-3">
+                        <button type="button" class="px-4 py-2 rounded-xl bg-gray-50 text-muted font-semibold hover:bg-gray-100 transition-colors border border-gray-200 cursor-pointer text-sm" id="btnCancelarEdicion" onclick="document.getElementById('servicioModal').classList.add('hidden')">Cancelar</button>
+                        <button type="submit" form="servicioForm" class="px-5 py-2 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep shadow-md shadow-brand/20 transition-all border-none cursor-pointer text-sm" id="submitButton">Guardar</button>
+                    </div>
                 </div>
 
-                <div id="mensaje" class="hidden p-4 mb-4 rounded-xl text-sm font-medium"></div>
+                <div id="mensaje" class="hidden mx-6 mt-4 p-4 rounded-xl text-sm font-medium shrink-0"></div>
 
-                <form id="servicioForm" class="flex flex-col gap-4 p-0 bg-transparent border-none m-0">
-                    <input type="hidden" id="servicioId">
+                <!-- Modal Body (Scrollable) -->
+                <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-gray-50/30">
+                    <form id="servicioForm" class="flex flex-col gap-6 m-0">
+                        <input type="hidden" id="servicioId">
 
-                    <div class="flex flex-col gap-1.5">
-                        <label for="nombre" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Nombre del Servicio</label>
-                        <input type="text" id="nombre" name="nombre" placeholder="Ej. Cabalgata Guiada Nocturna" required class="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm">
-                    </div>
+                        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-5">
+                            <div class="flex flex-col gap-2">
+                                <label for="nombre" class="text-xs font-bold text-muted uppercase tracking-wider">Nombre de la Experiencia</label>
+                                <input type="text" id="nombre" name="nombre" placeholder="Ej. Cabalgata Guiada Nocturna" required 
+                                       class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                            </div>
+                            
 
-                    <div class="flex flex-col gap-1.5">
-                        <label for="descripcion" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Descripción</label>
-                        <textarea id="descripcion" name="descripcion" placeholder="Detalles de la experiencia, duración y qué incluye..." style="height: 90px;" class="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm resize-none"></textarea>
-                    </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div class="flex flex-col gap-2">
+                                    <label for="precio" class="text-xs font-bold text-muted uppercase tracking-wider">Tarifa (COP)</label>
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+                                        <input type="number" id="precio" name="precio" min="0" placeholder="50000" required 
+                                               class="w-full min-h-[44px] py-2.5 pl-8 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <label for="estado" class="text-xs font-bold text-muted uppercase tracking-wider">Estado de Operación</label>
+                                    <select id="estado" name="estado" required 
+                                            class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all cursor-pointer">
+                                        <option value="1">✅ Activo (Disponible)</option>
+                                        <option value="0">⛔ Inactivo (No disponible)</option>
+                                    </select>
+                                </div>
+                            </div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-1.5">
-                            <label for="precio" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Precio del Servicio (COP)</label>
-                            <input type="number" id="precio" name="precio" min="0" placeholder="50000" required class="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm">
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                                <div class="flex flex-col gap-2">
+                                    <label for="duracion" class="text-xs font-bold text-muted uppercase tracking-wider">Duración (minutos)</label>
+                                    <input type="number" id="duracion" name="duracion" min="0" placeholder="120"
+                                           class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                                    <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="duracion"></div>
+                                </div>
+
+                                <div class="flex flex-col gap-2">
+                                    <label for="capacidad" class="text-xs font-bold text-muted uppercase tracking-wider">Capacidad Máx.</label>
+                                    <input type="number" id="capacidad" name="capacidad" min="1" placeholder="10"
+                                           class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                                    <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="capacidad"></div>
+                                </div>
+
+                                <div class="flex flex-col gap-2">
+                                    <label for="imagenUrl" class="text-xs font-bold text-muted uppercase tracking-wider">URL imagen</label>
+                                    <input type="url" id="imagenUrl" name="imagenUrl" placeholder="https://.../imagen.jpg" required
+                                           class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                                    <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="imagenUrl"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex flex-col gap-2">
+                                <label for="descripcionExtra" class="text-xs font-bold text-muted uppercase tracking-wider">Descripción Extra (Notas)</label>
+                                <textarea id="descripcionExtra" name="descripcionExtra" placeholder="Notas adicionales sobre restricciones..." 
+                                          class="w-full min-h-[80px] p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all resize-y"></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                                <div class="flex flex-col gap-2">
+                                    <label for="edadMinima" class="text-xs font-bold text-muted uppercase tracking-wider">Edad mínima</label>
+                                    <input type="number" id="edadMinima" name="edadMinima" min="0" placeholder="0"
+                                           class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                                    <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="edadMinima"></div>
+                                </div>
+
+                                <div class="flex flex-col gap-2">
+                                    <label for="edadMaxima" class="text-xs font-bold text-muted uppercase tracking-wider">Edad máxima</label>
+                                    <input type="number" id="edadMaxima" name="edadMaxima" min="0" placeholder="99"
+                                           class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                                    <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="edadMaxima"></div>
+                                </div>
+
+                                </div>
+                            </div>
+
+
+                            <div class="flex items-center gap-4">
+                                <div id="servicioImagenPreview" class="w-28 h-20 rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center text-sm text-muted">Vista previa</div>
+                                <small class="text-sm text-muted">Pega la URL de la imagen para previsualizarla.</small>
+                            </div>
                         </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label for="estado" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial</label>
-                            <select id="estado" name="estado" required class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm cursor-pointer">
-                                <option value="1">Activo</option>
-                                <option value="0">Inactivo</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-3 mt-6 pt-4 border-t border-gray-100">
-                        <button class="flex-1 px-5 py-3 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep active:scale-98 shadow-md shadow-brand/10 cursor-pointer border-none transition-all duration-300" type="submit" id="submitButton">Guardar servicio</button>
-                        <button class="px-5 py-3 rounded-xl bg-gray-100 text-brand-deep font-semibold hover:bg-gray-200 active:scale-98 cursor-pointer border-none transition-all duration-300" type="button" id="btnCancelarEdicion">Cancelar</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </article>
         </div>
 
-        <!-- Service Detail Modal (NEW FEATURE) -->
-        <div id="servicioDetalleModal" class="hidden fixed inset-0 bg-[#173029]/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 transition-all duration-300">
-            <article class="bg-white rounded-3xl p-8 max-w-xl w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300">
-                <div class="mb-6 border-b border-gray-100 pb-4 flex justify-between items-start">
+        <!-- Service Detail Modal (Premium) -->
+        <div id="servicioDetalleModal" class="hidden fixed inset-0 modal-premium-backdrop z-[1000] flex items-center justify-center p-4 transition-all duration-300">
+            <article class="bg-white rounded-2xl w-full max-w-3xl shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300">
+                
+                <!-- Header -->
+                <div class="flex justify-between items-start p-6 border-b border-gray-100 bg-white z-10 shrink-0">
                     <div>
                         <div class="flex items-center gap-3">
                             <h3 id="detalleNombre" class="text-2xl font-bold text-brand-deep m-0">Servicio de Spa</h3>
@@ -128,70 +190,63 @@
                         </div>
                         <p class="text-xs font-semibold text-brand tracking-wider uppercase mt-1 m-0">Experiencias y Actividades Via Luna</p>
                     </div>
-                    <button type="button" class="text-muted hover:text-ink text-2xl font-bold bg-transparent border-none cursor-pointer p-1" onclick="document.getElementById('servicioDetalleModal').classList.add('hidden')">&times;</button>
+                    <button type="button" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-muted font-bold hover:bg-gray-100 hover:text-ink transition-colors border border-gray-200 cursor-pointer" onclick="document.getElementById('servicioDetalleModal').classList.add('hidden')">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
                 </div>
 
-                <!-- Detail Body -->
-                <div class="flex flex-col gap-6">
-                    <!-- Banner Image -->
-                    <div class="relative w-full aspect-[16/9] rounded-2xl overflow-hidden shadow-sm bg-gray-100">
-                        <img id="detalleImagenPrincipal" src="" alt="Servicio" class="w-full h-full object-cover">
-                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent p-4 flex justify-between items-center text-white">
-                            <span class="text-xs font-medium bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm">Aventura & Relax</span>
-                            <span id="detalleCostoBadge" class="text-sm font-bold bg-brand px-3 py-1 rounded-full shadow">COP $50,000</span>
+                <!-- Body -->
+                <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-gray-50/30">
+                    <div class="flex flex-col gap-6">
+                        
+                        <!-- Banner con Foto -->
+                        <div class="relative w-full aspect-[21/9] rounded-2xl overflow-hidden shadow-sm bg-gray-100 border border-gray-200">
+                            <img id="detalleImagenPrincipal" src="" alt="Servicio" class="w-full h-full object-cover">
+                            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-5 flex justify-between items-end text-white">
+                                <span class="text-xs font-bold bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 uppercase tracking-wider">Detalles Visuales</span>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Room Metrics Tags -->
-                    <div class="grid grid-cols-3 gap-3 text-center">
-                        <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <span class="block text-lg">⏳</span>
-                            <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">Duración</span>
-                            <strong class="block text-sm text-brand-deep mt-0.5">2 Horas Aprox.</strong>
+                        <!-- Stats y Precio -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-bold text-muted uppercase tracking-wider mb-1">Tarifa General</span>
+                                    <span id="detalleCostoBadge" class="text-2xl font-extrabold text-brand-deep">COP $50,000</span>
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shadow-inner">
+                                    <i class="fa-solid fa-ticket"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- Mini-stats transversales -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="p-3 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center items-center text-center">
+                                    <i class="fa-solid fa-stopwatch text-indigo-500 mb-1 text-lg"></i>
+                                    <span class="block text-[9px] text-muted font-bold uppercase tracking-wider">Duración Est.</span>
+                                    <strong class="block text-xs text-brand-deep mt-0.5">2 a 3 Horas</strong>
+                                </div>
+                                <div class="p-3 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center items-center text-center">
+                                    <i class="fa-solid fa-users text-blue-500 mb-1 text-lg"></i>
+                                    <span class="block text-[9px] text-muted font-bold uppercase tracking-wider">Modalidad</span>
+                                    <strong class="block text-xs text-brand-deep mt-0.5">Familiar / Pareja</strong>
+                                </div>
+                            </div>
                         </div>
-                        <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <span class="block text-lg">👥</span>
-                            <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">Capacidad</span>
-                            <strong class="block text-sm text-brand-deep mt-0.5">Grupal / Pareja</strong>
-                        </div>
-                        <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <span class="block text-lg">⛰️</span>
-                            <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">Lugar</span>
-                            <strong class="block text-sm text-brand-deep mt-0.5">Instalaciones</strong>
-                        </div>
-                    </div>
 
-                    <!-- Description -->
-                    <div class="flex flex-col gap-2">
-                        <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider m-0">Descripción de la Experiencia</h4>
-                        <p id="detalleDescripcion" class="text-sm text-muted leading-relaxed m-0">
-                            Detalles del servicio...
-                        </p>
-                    </div>
-
-                    <!-- Included Elements -->
-                    <div class="flex flex-col gap-3">
-                        <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider m-0">¿Qué Incluye esta Actividad?</h4>
-                        <div class="grid grid-cols-2 gap-3 text-xs font-semibold text-muted">
-                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                🛡️ <span>Equipos de Seguridad & Guía</span>
-                            </div>
-                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                🥤 <span>Refrigerio Campestre Tradicional</span>
-                            </div>
-                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                📸 <span>Registro Fotográfico de Recuerdo</span>
-                            </div>
-                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                🚑 <span>Póliza de Asistencia Médica</span>
-                            </div>
+                        <!-- Text -->
+                        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                            <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider m-0 border-b border-gray-50 pb-2 mb-3">Qué incluye la Experiencia</h4>
+                            <p id="detalleDescripcion" class="text-sm text-muted leading-relaxed m-0 whitespace-pre-line">
+                                Detalles del servicio...
+                            </p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Footer Actions -->
-                <div class="flex gap-3 mt-8 pt-4 border-t border-gray-100">
-                    <button class="flex-1 px-5 py-3 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep active:scale-98 shadow-md shadow-brand/10 cursor-pointer border-none transition-all duration-300" type="button" onclick="document.getElementById('servicioDetalleModal').classList.add('hidden')">Cerrar detalle</button>
+                <!-- Footer -->
+                <div class="flex justify-end gap-3 p-6 border-t border-gray-100 bg-white shrink-0">
+                    <button class="px-6 py-2.5 rounded-xl bg-gray-100 text-brand-deep font-semibold hover:bg-gray-200 active:scale-95 transition-all duration-300 border-none cursor-pointer text-sm" type="button" onclick="document.getElementById('servicioDetalleModal').classList.add('hidden')">Cerrar</button>
                 </div>
             </article>
         </div>

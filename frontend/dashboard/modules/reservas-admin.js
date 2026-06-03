@@ -9,6 +9,7 @@ import {
   cancelarReserva
 } from "../core/api.js";
 import { getAppUrl } from "../core/authGuard.js";
+import { showAlert } from "./ui-utils.js";
 
 // Admin Reservas module
 export class ReservasAdminModule {
@@ -34,6 +35,9 @@ export class ReservasAdminModule {
       selectedPackages: [],
       selectedServices: []
     };
+    this.currentPage = 1;
+    this.itemsPerPage = 10;
+    this.currentFilteredData = [];
     this.refs = {};
   }
 
@@ -116,11 +120,27 @@ export class ReservasAdminModule {
       this.renderRooms(habitaciones);
       this.renderPackages(paquetes);
       this.renderServices(servicios);
+      this.currentFilteredData = reservas;
       this.renderReservationsTable(reservas);
       this.updateMetrics();
 
-      // Setup event listeners
-      this.setupEventListeners();
+      // Ensure Chart.js is loaded before rendering charts
+      const loadChartJs = () => {
+        return new Promise((resolve, reject) => {
+          if (window.Chart) {
+            resolve();
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+          script.onload = () => resolve();
+          script.onerror = (e) => reject(new Error('Failed to load Chart.js'));
+          document.head.appendChild(script);
+        });
+      };
+      await loadChartJs();
+        this.renderCharts();
+        this.setupEventListeners();
 
     } catch (error) {
       console.error("Error inicializando reservas:", error);
@@ -160,6 +180,10 @@ export class ReservasAdminModule {
       searchReservations: this.container.querySelector("#searchReservations"),
       filterStatus: this.container.querySelector("#filterStatus")
     };
+
+    // Make standard time readonly
+    if (this.refs.horaEntrada) this.refs.horaEntrada.setAttribute('readonly', 'true');
+    if (this.refs.horaSalida) this.refs.horaSalida.setAttribute('readonly', 'true');
 
     // Apply mode-specific configurations
     this.applyModeConfigurations();
@@ -269,7 +293,10 @@ export class ReservasAdminModule {
 
   // Helper to resolve room image
   resolveRoomImage(hab) {
-    const imgName = hab.imagen || hab.ImagenHabitacion;
+    let imgName = hab.ImagenUrl || hab.imagenUrl || hab.imagen || hab.ImagenHabitacion;
+    if (imgName && typeof imgName === 'object' && imgName.type === 'Buffer') {
+        imgName = String.fromCharCode.apply(null, imgName.data);
+    }
     if (typeof imgName === 'string' && imgName.trim() !== '' && imgName !== 'null' && imgName !== '[object Object]') {
       if (imgName.startsWith('http')) return imgName;
       const cleanName = imgName.replace(/^(\.\.\/)+assets\/images\/rooms\//, '').replace('assets/images/rooms/', '');
@@ -286,7 +313,10 @@ export class ReservasAdminModule {
   // Render rooms
   renderRooms(habitaciones) {
     const activeRooms = this.currentData.selectedRoom ? [this.currentData.selectedRoom] : [];
-    const availableRooms = habitaciones.filter(h => Number(h.Estado) === 1);
+    const availableRooms = habitaciones.filter(h => {
+        const estado = h.estado !== undefined ? h.estado : (h.Estado !== undefined ? h.Estado : 1);
+        return Number(estado) === 1 || String(estado).toLowerCase() === 'disponible';
+    });
     
     if (!this.refs.roomSelection) return;
     
@@ -339,32 +369,53 @@ export class ReservasAdminModule {
 
   // Render packages
   renderPackages(paquetes) {
-    const activePackages = paquetes.filter(p => Number(p.Estado) === 1);
+    const activePackages = paquetes.filter(p => {
+        const estado = p.estado !== undefined ? p.estado : (p.Estado !== undefined ? p.Estado : 1);
+        return Number(estado) === 1;
+    });
     
-    if (!this.refs.packagesGrid) return;
+    if (activePackages.length === 0) {
+        this.refs.packagesGrid.innerHTML = '<div class="text-center py-6 text-muted font-semibold col-span-2">No hay paquetes disponibles.</div>';
+        return;
+    }
+
+    this.refs.packagesGrid.className = "grid grid-cols-1 sm:grid-cols-2 gap-4 w-full box-border";
     
     this.refs.packagesGrid.innerHTML = activePackages.map(pkg => {
       const isSelected = this.currentData.selectedPackages.find(p => (p.id_paquete || p.IDPaquete) == (pkg.id_paquete || pkg.IDPaquete));
+      let imgSrc = pkg.ImagenUrl || pkg.imagenUrl || pkg.Imagen || pkg.imagen || pkg.ImagenPaquete || null;
+      if (imgSrc && typeof imgSrc === 'object' && imgSrc.type === 'Buffer') {
+          imgSrc = String.fromCharCode.apply(null, imgSrc.data);
+      }
+      if (imgSrc === 'null') imgSrc = null;
+      const displayTitle = pkg.nombre || pkg.Nombre || pkg.NombrePaquete || 'Paquete';
+      
       return `
         <div class="package-checkbox modern-package">
           <input type="checkbox" id="pkg_${pkg.id_paquete || pkg.IDPaquete}" 
+                 class="package-check-input"
                  data-package-id="${pkg.id_paquete || pkg.IDPaquete}" 
                  ${isSelected ? 'checked' : ''}
                  style="position: absolute; opacity: 0; cursor: pointer;">
           <label for="pkg_${pkg.id_paquete || pkg.IDPaquete}" 
                  class="package-label ${isSelected ? 'selected' : ''}"
-                 style="display: block; cursor: pointer; border-radius: 16px; background: ${isSelected ? 'rgba(31, 106, 77, 0.05)' : 'white'}; border: 1px solid ${isSelected ? 'var(--brand)' : 'rgba(0,0,0,0.08)'}; position: relative; transition: all 0.3s ease; padding: 20px;">
-            <div class="package-info">
+                 style="display: flex; flex-direction: column; cursor: pointer; border-radius: 16px; overflow: hidden; background: ${isSelected ? 'rgba(31, 106, 77, 0.05)' : 'white'}; border: 1px solid ${isSelected ? 'var(--brand)' : 'rgba(0,0,0,0.08)'}; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease; height: 100%;">
+            
+            <div class="package-image" style="height: 120px; position: relative; background: #f9fafb;">
+              ${imgSrc ? `<img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='${getAppUrl('assets/images/placeholder.png')}'">` : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; opacity: 0.4;">🎁</div>`}
+              ${isSelected ? '<div class="checkmark" style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>' : ''}
+            </div>
+
+            <div class="package-info" style="padding: 15px; display: flex; flex-direction: column; flex-grow: 1;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                <h4 style="margin: 0; font-size: 1.1rem; color: var(--brand-deep);">${pkg.nombre || pkg.Nombre || 'Paquete'}</h4>
-                ${isSelected ? '<span style="color: var(--brand); font-weight: bold;">✓ Seleccionado</span>' : ''}
+                <h4 style="margin: 0; font-size: 1.1rem; color: var(--brand-deep); line-height: 1.2;">${displayTitle}</h4>
               </div>
-              <p style="margin: 0 0 15px 0; font-size: 0.9rem; color: var(--muted);">
-                ${pkg.descripcion || 'Incluye servicios especiales para tu estadía.'}
+              <p style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
+                ${pkg.descripcion || pkg.Descripcion || 'Incluye servicios especiales para tu estadía.'}
               </p>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
                 <span class="package-price" style="font-weight: 700; color: var(--brand); font-size: 1.1rem;">$${this.formatCurrency(pkg.precio || pkg.Precio || 0)}</span>
-                <span style="font-size: 0.8rem; background: var(--paper); padding: 4px 10px; border-radius: 20px; color: var(--muted);">Paquete Adicional</span>
+                <span style="font-size: 0.8rem; background: var(--paper); padding: 4px 10px; border-radius: 20px; color: var(--muted);">Paquete</span>
               </div>
             </div>
           </label>
@@ -373,7 +424,7 @@ export class ReservasAdminModule {
     }).join('');
 
     // Add change handlers
-    this.container.querySelectorAll('.package-checkbox input').forEach(checkbox => {
+    this.container.querySelectorAll('.package-check-input').forEach(checkbox => {
       checkbox.addEventListener('change', () => {
         const pkgId = checkbox.dataset.packageId;
         const pkg = activePackages.find(p => (p.id_paquete || p.IDPaquete) == pkgId);
@@ -393,29 +444,46 @@ export class ReservasAdminModule {
 
   // Render services
   renderServices(servicios) {
-    const activeServices = servicios.filter(s => Number(s.Estado) === 1);
+    const activeServices = servicios.filter(s => {
+        const estado = s.estado !== undefined ? s.estado : (s.Estado !== undefined ? s.Estado : 1);
+        return Number(estado) === 1;
+    });
     
     if (!this.refs.servicesGrid) return;
+
+    if (activeServices.length === 0) {
+        this.refs.servicesGrid.innerHTML = '<div class="text-center py-6 text-muted font-semibold col-span-2">No hay servicios disponibles.</div>';
+        return;
+    }
+
+    // Cambiamos el estilo del contenedor a grid dinámicamente si no lo tiene
+    this.refs.servicesGrid.className = "grid grid-cols-1 sm:grid-cols-2 gap-4 w-full box-border";
     
     this.refs.servicesGrid.innerHTML = activeServices.map(service => {
       const isSelected = this.currentData.selectedServices.find(s => (s.id_servicio || s.IDServicio) == (service.id_servicio || service.IDServicio));
       
       // Resolve service info and image
-      const name = String(service.nombre || service.Nombre || '').toLowerCase();
+      const name = String(service.nombre || service.Nombre || service.NombreServicio || '').toLowerCase();
       const desc = String(service.descripcion || service.Descripcion || '').toLowerCase();
       const fullText = `${name} ${desc}`;
       
-      let serviceImg = getAppUrl('assets/images/service/SPA.png'); 
-      if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relajacion')) {
-        serviceImg = getAppUrl('assets/images/service/SPA.png');
-      } else if (fullText.includes('caballo') || fullText.includes('cabalgata')) {
-        serviceImg = getAppUrl('assets/images/service/cabalgata.png');
-      } else if (fullText.includes('caminata') || fullText.includes('guiado') || fullText.includes('recorrido')) {
-        serviceImg = getAppUrl('assets/images/service/caminata.png');
+      let serviceImg = service.ImagenUrl || service.imagenUrl || service.Imagen || service.imagen || service.ImagenServicio || null;
+      if (serviceImg && typeof serviceImg === 'object' && serviceImg.type === 'Buffer') {
+          serviceImg = String.fromCharCode.apply(null, serviceImg.data);
       }
-
+      if (!serviceImg || serviceImg === 'null') {
+        if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relajacion')) {
+          serviceImg = getAppUrl('assets/images/service/SPA.png');
+        } else if (fullText.includes('caballo') || fullText.includes('cabalgata')) {
+          serviceImg = getAppUrl('assets/images/service/cabalgata.png');
+        } else if (fullText.includes('caminata') || fullText.includes('guiado') || fullText.includes('recorrido') || fullText.includes('senderismo')) {
+          serviceImg = getAppUrl('assets/images/service/caminata.png');
+        } else {
+          serviceImg = getAppUrl('assets/images/service/SPA.png');
+        }
+      }
       // Improve title if generic
-      let displayTitle = service.nombre || service.Nombre || 'Servicio';
+      let displayTitle = service.nombre || service.Nombre || service.NombreServicio || 'Servicio';
       if (displayTitle.toLowerCase() === 'servicio') {
         if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relajacion')) displayTitle = 'Spa & Relajación';
         else if (fullText.includes('caballo') || fullText.includes('cabalgata')) displayTitle = 'Cabalgata Guiada';
@@ -423,41 +491,38 @@ export class ReservasAdminModule {
       }
 
       return `
-        <div class="service-item-row">
-          <div class="service-icon-box" style="padding: 0; overflow: hidden; border-radius: 8px; width: 50px; height: 50px;">
-             <img src="${serviceImg}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'">
-          </div>
-          <div class="service-item-info">
-            <h5>${displayTitle}</h5>
-            <p>${service.descripcion || service.Descripcion || 'Servicio adicional para complementar tu estadía.'}</p>
-          </div>
-          <div class="service-item-actions">
-            <span style="font-weight: 700; color: var(--brand);">$${this.formatCurrency(service.precio || service.Precio || service.Costo || 0)}</span>
-            <input type="checkbox" class="service-check-input" 
-                   data-service-id="${service.id_servicio || service.IDServicio}" 
-                   ${isSelected ? 'checked' : ''}>
-          </div>
+        <div class="service-checkbox modern-service">
+          <input type="checkbox" id="svc_${service.id_servicio || service.IDServicio}" 
+                 class="service-check-input"
+                 data-service-id="${service.id_servicio || service.IDServicio}" 
+                 ${isSelected ? 'checked' : ''}
+                 style="position: absolute; opacity: 0; cursor: pointer;">
+          <label for="svc_${service.id_servicio || service.IDServicio}" 
+                 class="service-label ${isSelected ? 'selected' : ''}"
+                 style="display: flex; flex-direction: column; cursor: pointer; border-radius: 16px; overflow: hidden; background: ${isSelected ? 'rgba(31, 106, 77, 0.05)' : 'white'}; border: 1px solid ${isSelected ? 'var(--brand)' : 'rgba(0,0,0,0.08)'}; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease; height: 100%;">
+            <div class="service-image" style="height: 120px; position: relative;">
+              <img src="${serviceImg}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'">
+              ${isSelected ? '<div style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>' : ''}
+            </div>
+            <div class="service-info" style="padding: 15px; display: flex; flex-direction: column; flex-grow: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                <h4 style="margin: 0; font-size: 1.1rem; color: var(--brand-deep); line-height: 1.2;">${displayTitle}</h4>
+              </div>
+              <p style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
+                ${service.descripcion || service.Descripcion || 'Servicio adicional para complementar tu estadía.'}
+              </p>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                <span class="service-price" style="font-weight: 700; color: var(--brand); font-size: 1.1rem;">$${this.formatCurrency(service.precio || service.Precio || service.Costo || 0)}</span>
+                <span style="font-size: 0.8rem; background: var(--paper); padding: 4px 10px; border-radius: 20px; color: var(--muted);">Servicio</span>
+              </div>
+            </div>
+          </label>
         </div>
       `;
     }).join('');
 
-    // Add click handlers to the whole row
-    this.container.querySelectorAll('.service-item-row').forEach(row => {
-      row.style.cursor = 'pointer';
-      row.addEventListener('click', (e) => {
-        // Prevent double toggle if the checkbox itself was clicked
-        if (e.target.type === 'checkbox') return;
-        
-        const checkbox = row.querySelector('.service-check-input');
-        checkbox.checked = !checkbox.checked;
-        
-        // Trigger change event manually
-        const event = new Event('change');
-        checkbox.dispatchEvent(event);
-      });
-    });
-
-    // Add change handlers
+    // Remove the old manual row click handlers since we now use labels with standard checkboxes
+    // Add change handlers for the inputs
     this.container.querySelectorAll('.service-check-input').forEach(checkbox => {
       checkbox.addEventListener('change', () => {
         const svcId = checkbox.dataset.serviceId;
@@ -471,11 +536,25 @@ export class ReservasAdminModule {
           this.currentData.selectedServices = this.currentData.selectedServices.filter(s => (s.id_servicio || s.IDServicio) != svcId);
         }
         
-        // Visual feedback on the row
-        const row = checkbox.closest('.service-item-row');
-        if (row) {
-          if (checkbox.checked) row.classList.add('selected');
-          else row.classList.remove('selected');
+        // Visual feedback on the label card
+        const label = checkbox.nextElementSibling;
+        if (label) {
+          if (checkbox.checked) {
+              label.classList.add('selected');
+              label.style.background = 'rgba(31, 106, 77, 0.05)';
+              label.style.borderColor = 'var(--brand)';
+              // Add checkmark dynamically if not present
+              const imgContainer = label.querySelector('.service-image');
+              if (imgContainer && !imgContainer.querySelector('.checkmark')) {
+                  imgContainer.insertAdjacentHTML('beforeend', '<div class="checkmark" style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>');
+              }
+          } else {
+              label.classList.remove('selected');
+              label.style.background = 'white';
+              label.style.borderColor = 'rgba(0,0,0,0.08)';
+              const checkmark = label.querySelector('.checkmark');
+              if (checkmark) checkmark.remove();
+          }
         }
 
         this.calculateTotal();
@@ -496,14 +575,24 @@ export class ReservasAdminModule {
 
   // Render reservations table
   renderReservationsTable(reservas) {
+    this.currentFilteredData = reservas;
     if (!this.refs.reservationsTableBody) return;
     
-    if (!reservas.length) {
+    // Validate current page bounds
+    const totalPages = Math.ceil(reservas.length / this.itemsPerPage) || 1;
+    if (this.currentPage > totalPages) this.currentPage = totalPages;
+    
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    const paginatedData = reservas.slice(start, end);
+    
+    if (!paginatedData.length) {
       this.refs.reservationsTableBody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-muted font-semibold">No hay reservas registradas.</td></tr>';
+      this._renderPaginationControls(0);
       return;
     }
 
-    this.refs.reservationsTableBody.innerHTML = reservas.map(reserva => {
+    this.refs.reservationsTableBody.innerHTML = paginatedData.map(reserva => {
       const cliente = this.currentData.clientes.find(c => c.id_cliente == reserva.id_cliente);
       const habitacion = this.currentData.habitaciones.find(h => h.id_habitacion == reserva.id_habitacion);
       const status = this._extractStatusId(reserva);
@@ -540,18 +629,55 @@ export class ReservasAdminModule {
           <div class="action-group-modern">
             <button class="btn-action-modern view" 
                     onclick="window.reservasModule.verDetalleReserva(${resId})" 
-                    title="Ver detalle">🔍</button>
+                    title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
             <button class="btn-action-modern edit" 
                     onclick="window.reservasModule.editReserva(${resId})" 
-                    title="Editar">✏️</button>
+                    title="Editar"><i class="fa-solid fa-pen"></i></button>
             <button class="btn-action-modern delete" 
                     onclick="window.reservasModule.deleteReserva(${resId})" 
-                    title="Eliminar">🗑️</button>
+                    title="Eliminar"><i class="fa-solid fa-trash"></i></button>
           </div>
         </td>
       </tr>
     `;
     }).join('');
+    
+    this._renderPaginationControls(totalPages);
+  }
+
+  _renderPaginationControls(totalPages) {
+    const table = this.container.querySelector("table");
+    const tableWrapper = table ? table.closest('.table-container') || table.parentElement : null;
+    if (!tableWrapper) return;
+    
+    let paginationDiv = this.container.querySelector('#paginationContainer');
+    if (!paginationDiv) {
+      paginationDiv = document.createElement('div');
+      paginationDiv.id = 'paginationContainer';
+      paginationDiv.className = 'flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-white';
+      tableWrapper.parentElement.insertBefore(paginationDiv, tableWrapper.nextSibling);
+    }
+    
+    if (totalPages <= 1) {
+      paginationDiv.innerHTML = '';
+      return;
+    }
+    
+    let buttonsHTML = '';
+    for (let i = 1; i <= totalPages; i++) {
+        const activeClass = i === this.currentPage ? 'bg-brand text-white border-brand' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50';
+        buttonsHTML += `<button onclick="window.reservasModule.goToPage(${i})" class="w-8 h-8 flex items-center justify-center rounded-lg border font-semibold text-xs cursor-pointer transition-colors ${activeClass}">${i}</button>`;
+    }
+    
+    paginationDiv.innerHTML = `
+      <span class="text-xs text-muted font-semibold">Página ${this.currentPage} de ${totalPages}</span>
+      <div class="flex gap-1">${buttonsHTML}</div>
+    `;
+  }
+  
+  goToPage(page) {
+    this.currentPage = page;
+    this.renderReservationsTable(this.currentFilteredData);
   }
 
   // Update metrics
@@ -584,7 +710,6 @@ export class ReservasAdminModule {
       
       if (summaryRoom) {
         summaryRoom.innerHTML = `
-          <img src="${this.resolveRoomImage(room)}" alt="Room" onerror="this.src='${getAppUrl('assets/images/rooms/individual.png')}'">
           <div class="summary-item-details">
             <h5 style="color: var(--brand-deep); font-size: 1.1rem; margin-bottom: 4px;">${room.numero || room.Numero || 'Habitación'} - ${room.tipo || room.Tipo || room.NombreHabitacion || 'Estándar'}</h5>
             <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; line-height: 1.4;">
@@ -705,6 +830,109 @@ export class ReservasAdminModule {
     window.reservasModule = this;
   }
 
+
+    // Render charts using Chart.js
+  renderCharts() {
+  // Ensure container has canvases
+  const chartDayCanvas = this.container.querySelector('#chartReservationsByDay');
+  const chartStatusCanvas = this.container.querySelector('#chartStatusDistribution');
+  const chartRevenueCanvas = this.container.querySelector('#chartRevenueTrend');
+  if (!chartDayCanvas || !chartStatusCanvas || !chartRevenueCanvas) return;
+
+  // Destroy previous charts if exist
+  if (this.charts) {
+    Object.values(this.charts).forEach(c => { if (c && typeof c.destroy === 'function') c.destroy(); });
+  }
+  this.charts = {};
+
+  // Helper to format dates
+  const formatDate = d => new Date(d).toISOString().split('T')[0];
+
+  // 1. Reservations by Day (Bar Chart)
+  const reservationsByDayMap = {};
+  this.currentData.reservas.forEach(r => {
+    const date = formatDate(r.fecha_inicio || r.FechaInicio || r.fecha || r.fecha_reserva);
+    if (date) {
+      reservationsByDayMap[date] = (reservationsByDayMap[date] || 0) + 1;
+    }
+  });
+  const sortedDays = Object.keys(reservationsByDayMap).sort();
+  const dayLabels = sortedDays;
+  const dayCounts = sortedDays.map(d => reservationsByDayMap[d]);
+  this.charts.dayChart = new Chart(chartDayCanvas, {
+    type: 'bar',
+    data: {
+      labels: dayLabels,
+      datasets: [{
+        label: 'Reservas por día',
+        data: dayCounts,
+        backgroundColor: 'rgba(31,106,77,0.6)',
+        borderColor: 'rgba(31,106,77,1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { title: { display: true, text: 'Fecha' } },
+        y: { beginAtZero: true, title: { display: true, text: 'Cantidad' } }
+      }
+    }
+  });
+
+  // 2. Status Distribution (Pie Chart)
+  const statusCounts = { '1': 0, '2': 0, '3': 0 };
+  this.currentData.reservas.forEach(r => {
+    const status = this._extractStatusId(r);
+    if (statusCounts[status] !== undefined) statusCounts[status]++;
+  });
+  const statusLabels = ['Activa', 'Cancelada', 'Finalizada'];
+  const statusData = [statusCounts['1'], statusCounts['2'], statusCounts['3']];
+  const statusColors = ['rgba(16,185,129,0.6)', 'rgba(239,68,68,0.6)', 'rgba(59,130,246,0.6)'];
+  this.charts.statusChart = new Chart(chartStatusCanvas, {
+    type: 'pie',
+    data: {
+      labels: statusLabels,
+      datasets: [{ data: statusData, backgroundColor: statusColors }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+
+  // 3. Revenue Trend (Line Chart)
+  const revenueByDay = {};
+  this.currentData.reservas.forEach(r => {
+    const date = formatDate(r.fecha_inicio || r.FechaInicio || r.fecha || r.fecha_reserva);
+    const amount = Number(r.total || r.Total || r.monto || 0);
+    if (date) {
+      revenueByDay[date] = (revenueByDay[date] || 0) + amount;
+    }
+  });
+  const revSortedDays = Object.keys(revenueByDay).sort();
+  const revLabels = revSortedDays;
+  const revValues = revSortedDays.map(d => revenueByDay[d]);
+  this.charts.revenueChart = new Chart(chartRevenueCanvas, {
+    type: 'line',
+    data: {
+      labels: revLabels,
+      datasets: [{
+        label: 'Ingresos diarios',
+        data: revValues,
+        borderColor: 'var(--brand)',
+        backgroundColor: 'rgba(0,0,0,0)',
+        tension: 0.3,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+    
   // Setup event listeners
   setupEventListeners() {
     // Show form button
@@ -728,7 +956,7 @@ if (this.refs.reservationForm) {
     e.preventDefault();
 
     try {
-      // 🔴 VALIDACIONES
+      // <i class="fa-solid fa-circle text-red-500 mr-1"></i> VALIDACIONES
       if (!this.currentData.selectedRoom) {
         throw new Error('Selecciona una habitación');
       }
@@ -757,7 +985,7 @@ if (this.refs.reservationForm) {
         hora_entrada: this.refs.horaEntrada.value || '14:00',
         hora_salida: this.refs.horaSalida.value || '12:00',
 
-        // ✅ AQUÍ ESTÁ EL FIX REAL - CAMPO CORRECTO PARA BACKEND
+        // <i class="fa-solid fa-check"></i> AQUÍ ESTÁ EL FIX REAL - CAMPO CORRECTO PARA BACKEND
         id_metodo_pago: parseInt(this.refs.metodoPago.value),
 
         estado: parseInt(this.refs.estadoReserva.value),
@@ -785,17 +1013,17 @@ if (this.refs.reservationForm) {
       // PETICIÓN
       const result = await crearReserva(formData);
 
-      alert(' Reserva creada correctamente');
+      showAlert('Información', 'Reserva creada correctamente', 'info');
 
-      // 🔄 RECARGAR
+      // <i class="fa-solid fa-rotate-right"></i> RECARGAR
       await this.reloadData();
       this.renderReservationsTable(this.currentData.reservas);
       this.updateMetrics();
       this.showReservationsList();
 
     } catch (error) {
-      console.error('❌ Error:', error);
-      alert(error.message || 'Error al crear reserva');
+      console.error('<i class="fa-solid fa-xmark"></i> Error:', error);
+      showAlert('Error', error.message || 'Error al crear reserva', 'error');
     }
   });
 }
@@ -833,10 +1061,12 @@ if (this.refs.reservationForm) {
       const habitacion = this.currentData.habitaciones.find(h => h.id_habitacion == reserva.id_habitacion);
       
       const clienteName = cliente ? (cliente.NombreCompleto || `${cliente.Nombres || ''} ${cliente.Apellidos || ''}`.trim() || '').toLowerCase() : '';
+      const clienteDoc = cliente ? (cliente.NroDocumento || cliente.nro_documento || '').toLowerCase() : '';
       const habitacionNumber = habitacion ? (habitacion.numero || habitacion.Numero || '').toLowerCase() : '';
       
       const matchesSearch = !searchTerm || 
         clienteName.includes(searchTerm) ||
+        clienteDoc.includes(searchTerm) ||
         habitacionNumber.includes(searchTerm) ||
         (reserva.id_reserva && reserva.id_reserva.toString().includes(searchTerm));
       
@@ -845,6 +1075,7 @@ if (this.refs.reservationForm) {
       return matchesSearch && matchesStatus;
     });
 
+    this.currentPage = 1;
     this.renderReservationsTable(filtered);
   }
 
@@ -912,7 +1143,7 @@ if (this.refs.reservationForm) {
       };
 
       await actualizarReserva(id, formData);
-      alert('Estado de reserva actualizado con éxito');
+      showAlert('Información', 'Estado de reserva actualizado con éxito', 'info');
       
       // Actualizar datos locales y re-renderizar
       await this.reloadData();
@@ -920,7 +1151,7 @@ if (this.refs.reservationForm) {
       this.updateMetrics();
     } catch (error) {
       console.error('Error al cambiar estado:', error);
-      alert('No se pudo actualizar el estado de la reserva: ' + (error.message || 'Error desconocido'));
+      Swal.fire('Error', 'No se pudo actualizar el estado de la reserva: ' + (error.message || 'Error desconocido'), 'error');
       // Re-renderizar para revertir el cambio visual en el select si falló
       this.renderReservationsTable(this.currentData.reservas);
     }
@@ -929,12 +1160,12 @@ if (this.refs.reservationForm) {
   // View details of reservation in premium modal
   verDetalleReserva(id) {
     if (!id || id === 'undefined' || id === 'null') {
-      alert('ID de reserva no válido');
+      Swal.fire('Error', 'ID de reserva no válido', 'error');
       return;
     }
     const reserva = this.currentData.reservas.find(r => (r.id_reserva || r.IDReserva || r.IdReserva || r.id) == id);
     if (!reserva) {
-      alert('Reserva no encontrada');
+      Swal.fire('', 'Reserva no encontrada', 'info');
       return;
     }
 
@@ -1033,12 +1264,12 @@ if (this.refs.reservationForm) {
   // Edit reservation
   async editReserva(id) {
     if (!id || id === 'undefined' || id === 'null') {
-      alert('ID de reserva no válido');
+      Swal.fire('Error', 'ID de reserva no válido', 'error');
       return;
     }
     const reserva = this.currentData.reservas.find(r => (r.id_reserva || r.IDReserva || r.IdReserva || r.id) == id);
     if (!reserva) {
-      alert('Reserva no encontrada');
+      Swal.fire('', 'Reserva no encontrada', 'info');
       return;
     }
     
@@ -1060,7 +1291,7 @@ if (this.refs.reservationForm) {
     this.refs.editReservationContainer.innerHTML = `
       <div class="section-panel" style="max-width: 800px; margin: 0 auto;">
         <div class="section-panel-header">
-          <h2 style="color:var(--brand-deep)">✏️ Editar Reserva #${reserva.id_reserva || reserva.IDReserva}</h2>
+          <h2 style="color:var(--brand-deep)"><i class="fa-solid fa-pen"></i> Editar Reserva #${reserva.id_reserva || reserva.IDReserva}</h2>
           <button onclick="window.reservasModule.showReservationsList()" class="btn-secondary">
             Volver a la lista
           </button>
@@ -1160,26 +1391,26 @@ if (this.refs.reservationForm) {
     try {
       console.log('Actualizando reserva:', formData);
       await actualizarReserva(id, formData);
-      alert('Reserva actualizada exitosamente');
+      showAlert('Información', 'Reserva actualizada exitosamente', 'info');
       
       // Reload data and go back to list
       await this.reloadData();
       this.showReservationsList();
     } catch (error) {
       console.error('Error actualizando reserva:', error);
-      alert('Error al actualizar la reserva: ' + (error.message || 'Error desconocido'));
+      Swal.fire('Error', 'Error al actualizar la reserva: ' + (error.message || 'Error desconocido'), 'error');
     }
   }
   
   // Delete reservation
   async deleteReserva(id) {
     if (!id || id === 'undefined' || id === 'null') {
-      alert('ID de reserva no válido');
+      Swal.fire('Error', 'ID de reserva no válido', 'error');
       return;
     }
     const reserva = this.currentData.reservas.find(r => (r.id_reserva || r.IDReserva || r.IdReserva || r.id) == id);
     if (!reserva) {
-      alert('Reserva no encontrada');
+      Swal.fire('', 'Reserva no encontrada', 'info');
       return;
     }
     
@@ -1187,20 +1418,30 @@ if (this.refs.reservationForm) {
     const cliente = this.currentData.clientes.find(c => (c.id_cliente || c.IDCliente) == idCliente);
     const clienteName = cliente ? (cliente.NombreCompleto || `${cliente.Nombres || ''} ${cliente.Apellidos || ''}`.trim()) : 'Huésped';
     
-    if (!confirm(`¿Está seguro de eliminar la reserva #${id} de ${clienteName}?`)) {
+    const confirmRes = await Swal.fire({
+      title: '¿Eliminar Reserva?',
+      text: `¿Está seguro de eliminar la reserva #${id} de ${clienteName}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!confirmRes.isConfirmed) {
       return;
     }
     
     try {
       console.log(`Eliminando reserva ${id}`);
       await cancelarReserva(id);
-      alert('Reserva eliminada exitosamente');
+      showAlert('Información', 'Reserva eliminada exitosamente', 'info');
       
       await this.reloadData();
+      this.filterReservations();
+      this.updateMetrics();
       this.showReservationsList();
     } catch (error) {
       console.error('Error eliminando reserva:', error);
-      alert('Error al eliminar la reserva: ' + (error.message || 'Error desconocido'));
+      Swal.fire('Error', 'Error al eliminar la reserva: ' + (error.message || 'Error desconocido'), 'error');
     }
   }
   

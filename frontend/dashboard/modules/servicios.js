@@ -1,5 +1,6 @@
 import { createCrudModule } from './shared/crud-module.js';
 import { apiUrl } from './shared/api-config.js';
+import { showAlert, renderPremiumPagination } from './ui-utils.js';
 import { getAppUrl } from '../core/authGuard.js';
 
 // Helper to resolve high-quality image for each service
@@ -71,19 +72,46 @@ const crud = createCrudModule({
         const formData = new FormData(form);
         return {
             NombreServicio: String(formData.get('nombre') || '').trim(),
-            Descripcion: String(formData.get('descripcion') || '').trim(),
+            Descripcion: String(formData.get('descripcion') || 'Servicio de Via Luna').trim(),
             Costo: Number(formData.get('precio')),
             Estado: parseInt(formData.get('estado')),
-            Duracion: 120, // default duration in minutes
-            CantidadMaximaPersonas: 10
+            Duracion: Number(formData.get('duracion')) || 120,
+            DuracionMinutos: Number(formData.get('duracion')) || 120,
+            CantidadMaximaPersonas: Number(formData.get('capacidad')) || 10,
+            CapacidadMaxima: Number(formData.get('capacidad')) || 10,
+            EdadMinima: Number(formData.get('edadMinima')) || null,
+            EdadMaxima: Number(formData.get('edadMaxima')) || null,
+            DescripcionExtra: String(formData.get('descripcionExtra') || '').trim() || null,
+            ImagenUrl: String(formData.get('imagenUrl') || '').trim() || null
         };
     },
     fillForm: (item) => {
         document.getElementById('servicioId').value = item.id || item.IDServicio;
         document.getElementById('nombre').value = item.nombre || item.NombreServicio || '';
-        document.getElementById('descripcion').value = item.descripcion || item.Descripcion || '';
+        
+        const descEl = document.getElementById('descripcion');
+        if (descEl) descEl.value = item.descripcion || item.Descripcion || '';
+        
         document.getElementById('precio').value = item.precio || item.Costo || '';
         document.getElementById('estado').value = item.estado !== undefined ? item.estado : (item.Estado !== undefined ? item.Estado : 1);
+        
+        const duracionEl = document.getElementById('duracion');
+        if (duracionEl) duracionEl.value = item.DuracionMinutos || item.Duracion || '';
+        
+        const capacidadEl = document.getElementById('capacidad');
+        if (capacidadEl) capacidadEl.value = item.CapacidadMaxima || item.CantidadMaximaPersonas || '';
+        
+        const edadMinEl = document.getElementById('edadMinima');
+        if (edadMinEl) edadMinEl.value = item.EdadMinima || '';
+
+        const edadMaxEl = document.getElementById('edadMaxima');
+        if (edadMaxEl) edadMaxEl.value = item.EdadMaxima || '';
+
+        const descExtraEl = document.getElementById('descripcionExtra');
+        if (descExtraEl) descExtraEl.value = item.DescripcionExtra || '';
+
+        const imgUrlEl = document.getElementById('imagenUrl');
+        if (imgUrlEl) imgUrlEl.value = item.ImagenUrl || '';
     },
     onResetForm: () => {
         document.getElementById('servicioId').value = '';
@@ -100,7 +128,7 @@ const crud = createCrudModule({
         const itemPrice = item.precio || item.Costo || item.Precio || 0;
         const itemDesc = item.descripcion || item.Descripcion || 'Servicio rústico exclusivo para complementar tu estadía en el hotel.';
         const itemEstado = item.estado !== undefined ? item.estado : (item.Estado !== undefined ? item.Estado : 1);
-        const serviceImg = resolveServiceImage(item);
+        const serviceImg = item.ImagenUrl || item.Imagen || resolveServiceImage(item);
         
         let statusBg = itemEstado == 1 ? 'bg-emerald-500/90 text-white' : 'bg-red-500/90 text-white';
 
@@ -144,15 +172,15 @@ const crud = createCrudModule({
 
                     <!-- Clean CRUD Actions -->
                     <div class="flex flex-col gap-2">
-                        <button class="w-full h-9 rounded-xl bg-brand text-white text-xs font-bold shadow-md shadow-brand/10 hover:bg-brand-deep hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border-none transition-all duration-300 flex items-center justify-center gap-1.5" type="button" data-action="detalle" data-id="${itemId}">
-                            🔍 Ver detalle
+                        <button style="min-height: 40px; border-radius: 10px; background: var(--brand); color: white; border: none; font-weight: 600; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;" type="button" data-action="detalle" data-id="${itemId}">
+                            <i class="fa-solid fa-eye"></i> Ver detalle
                         </button>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button class="h-8 rounded-xl bg-gray-100 text-brand-deep text-xs font-bold hover:bg-gray-200 active:scale-98 cursor-pointer border-none transition-all duration-300 flex items-center justify-center gap-1" type="button" data-action="editar" data-id="${itemId}">
-                                ✏️ Editar
+                        <div class="card-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <button class="button secondary" style="min-height: 40px; border-radius: 10px; background: #f8fafc; font-weight: 600; cursor: pointer; border: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; gap: 6px;" type="button" data-action="editar" data-id="${itemId}">
+                                <i class="fa-solid fa-pen"></i> Editar
                             </button>
-                            <button class="h-8 rounded-xl bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 active:scale-98 cursor-pointer border-none transition-all duration-300 flex items-center justify-center gap-1" type="button" data-action="eliminar" data-id="${itemId}">
-                                🗑️ Eliminar
+                            <button class="button danger" style="min-height: 40px; border-radius: 10px; background: #fef2f2; color: #ef4444; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;" type="button" data-action="eliminar" data-id="${itemId}">
+                                <i class="fa-solid fa-trash"></i> Eliminar
                             </button>
                         </div>
                     </div>
@@ -185,14 +213,39 @@ function mostrarDetalleServicio(item) {
     const displayTitle = resolveServiceLabel(item);
     const itemPrice = item.precio || item.Costo || 0;
     const itemDesc = item.descripcion || item.Descripcion || 'Experiencia exclusiva diseñada para regalarle una inmersión completa en la tranquilidad, rodeado de la naturaleza idílica de Via Luna.';
-    const serviceImg = resolveServiceImage(item);
+    const serviceImg = item.ImagenUrl || resolveServiceImage(item);
+    const duracionStr = item.DuracionMinutos ? `${item.DuracionMinutos} min` : (item.Duracion || item.duracion ? `${item.Duracion || item.duracion} min` : 'No definida');
+    const capacidadStr = item.CapacidadMaxima ? `${item.CapacidadMaxima} pers.` : (item.CantidadMaximaPersonas || item.cantidadMaximaPersonas ? `${item.CantidadMaximaPersonas || item.cantidadMaximaPersonas} pers.` : 'No definida');
+    const edadStr = (item.EdadMinima || item.EdadMaxima) ? `${item.EdadMinima || 0} - ${item.EdadMaxima || 99} años` : 'Para todas las edades';
+    const extraDesc = item.DescripcionExtra ? `\n\nNotas Extra: ${item.DescripcionExtra}` : '';
 
     // Populate standard text fields
     crud.elements.detalleNombre.textContent = displayTitle;
     crud.elements.detalleID.textContent = `ID: #${itemId}`;
     crud.elements.detalleCostoBadge.textContent = `COP $${Number(itemPrice).toLocaleString()}`;
-    crud.elements.detalleDescripcion.textContent = itemDesc;
+    crud.elements.detalleDescripcion.textContent = itemDesc + extraDesc;
     crud.elements.detalleImagenPrincipal.src = serviceImg;
+    
+    const statsContainer = crud.elements.servicioDetalleModal.querySelector('.grid.grid-cols-2.gap-3');
+    if (statsContainer) {
+        statsContainer.innerHTML = `
+            <div class="p-3 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center items-center text-center">
+                <i class="fa-solid fa-stopwatch text-indigo-500 mb-1 text-lg"></i>
+                <span class="block text-[9px] text-muted font-bold uppercase tracking-wider">Duración</span>
+                <strong class="block text-xs text-brand-deep mt-0.5">${duracionStr}</strong>
+            </div>
+            <div class="p-3 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center items-center text-center">
+                <i class="fa-solid fa-users text-blue-500 mb-1 text-lg"></i>
+                <span class="block text-[9px] text-muted font-bold uppercase tracking-wider">Capacidad</span>
+                <strong class="block text-xs text-brand-deep mt-0.5">${capacidadStr}</strong>
+            </div>
+            <div class="col-span-2 p-3 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center items-center text-center">
+                <i class="fa-solid fa-child text-emerald-500 mb-1 text-lg"></i>
+                <span class="block text-[9px] text-muted font-bold uppercase tracking-wider">Rango de Edad</span>
+                <strong class="block text-xs text-brand-deep mt-0.5">${edadStr}</strong>
+            </div>
+        `;
+    }
 
     // Display Detail Modal
     crud.elements.servicioDetalleModal.classList.remove('hidden');
@@ -217,7 +270,13 @@ async function manejarCambioEstadoRapido(event) {
             Costo: Number(item.precio || item.Costo),
             Estado: nuevoEstado,
             Duracion: item.duracion || item.Duracion || 120,
-            CantidadMaximaPersonas: item.cantidadMaximaPersonas || item.CantidadMaximaPersonas || 10
+            DuracionMinutos: item.DuracionMinutos || item.duracion || item.Duracion || 120,
+            CantidadMaximaPersonas: item.cantidadMaximaPersonas || item.CantidadMaximaPersonas || 10,
+            CapacidadMaxima: item.CapacidadMaxima || item.cantidadMaximaPersonas || item.CantidadMaximaPersonas || 10,
+            EdadMinima: item.EdadMinima || null,
+            EdadMaxima: item.EdadMaxima || null,
+            DescripcionExtra: item.DescripcionExtra || null,
+            ImagenUrl: item.ImagenUrl || null
         };
 
         await crud.update(id, payload);
@@ -229,7 +288,7 @@ async function manejarCambioEstadoRapido(event) {
         // Render success and counters
         crud.onRender(crud.state.items);
     } catch (error) {
-        alert(`Error al actualizar estado: ${error.message}`);
+        showAlert('Error', `Error al actualizar estado: ${error.message}`, 'error');
         crud.onRender(crud.state.items); // Reset
     }
 }
@@ -259,14 +318,22 @@ async function manejarClickEnContenedor(event) {
     }
 
     if (action === 'eliminar') {
-        const confirmar = window.confirm(`¿Deseas eliminar el servicio "${item.nombre || item.NombreServicio}"?`);
+        const confirmRes = await Swal.fire({
+          title: '¿Eliminar Servicio?',
+          text: `¿Deseas eliminar el servicio "${item.nombre || item.NombreServicio}"?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, eliminar',
+          cancelButtonText: 'Cancelar'
+        });
+        const confirmar = confirmRes.isConfirmed;
         if (!confirmar) return;
 
         try {
             await crud.remove(id);
             crud.onRender(crud.state.items); // Refresh list
         } catch (error) {
-            alert(`Error al eliminar: ${error.message}`);
+            showAlert('Error', `Error al eliminar: ${error.message}`, 'error');
         }
     }
 }
@@ -300,6 +367,7 @@ export function renderServicios(container) {
     // Eventos específicos
     if (crud.elements.btnNuevo) {
         crud.elements.btnNuevo.onclick = () => {
+            crud.state.editandoId = null;
             crud.onResetForm();
             if (crud.elements.form) crud.elements.form.reset();
             crud.elements.formTitle.textContent = crud.formCreateTitle;
@@ -318,13 +386,37 @@ export function renderServicios(container) {
         };
     }
 
+    // Image preview handler for servicio modal
+    const servicioImagenInput = container.querySelector('#imagenUrl');
+    const servicioImagenPreview = container.querySelector('#servicioImagenPreview');
+    if (servicioImagenInput && servicioImagenPreview) {
+        servicioImagenInput.addEventListener('input', () => {
+            const url = servicioImagenInput.value.trim();
+            if (!url) { servicioImagenPreview.textContent = 'Vista previa'; return; }
+            const img = new Image();
+            img.onload = () => {
+                servicioImagenPreview.innerHTML = '';
+                img.className = 'w-full h-full object-cover';
+                servicioImagenPreview.appendChild(img);
+            };
+            img.onerror = () => {
+                servicioImagenPreview.innerHTML = '<span class="text-xs text-muted">URL inválida</span>';
+            };
+            img.src = url;
+        });
+    }
+
     if (crud.elements.btnLimpiarFiltros) {
         crud.elements.btnLimpiarFiltros.onclick = () => {
             if (crud.elements.buscador) crud.elements.buscador.value = '';
             if (crud.elements.filtroEstado) crud.elements.filtroEstado.value = 'todos';
+            crud.state.currentPage = 1;
             crud.onRender(crud.state.items);
         };
     }
+
+    crud.state.currentPage = 1;
+    crud.state.itemsPerPage = 10;
 
     // Attach Delegation Handlers directly on the container
     if (crud.elements.contenedor) {
@@ -364,16 +456,53 @@ export function renderServicios(container) {
                     <p class="text-muted text-sm max-w-sm m-0">Intenta cambiar los filtros de búsqueda o agrega un nuevo servicio desde el panel superior.</p>
                 </div>
             `;
+            const paginationDiv = document.getElementById('serviciosPaginationContainer');
+            if (paginationDiv) paginationDiv.innerHTML = '';
             return;
         }
 
-        cont.innerHTML = filtrados.map(item => crud.renderCard(item, {
+        const totalPages = Math.ceil(filtrados.length / crud.state.itemsPerPage) || 1;
+        if (crud.state.currentPage > totalPages) crud.state.currentPage = totalPages;
+        
+        const start = (crud.state.currentPage - 1) * crud.state.itemsPerPage;
+        const end = start + crud.state.itemsPerPage;
+        const paginatedData = filtrados.slice(start, end);
+
+        cont.innerHTML = paginatedData.map(item => crud.renderCard(item, {
             escapeHtml: (str) => String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[m])),
             formatMoney: (num) => `$${Number(num).toLocaleString()} COP`
         })).join('');
 
         crud.renderResumen(items, crud.elements);
+        renderPremiumPagination('serviciosPaginationContainer', crud.state, filtrados.length, 'serviciosModule');
     };
+
+    // Attach to Window for globals usage (card buttons & pagination)
+    window.serviciosModule = {
+        goToPage: (page) => {
+            crud.state.currentPage = page;
+            crud.onRender(crud.state.items);
+        },
+        changeItemsPerPage: (newSize) => {
+            crud.state.itemsPerPage = Number(newSize);
+            crud.state.currentPage = 1;
+            crud.onRender(crud.state.items);
+        },
+        changeStatusFromCard: async (id, nuevoEstado) => {
+            const select = { dataset: { id }, value: nuevoEstado, disabled: false };
+            manejarCambioEstadoRapido({ target: { closest: () => select } });
+        }
+    };
+
+    let paginationDiv = document.getElementById('serviciosPaginationContainer');
+    if (!paginationDiv) {
+        paginationDiv = document.createElement('div');
+        paginationDiv.id = 'serviciosPaginationContainer';
+        const cont = crud.elements.contenedor;
+        if (cont && cont.parentNode) {
+            cont.parentNode.insertBefore(paginationDiv, cont.nextSibling);
+        }
+    }
 
     // Al editar, abrir modal
     crud.edit = async (id) => {
@@ -411,8 +540,12 @@ export function renderServicios(container) {
     // Listar y renderizar
     crud.init();
 
-    // Assign global module for toggle switch on card
     window.serviciosModule = {
+        ...crud,
+        goToPage: (page) => {
+            crud.state.currentPage = page;
+            crud.onRender(crud.state.items);
+        },
         changeStatusFromCard: async (id, nuevoEstado) => {
             const item = crud.findById(id);
             if (!item) return;
@@ -424,7 +557,13 @@ export function renderServicios(container) {
                     Costo: Number(item.precio || item.Costo),
                     Estado: nuevoEstado,
                     Duracion: item.duracion || item.Duracion || 120,
-                    CantidadMaximaPersonas: item.cantidadMaximaPersonas || item.CantidadMaximaPersonas || 10
+                    DuracionMinutos: item.DuracionMinutos || item.duracion || item.Duracion || 120,
+                    CantidadMaximaPersonas: item.cantidadMaximaPersonas || item.CantidadMaximaPersonas || 10,
+                    CapacidadMaxima: item.CapacidadMaxima || item.cantidadMaximaPersonas || item.CantidadMaximaPersonas || 10,
+                    EdadMinima: item.EdadMinima || null,
+                    EdadMaxima: item.EdadMaxima || null,
+                    DescripcionExtra: item.DescripcionExtra || null,
+                    ImagenUrl: item.ImagenUrl || null
                 };
 
                 await crud.update(id, payload);
@@ -432,7 +571,7 @@ export function renderServicios(container) {
                 item.estado = nuevoEstado;
                 crud.onRender(crud.state.items);
             } catch (error) {
-                alert(`Error al actualizar estado: ${error.message}`);
+                showAlert('Error', `Error al actualizar estado: ${error.message}`, 'error');
                 crud.onRender(crud.state.items);
             }
         }

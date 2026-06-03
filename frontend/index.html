@@ -11,7 +11,7 @@
         const session = getSession();
         if (session) {
             if (isAdminSession(session)) window.location.replace("./pages/dashboard-admin.html");
-            else if (isClientSession(session)) window.location.replace("./cliente/dashboard.html");
+            else if (isClientSession(session)) window.location.replace("./pages/dashboard-cliente.html");
         }
     </script>
     <link rel="stylesheet" href="./css/public-theme.css">
@@ -245,10 +245,9 @@
             const nombre = item.NombreServicio || item.nombre || '';
             const desc = item.Descripcion || item.descripcion || '';
             const text = normalizeText(`${nombre} ${desc}`);
-
-            if (text.includes('spa') || text.includes('masaje')) return './assets/images/service/SPA.png';
-            if (text.includes('cabalg') || text.includes('caballo')) return './assets/images/service/cabalgata.png';
-            if (text.includes('recorrido') || text.includes('caminata')) return './assets/images/service/caminata.png';
+            if (text.includes('spa') || text.includes('masaje')) return getAppUrl('assets/images/service/SPA.png');
+            if (text.includes('cabalg') || text.includes('caballo')) return getAppUrl('assets/images/service/cabalgata.png');
+            if (text.includes('recorrido') || text.includes('caminata')) return getAppUrl('assets/images/service/caminata.png');
             return fallbackServiceImage;
         }
 

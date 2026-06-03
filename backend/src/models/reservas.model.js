@@ -309,7 +309,7 @@ async function validarReserva(connection, data, options = {}) {
     throw buildError("Las fechas de la reserva no son validas");
   }
 
-  if (fechaInicio < fechaHoy) {
+  if (!options.isUpdate && fechaInicio < fechaHoy) {
     throw buildError("No se pueden crear reservas en fechas pasadas");
   }
 
@@ -608,7 +608,8 @@ async function actualizar(id, data) {
     }
 
     const payload = await validarReserva(connection, data, {
-      fechaReserva: normalizeDate(existingRows[0].fecha_reserva)
+      fechaReserva: normalizeDate(existingRows[0].fecha_reserva),
+      isUpdate: true
     });
     const hasHoraEntrada = reservationColumns.has("hora_entrada");
     const hasHoraSalida = reservationColumns.has("hora_salida");
@@ -665,16 +666,20 @@ async function actualizar(id, data) {
 }
 
 async function eliminar(id) {
-  const [result] = await db.query(
-    `
-      UPDATE reservas
-      SET id_estado_reserva = ?
-      WHERE id_reserva = ?
-    `,
-    [ESTADO_CANCELADA, id]
-  );
-
-  return result;
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.query("DELETE FROM detalledereservapaquetes WHERE id_reserva = ?", [id]);
+    await connection.query("DELETE FROM detallereservaservicio WHERE IDReserva = ?", [id]);
+    const [result] = await connection.query("DELETE FROM reservas WHERE id_reserva = ?", [id]);
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 module.exports = {

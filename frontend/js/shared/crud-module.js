@@ -55,9 +55,10 @@ function createCrudModule(config) {
 
     const request = createRequest(config.baseHeaders);
 
-    function mostrarMensaje(texto, tipo = 'success') {
+    function mostrarMensaje(texto, tipo = 'info') {
+        const t = (tipo === 'success') ? 'info' : tipo;
         config.elements.mensaje.textContent = texto;
-        config.elements.mensaje.className = `message show ${tipo}`;
+        config.elements.mensaje.className = `message show ${t}`;
     }
 
     function limpiarMensaje() {

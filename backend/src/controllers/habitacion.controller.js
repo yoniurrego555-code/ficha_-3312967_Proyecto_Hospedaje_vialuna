@@ -18,6 +18,17 @@ exports.listar = (req, res) => {
 
 // 🔹 CREAR
 exports.crear = (req, res) => {
+    console.log("📥 Crear Habitación - Body:", req.body);
+    if (req.file) {
+        console.log("🖼️ Crear Habitación - File:", req.file);
+        const host = req.get("host") || "localhost:3000";
+        req.body.ImagenUrl = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+    }
+
+    if (req.body.cantidad_camas && Number(req.body.cantidad_camas) < 1) {
+        return res.status(400).json({ error: "La cantidad de camas debe ser mayor o igual a 1" });
+    }
+
     service.crear(req.body)
         .then(() => res.json({ mensaje: "Creado correctamente" }))
         .catch(error => {
@@ -28,6 +39,17 @@ exports.crear = (req, res) => {
 
 // 🔹 ACTUALIZAR
 exports.actualizar = (req, res) => {
+    console.log("📥 Actualizar Habitación - Body:", req.body);
+    if (req.file) {
+        console.log("🖼️ Actualizar Habitación - File:", req.file);
+        const host = req.get("host") || "localhost:3000";
+        req.body.ImagenUrl = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+    }
+
+    if (req.body.cantidad_camas && Number(req.body.cantidad_camas) < 1) {
+        return res.status(400).json({ error: "La cantidad de camas debe ser mayor o igual a 1" });
+    }
+
     service.actualizar(req.params.id, req.body)
         .then(() => res.json({ mensaje: "Actualizado correctamente" }))
         .catch(error => {

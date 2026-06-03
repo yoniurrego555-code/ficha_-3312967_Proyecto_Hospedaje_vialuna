@@ -33,6 +33,13 @@ async function request(path, options = {}) {
   }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearSession();
+      // Si no estamos ya en el login, redirigir
+      if (!window.location.pathname.includes('login.html')) {
+        window.location.href = '../pages/login.html';
+      }
+    }
     const error = new Error(data?.error || data?.message || data?.mensaje || "Error en la solicitud");
     error.status = response.status;
     throw error;

@@ -8,6 +8,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/frontend", express.static(path.resolve(__dirname, "../../frontend")));
+app.use("/uploads", express.static(path.resolve(__dirname, "../public/uploads")));
 
 app.use("/api/usuarios", require("./routes/usuarios.routes"));
 app.use("/api/clientes", require("./routes/clientes.routes"));
@@ -44,3 +45,6 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
+
+// touch
+// touch

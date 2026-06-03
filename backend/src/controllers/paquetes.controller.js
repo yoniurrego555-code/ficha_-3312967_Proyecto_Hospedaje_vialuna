@@ -22,6 +22,13 @@ exports.obtener = (req, res) => {
 
 // 🔹 CREAR
 exports.crear = (req, res) => {
+  console.log("📥 Crear Paquete - Body:", req.body);
+  if (req.file) {
+    console.log("🖼️ Crear Paquete - File:", req.file);
+    const host = req.get("host") || "localhost:3000";
+    req.body.ImagenUrl = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+  }
+
   service.crear(req.body)
     .then(result => res.json({
       mensaje: "Creado correctamente",
@@ -35,6 +42,13 @@ exports.crear = (req, res) => {
 
 // 🔹 ACTUALIZAR
 exports.actualizar = (req, res) => {
+  console.log("📥 Actualizar Paquete - Body:", req.body);
+  if (req.file) {
+    console.log("🖼️ Actualizar Paquete - File:", req.file);
+    const host = req.get("host") || "localhost:3000";
+    req.body.ImagenUrl = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+  }
+
   service.actualizar(req.params.id, req.body)
     .then(() => res.json({ mensaje: "Actualizado" }))
     .catch(err => {

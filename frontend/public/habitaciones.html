@@ -21,7 +21,7 @@
         <!-- Metrics Grid -->
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-                <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner">🏨</div>
+                <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner"><i class="fa-solid fa-hotel"></i></div>
                 <div>
                     <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Total habitaciones</p>
                     <h3 id="metricTotal" class="m-0 text-xl font-bold text-brand-deep mt-0.5">0</h3>
@@ -35,7 +35,7 @@
                 </div>
             </div>
             <div class="p-5 bg-amber-50/50 rounded-2xl border border-amber-100/50 border-l-4 border-l-amber-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-xl shadow-sm">⏳</div>
+                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-xl shadow-sm"><i class="fa-solid fa-bed text-amber-600"></i></div>
                 <div>
                     <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Ocupadas</p>
                     <h3 id="metricOcupadas" class="m-0 text-xl font-bold text-amber-700 mt-0.5">0</h3>
@@ -84,75 +84,137 @@
                 </select>
             </div>
             <button class="px-5 py-2.5 rounded-xl bg-emerald-50 text-brand-deep font-semibold hover:bg-emerald-100 active:scale-95 transition-all duration-300 text-sm border-none shadow-sm cursor-pointer h-[42px] flex items-center justify-center gap-2" id="btnLimpiarFiltros">
-                🔄 Limpiar filtros
+                <i class="fa-solid fa-rotate-right"></i> Limpiar filtros
             </button>
         </section>
 
         <!-- Room Grid -->
         <section id="habitacionesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="col-span-full py-12 text-center text-muted font-medium bg-white rounded-2xl border border-gray-100">
-                <span class="inline-block animate-spin mr-2">⏳</span> Cargando habitaciones de Via Luna...
+                <span class="inline-block animate-spin mr-2"><i class="fa-solid fa-spinner fa-spin"></i></span> Cargando habitaciones de Via Luna...
             </div>
         </section>
 
         <!-- Room Create/Edit Form Modal -->
-        <div id="habitacionModal" class="hidden fixed inset-0 bg-[#173029]/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 transition-all duration-300">
-            <article class="bg-white rounded-3xl p-8 max-w-lg w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300">
-                <div class="mb-6 border-b border-gray-100 pb-4 flex justify-between items-start">
+        <div id="habitacionModal" class="hidden fixed inset-0 modal-premium-backdrop z-[1000] flex items-center justify-center p-4 transition-all duration-300">
+            <article class="bg-white rounded-2xl w-full max-w-3xl shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300">
+                
+                <!-- Modal Header (Sticky) -->
+                <div class="flex justify-between items-center p-6 border-b border-gray-100 bg-white z-10 shrink-0">
                     <div>
                         <h3 id="formTitle" class="text-xl font-bold text-brand-deep m-0">Nueva Habitación</h3>
-                        <p id="formSubtitle" class="text-xs text-muted mt-1 m-0">Completa los datos detallados de la habitación.</p>
+                        <p id="formSubtitle" class="text-xs text-muted mt-1 m-0">Completa los detalles y configuración de la habitación.</p>
                     </div>
-                    <button type="button" class="text-muted hover:text-ink text-xl font-bold bg-transparent border-none cursor-pointer p-1" onclick="document.getElementById('habitacionModal').classList.add('hidden')">&times;</button>
+                    <div class="flex items-center gap-3">
+                        <button type="button" class="px-4 py-2 rounded-xl bg-gray-50 text-muted font-semibold hover:bg-gray-100 transition-colors border border-gray-200 cursor-pointer text-sm" id="btnCancelarEdicion">Cancelar</button>
+                        <button type="submit" form="habitacionForm" class="px-5 py-2 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep shadow-md shadow-brand/20 transition-all border-none cursor-pointer text-sm" id="submitButton">Guardar</button>
+                    </div>
                 </div>
 
-                <div id="mensaje" class="hidden p-4 mb-4 rounded-xl text-sm font-medium"></div>
+                <div id="mensaje" class="hidden mx-6 mt-4 p-4 rounded-xl text-sm font-medium shrink-0"></div>
 
-                <form id="habitacionForm" class="flex flex-col gap-4 p-0 bg-transparent border-none m-0">
-                    <input type="hidden" id="habitacionId">
+                <!-- Modal Body (Scrollable) -->
+                <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-gray-50/30">
+                    <form id="habitacionForm" class="flex flex-col gap-8 m-0">
+                        <input type="hidden" id="habitacionId">
 
-                    <div class="flex flex-col gap-1.5">
-                        <label for="nombre" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Nombre / Identificador</label>
-                        <input type="text" id="nombre" name="nombre" placeholder="Ej. Familiar Suite Vista Montaña" required class="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm">
-                    </div>
+                        <!-- Section: Información General -->
+                        <section class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-5">
+                            <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 m-0 border-b border-gray-50 pb-3">
+                                <i class="fa-solid fa-circle-info text-brand"></i> Información General
+                            </h4>
+                            
+                            <div class="grid grid-cols-1 gap-5">
+                                <div class="flex flex-col gap-2">
+                                    <label for="nombre" class="text-xs font-bold text-muted uppercase tracking-wider">Nombre / Identificador</label>
+                                    <input type="text" id="nombre" name="nombre" placeholder="Ej. Familiar Suite Vista Montaña" required 
+                                           class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <label for="descripcion" class="text-xs font-bold text-muted uppercase tracking-wider">Descripción detallada</label>
+                                    <textarea id="descripcion" name="descripcion" placeholder="Detalles de diseño, vistas y comodidades..." required
+                                              class="w-full min-h-[100px] p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all resize-y"></textarea>
+                                </div>
+                            </div>
+                        </section>
 
-                    <div class="flex flex-col gap-1.5">
-                        <label for="descripcion" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Descripción</label>
-                        <textarea id="descripcion" name="descripcion" placeholder="Detalles de diseño, vistas y comodidades..." style="height: 90px;" class="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm resize-none"></textarea>
-                    </div>
+                        <!-- Section: Configuración & Tarifas -->
+                        <section class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-5">
+                            <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 m-0 border-b border-gray-50 pb-3">
+                                <i class="fa-solid fa-sliders text-brand"></i> Configuración y Tarifas
+                            </h4>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                <div class="flex flex-col gap-2">
+                                    <label for="precio" class="text-xs font-bold text-muted uppercase tracking-wider">Tarifa base x Noche (COP)</label>
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+                                        <input type="number" id="precio" name="precio" min="0" placeholder="150000" required 
+                                               class="w-full min-h-[44px] py-2.5 pl-8 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <label for="capacidad" class="text-xs font-bold text-muted uppercase tracking-wider">Capacidad (Pers)</label>
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-solid fa-user-group"></i></span>
+                                        <input type="number" id="capacidad" name="capacidad" min="1" placeholder="2" required 
+                                               class="w-full min-h-[44px] py-2.5 pl-10 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-2 sm:col-span-2">
+                                    <label for="estado" class="text-xs font-bold text-muted uppercase tracking-wider">Estado Inicial</label>
+                                    <select id="estado" name="estado" required 
+                                            class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all cursor-pointer">
+                                        <option value="disponible">✅ Disponible (Lista para check-in)</option>
+                                        <option value="ocupada">🧳 Ocupada (Con huésped actual)</option>
+                                        <option value="mantenimiento">🛠️ Mantenimiento (Bloqueada)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </section>
+                        <!-- Section: Multimedia y Camas -->
+                        <section class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-5">
+                            <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 m-0 border-b border-gray-50 pb-3">
+                                <i class="fa-solid fa-image text-brand"></i> Multimedia y Camas
+                            </h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div class="flex flex-col gap-2">
+                                    <label for="cantidadCamas" class="text-xs font-bold text-muted uppercase tracking-wider">Cant. de camas</label>
+                                    <input type="number" id="cantidadCamas" name="cantidadCamas" min="1" max="10" placeholder="1" required
+                                           class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                                    <small id="error-cantidadCamas" class="text-xs text-red-600 hidden mt-1"></small>
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <label for="tipoCamas" class="text-xs font-bold text-muted uppercase tracking-wider">Tipo de Camas</label>
+                                    <input type="text" id="tipoCamas" name="tipoCamas" placeholder="Dobles, Sencillas..." required
+                                           class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <label for="imagenUrl" class="text-xs font-bold text-muted uppercase tracking-wider">URL imagen principal</label>
+                                    <input type="url" id="imagenUrl" name="imagenUrl" placeholder="https://.../imagen.jpg" required
+                                           class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                                    <small id="error-imagenUrl" class="text-xs text-red-600 hidden mt-1"></small>
+                                </div>
+                            </div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-1.5">
-                            <label for="precio" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Precio por Noche (COP)</label>
-                            <input type="number" id="precio" name="precio" min="0" placeholder="150000" required class="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm">
-                        </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label for="capacidad" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Capacidad (Pers)</label>
-                            <input type="number" id="capacidad" name="capacidad" min="1" placeholder="2" required class="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm">
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col gap-1.5">
-                        <label for="estado" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial</label>
-                        <select id="estado" name="estado" required class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm cursor-pointer">
-                            <option value="disponible">Disponible</option>
-                            <option value="ocupada">Ocupada</option>
-                            <option value="mantenimiento">Mantenimiento</option>
-                        </select>
-                    </div>
-
-                    <div class="flex gap-3 mt-6 pt-4 border-t border-gray-100">
-                        <button class="flex-1 px-5 py-3 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep active:scale-98 shadow-md shadow-brand/10 cursor-pointer border-none transition-all duration-300" type="submit" id="submitButton">Guardar habitación</button>
-                        <button class="px-5 py-3 rounded-xl bg-gray-100 text-brand-deep font-semibold hover:bg-gray-200 active:scale-98 cursor-pointer border-none transition-all duration-300" type="button" id="btnCancelarEdicion">Cancelar</button>
-                    </div>
-                </form>
+                            <div class="mt-4">
+                                <label class="text-xs font-bold text-muted uppercase tracking-wider">Previsualización</label>
+                                <div class="mt-2 w-full max-w-sm rounded-xl overflow-hidden border border-gray-100 bg-gray-50">
+                                    <img id="imagenPreview" src="../assets/room-cabin.svg" alt="Preview imagen" class="w-full h-40 object-cover">
+                                </div>
+                            </div>
+                        </section>
+                    </form>
+                </div>
             </article>
         </div>
 
-        <!-- Room Detail Modal (NEW FEATURE) -->
-        <div id="habitacionDetalleModal" class="hidden fixed inset-0 bg-[#173029]/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 transition-all duration-300">
-            <article class="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300">
-                <div class="mb-6 border-b border-gray-100 pb-4 flex justify-between items-start">
+        <!-- Room Detail Modal (Premium) -->
+        <div id="habitacionDetalleModal" class="hidden fixed inset-0 modal-premium-backdrop z-[1000] flex items-center justify-center p-4 transition-all duration-300">
+            <article class="bg-white rounded-2xl w-full max-w-4xl shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300">
+                
+                <!-- Modal Header (Sticky) -->
+                <div class="flex justify-between items-start p-6 border-b border-gray-100 bg-white z-10 shrink-0">
                     <div>
                         <div class="flex items-center gap-3">
                             <h3 id="detalleNombre" class="text-2xl font-bold text-brand-deep m-0">Habitación Doble Premium</h3>
@@ -160,81 +222,74 @@
                         </div>
                         <p id="detalleTipo" class="text-xs font-semibold text-brand tracking-wider uppercase mt-1 m-0">Habitación Doble / Parejas</p>
                     </div>
-                    <button type="button" class="text-muted hover:text-ink text-2xl font-bold bg-transparent border-none cursor-pointer p-1" onclick="document.getElementById('habitacionDetalleModal').classList.add('hidden')">&times;</button>
+                    <div class="flex items-center gap-2">
+                        <!-- Botón Editar que se conecta a la lógica de edición (si se desea) o solo cerrar -->
+                        <button type="button" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-muted font-bold hover:bg-gray-100 hover:text-ink transition-colors border border-gray-200 cursor-pointer" onclick="document.getElementById('habitacionDetalleModal').classList.add('hidden')">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Detail Body -->
-                <div class="flex flex-col gap-6">
-                    <!-- Photo Gallery Carousel -->
-                    <div class="relative w-full aspect-[16/9] rounded-2xl overflow-hidden shadow-sm bg-gray-100">
-                        <img id="detalleImagenPrincipal" src="" alt="Habitación" class="w-full h-full object-cover transition-all duration-500">
-                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent p-4 flex justify-between items-center text-white">
-                            <span class="text-xs font-medium bg-black/30 px-3 py-1 rounded-full backdrop-blur-sm">Cabaña Rústica Boutique</span>
-                            <span id="detalleCostoBadge" class="text-sm font-bold bg-brand px-3 py-1 rounded-full shadow">COP $180,000 / Noche</span>
+                <!-- Modal Body (Scrollable) -->
+                <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-gray-50/30">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        
+                        <!-- Columna Izquierda: Galería e Imágenes -->
+                        <div class="flex flex-col gap-4">
+                            <!-- Photo Gallery Carousel -->
+                            <div class="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-sm bg-gray-100 border border-gray-200 group">
+                                <img id="detalleImagenPrincipal" src="" alt="Habitación" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-5 flex justify-between items-end text-white opacity-90">
+                                    <span class="text-xs font-medium bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10">Vista Previa</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Dynamic Sub-Gallery Photos -->
+                            <div id="detalleGaleriaGrid" class="grid grid-cols-3 gap-3">
+                                <!-- Mock images will be injected here dynamically -->
+                            </div>
                         </div>
-                    </div>
-                    
-                    <!-- Dynamic Sub-Gallery Photos -->
-                    <div id="detalleGaleriaGrid" class="grid grid-cols-3 gap-3">
-                        <!-- Mock images will be injected here dynamically -->
-                    </div>
 
-                    <!-- Room Metrics Tags -->
-                    <div class="grid grid-cols-3 gap-3 text-center">
-                        <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <span class="block text-lg">👤</span>
-                            <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">Capacidad</span>
-                            <strong id="detalleCapacidad" class="block text-sm text-brand-deep mt-0.5">2 Personas</strong>
-                        </div>
-                        <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <span class="block text-lg">🛏️</span>
-                            <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">Camas</span>
-                            <strong id="detalleCamas" class="block text-sm text-brand-deep mt-0.5">1 Cama doble</strong>
-                        </div>
-                        <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <span class="block text-lg">📐</span>
-                            <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">Tamaño</span>
-                            <strong class="block text-sm text-brand-deep mt-0.5">32 m²</strong>
-                        </div>
-                    </div>
+                        <!-- Columna Derecha: Detalles y Stats -->
+                        <div class="flex flex-col gap-6">
+                            
+                            <!-- Tarjeta de Precio (Stripe style) -->
+                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                                <div class="flex flex-col">
+                                    <span class="text-xs font-bold text-muted uppercase tracking-wider mb-1">Tarifa por Noche</span>
+                                    <span id="detalleCostoBadge" class="text-2xl font-extrabold text-brand-deep">COP $180,000</span>
+                                </div>
+                                <div class="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shadow-inner">
+                                    <i class="fa-solid fa-tag"></i>
+                                </div>
+                            </div>
 
-                    <!-- Description -->
-                    <div class="flex flex-col gap-2">
-                        <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider m-0">Descripción del Espacio</h4>
-                        <p id="detalleDescripcion" class="text-sm text-muted leading-relaxed m-0">
-                            Detalles de la habitación...
-                        </p>
-                    </div>
+                            <!-- Room Metrics Tags (Grid) -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="p-4 bg-white rounded-xl border border-gray-100 shadow-sm flex items-center gap-3 hover:border-brand/30 transition-colors">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-lg"><i class="fa-solid fa-user-group"></i></div>
+                                    <div>
+                                        <span class="block text-[10px] text-muted font-bold uppercase tracking-wider">Capacidad</span>
+                                        <strong id="detalleCapacidad" class="block text-sm text-brand-deep mt-0.5">2 Personas</strong>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <!-- Services and Amenities Included -->
-                    <div class="flex flex-col gap-3">
-                        <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider m-0">Servicios & Comodidades Incluidas</h4>
-                        <div class="grid grid-cols-2 gap-3 text-xs font-semibold text-muted">
-                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                📶 <span>Wi-Fi Gratuito (Alta velocidad)</span>
-                            </div>
-                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                ❄️ <span>Aire Acondicionado / Calefacción</span>
-                            </div>
-                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                📺 <span>Smart TV 4K con Netflix</span>
-                            </div>
-                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                🚿 <span>Baño Privado con Ducha Caliente</span>
-                            </div>
-                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                🍳 <span>Desayuno Rústico Campestre</span>
-                            </div>
-                            <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                🔑 <span>Caja Fuerte & Cerradura Digital</span>
-                            </div>
+                            <!-- Description -->
+                            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3">
+                                <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider m-0 border-b border-gray-50 pb-2">Descripción del Espacio</h4>
+                                <p id="detalleDescripcion" class="text-sm text-muted leading-relaxed m-0">
+                                    Detalles de la habitación...
+                                </p>
+                                <div class="flex flex-col gap-2">
+
                         </div>
                     </div>
                 </div>
 
                 <!-- Footer Actions -->
-                <div class="flex gap-3 mt-8 pt-4 border-t border-gray-100">
-                    <button class="flex-1 px-5 py-3 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep active:scale-98 shadow-md shadow-brand/10 cursor-pointer border-none transition-all duration-300" type="button" onclick="document.getElementById('habitacionDetalleModal').classList.add('hidden')">Cerrar detalle</button>
+                <div class="flex justify-end gap-3 p-6 border-t border-gray-100 bg-white shrink-0">
+                    <button class="px-6 py-2.5 rounded-xl bg-gray-100 text-brand-deep font-semibold hover:bg-gray-200 active:scale-95 transition-all duration-300 border-none cursor-pointer text-sm" type="button" onclick="document.getElementById('habitacionDetalleModal').classList.add('hidden')">Cerrar</button>
                 </div>
             </article>
         </div>

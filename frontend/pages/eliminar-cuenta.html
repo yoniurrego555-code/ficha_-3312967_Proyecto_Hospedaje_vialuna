@@ -121,8 +121,9 @@
         }
 
         function showMessage(text, type) {
+            const t = (type === 'success') ? 'info' : type;
             message.textContent = text;
-            message.className = `message show ${type}`;
+            message.className = `message show ${t}`;
         }
 
         form.addEventListener('submit', async (event) => {
@@ -190,7 +191,7 @@
 
                 localStorage.removeItem('token');
                 localStorage.removeItem('usuario');
-                showMessage('Tu cuenta fue eliminada correctamente. Te llevaremos al inicio.', 'success');
+                showMessage('Tu cuenta fue eliminada correctamente. Te llevaremos al inicio.', 'info');
                 form.reset();
 
                 window.setTimeout(() => {

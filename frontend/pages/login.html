@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Via Luna | Iniciar sesión</title>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="../css/public-theme.css">
 </head>
 
@@ -110,8 +114,9 @@
         const submitButton = document.getElementById('submitButton');
 
         function showMessage(text, type) {
+            const t = (type === 'success') ? 'info' : type;
             message.textContent = text;
-            message.className = `message show ${type}`;
+            message.className = `message show ${t}`;
         }
 
         form.addEventListener('submit', async (event) => {
@@ -136,15 +141,15 @@
 
                 // Mostrar si está en modo offline
                 if (response.offline) {
-                    showMessage('Inicio de sesión exitoso (Modo Offline - Backend no disponible)', 'success');
+                    showMessage('Inicio de sesión exitoso (Modo Offline - Backend no disponible)', 'info');
                 } else {
-                    showMessage('Inicio de sesión exitoso. Redirigiendo...', 'success');
+                    showMessage('Inicio de sesión exitoso. Redirigiendo...', 'info');
                 }
 
                 // Determinar destino según el rol
                 const destino = response.user && response.user.rol === 'admin'
                     ? 'dashboard-admin.html'
-                    : (redirectParam || '../cliente/dashboard.html');
+                    : (redirectParam || 'dashboard-cliente.html');
 
                 window.setTimeout(() => {
                     window.location.replace(destino);

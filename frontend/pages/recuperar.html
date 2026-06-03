@@ -103,8 +103,9 @@
         const submitButton = document.getElementById('submitButton');
 
         function showMessage(text, type) {
+            const t = (type === 'success') ? 'info' : type;
             message.textContent = text;
-            message.className = `message show ${type}`;
+            message.className = `message show ${t}`;
         }
 
         form.addEventListener('submit', (event) => {
@@ -122,7 +123,7 @@
             historial.push(payload);
             localStorage.setItem('viaLunaRecoveryRequests', JSON.stringify(historial));
 
-            showMessage('Solicitud registrada correctamente. Te enviaremos instrucciones a tu correo electrónico.', 'success');
+            showMessage('Solicitud registrada correctamente. Te enviaremos instrucciones a tu correo electrónico.', 'info');
             form.reset();
             submitButton.disabled = false;
             submitButton.textContent = 'Enviar solicitud';

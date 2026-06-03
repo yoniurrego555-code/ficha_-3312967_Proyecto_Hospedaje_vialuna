@@ -58,8 +58,8 @@ export class DashboardModule {
       // Update metrics
       this.updateMetrics(clientes, habitaciones, paquetes, servicios, reservas);
       
-      // Render recent reservations
-      this.renderRecentReservationsTable();
+      // Render dashboard charts
+      this.renderCharts();
 
       // Update current date
       this.updateCurrentDate();
@@ -82,8 +82,8 @@ export class DashboardModule {
     const todayReservations = reservas.filter(r => r.fecha_inicio === today).length;
     const activeReservations = reservas.filter(r => {
       try {
-        const status = String(r.EstadoNombre || r.estado_nombre || r.estado || '').toLowerCase();
-        return !status.includes('cancel') && !status.includes('anul');
+        const status = this._extractStatusId(r);
+        return status === '1';
       } catch (e) {
         return true;
       }
@@ -105,58 +105,131 @@ export class DashboardModule {
     if (elements.monthlyRevenue) elements.monthlyRevenue.textContent = `$${this.formatCurrency(totalIncome)}`;
   }
 
-  // Render recent reservations table
-  renderRecentReservationsTable() {
-    const recentReservationsTable = this.container.querySelector("#recentReservationsTable");
-    if (!recentReservationsTable) return;
-    
-    if (!this.currentData.reservas.length) {
-      recentReservationsTable.innerHTML = '<tr><td colspan="7" class="text-center">No hay reservas registradas</td></tr>';
-      return;
-    }
+  // Render charts using reservation data
+  renderCharts() {
+    const chartDayCanvas = this.container.querySelector('#chartReservationsByDay');
+    const chartStatusCanvas = this.container.querySelector('#chartStatusDistribution');
+    const chartRevenueCanvas = this.container.querySelector('#chartRevenueTrend');
+    if (!chartDayCanvas || !chartStatusCanvas || !chartRevenueCanvas) return;
 
-    const recentReservations = this.currentData.reservas.slice(0, 5);
+    if (this.charts) {
+      Object.values(this.charts).forEach(c => { if (c && typeof c.destroy === 'function') c.destroy(); });
+    }
+    this.charts = {};
+
+    const formatDateKey = dateValue => {
+      if (!dateValue) return '';
+      const date = new Date(dateValue);
+      if (Number.isNaN(date.getTime())) return String(dateValue).split('T')[0];
+      return date.toISOString().split('T')[0];
+    };
+
+    const reservationsByDayMap = {};
+    this.currentData.reservas.forEach(r => {
+      const date = formatDateKey(r.fecha_inicio || r.FechaInicio || r.fecha || r.fecha_reserva || r.inicio);
+      if (!date) return;
+      reservationsByDayMap[date] = (reservationsByDayMap[date] || 0) + 1;
+    });
+    const sortedDays = Object.keys(reservationsByDayMap).sort();
+    const dayLabels = sortedDays;
+    const dayCounts = sortedDays.map(d => reservationsByDayMap[d]);
+
+    this.charts.dayChart = new Chart(chartDayCanvas, {
+      type: 'bar',
+      data: {
+        labels: dayLabels,
+        datasets: [{
+          label: 'Reservas',
+          data: dayCounts,
+          backgroundColor: 'rgba(31,106,77,0.7)',
+          borderColor: 'rgba(31,106,77,1)',
+          borderWidth: 1,
+          borderRadius: 8,
+          maxBarThickness: 40
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { title: { display: true, text: 'Fecha' } },
+          y: { beginAtZero: true, title: { display: true, text: 'Número de reservas' } }
+        }
+      }
+    });
+
+    const statusCounts = { '1': 0, '2': 0, '3': 0 };
+    this.currentData.reservas.forEach(r => {
+      const status = this._extractStatusId(r);
+      if (statusCounts[status] !== undefined) statusCounts[status]++;
+    });
+    this.charts.statusChart = new Chart(chartStatusCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: ['Activas', 'Canceladas', 'Finalizadas'],
+        datasets: [{
+          data: [statusCounts['1'], statusCounts['2'], statusCounts['3']],
+          backgroundColor: ['rgba(16,185,129,0.7)', 'rgba(239,68,68,0.7)', 'rgba(59,130,246,0.7)']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+
+    const revenueByDay = {};
+    this.currentData.reservas.forEach(r => {
+      const date = formatDateKey(r.fecha_inicio || r.FechaInicio || r.fecha || r.fecha_reserva || r.inicio);
+      const amount = Number(r.total || r.Total || r.monto || 0);
+      if (!date) return;
+      revenueByDay[date] = (revenueByDay[date] || 0) + amount;
+    });
+    const revenueDays = Object.keys(revenueByDay).sort();
+    const revenueValues = revenueDays.map(d => revenueByDay[d]);
+
+    this.charts.revenueChart = new Chart(chartRevenueCanvas, {
+      type: 'line',
+      data: {
+        labels: revenueDays,
+        datasets: [{
+          label: 'Ingresos diarios',
+          data: revenueValues,
+          borderColor: 'rgba(61,124,98,0.9)',
+          backgroundColor: 'rgba(61,124,98,0.1)',
+          tension: 0.35,
+          fill: true,
+          pointRadius: 3,
+          pointBackgroundColor: 'rgba(31,106,77,1)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { title: { display: true, text: 'Fecha' } },
+          y: { beginAtZero: true, title: { display: true, text: 'Ingresos' } }
+        }
+      }
+    });
+  }
+
+  _extractStatusId(reserva) {
+    if (!reserva) return '1';
     
-    recentReservationsTable.innerHTML = recentReservations.map(reserva => {
-      const cliente = this.currentData.clientes.find(c => c.id_cliente == reserva.id_cliente);
-      const habitacion = this.currentData.habitaciones.find(h => h.id_habitacion == reserva.id_habitacion);
-      const status = String(reserva.Estado || reserva.estado || '1');
-      
-      return `
-        <tr>
-          <td>
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="width: 32px; height: 32px; background: rgba(61, 124, 98, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--brand-deep); font-weight: 700; font-size: 0.8rem;">
-                ${cliente ? (cliente.NombreCompleto || cliente.Nombres || 'C').charAt(0).toUpperCase() : 'C'}
-              </div>
-              <div>
-                <div style="font-weight: 600; font-size: 0.9rem;">${cliente ? (cliente.NombreCompleto || `${cliente.Nombres || ''} ${cliente.Apellidos || ''}`.trim() || 'Cliente sin nombre') : reserva.nr_documento || "Sin cliente"}</div>
-                <div style="font-size: 0.75rem; color: var(--muted);">${cliente ? cliente.Email : ''}</div>
-              </div>
-            </div>
-          </td>
-          <td>
-            <span class="status-pill pill-info" style="font-size: 0.75rem;">${habitacion ? (habitacion.numero || habitacion.Numero || 'N/A') : "---"}</span>
-          </td>
-          <td style="font-size: 0.85rem;">${reserva.fecha_inicio || "N/A"}</td>
-          <td style="font-size: 0.85rem;">${reserva.fecha_fin || "N/A"}</td>
-          <td>
-            <div class="status-toggle-wrapper">
-              <label class="switch">
-                <input type="checkbox" ${status == '1' ? 'checked' : ''} 
-                       ${status == '3' ? 'disabled' : ''}
-                       onchange="const resId = ${reserva.id_reserva || reserva.IDReserva || reserva.IdReserva || reserva.id || 'null'}; if(resId) window.dashboardModule.changeStatusFromTable(resId, this.checked ? 1 : 2)">
-                <span class="slider"></span>
-              </label>
-              <span class="status-pill ${status == '1' ? 'pill-active' : status == '2' ? 'pill-inactive' : 'pill-info'}">
-                ${this.getStatusText(status)}
-              </span>
-            </div>
-          </td>
-          <td style="font-weight: 700; color: var(--brand);">$${this.formatCurrency(reserva.total || 0)}</td>
-        </tr>
-      `;
-    }).join('');
+    // Handle hydrated object states
+    if (reserva.estado && typeof reserva.estado === 'object') {
+      return String(reserva.estado.id || reserva.estado.id_estado_reserva || '1');
+    }
+    
+    const statusValue = String(reserva.Estado || reserva.estado || reserva.id_estado_reserva || reserva.IdEstado || reserva.estado_nombre || '').toLowerCase();
+    
+    if (statusValue.includes('cancel') || statusValue.includes('anul') || statusValue === '2') return '2';
+    if (statusValue.includes('final') || statusValue.includes('complete') || statusValue.includes('completada') || statusValue === '3') return '3';
+    
+    return '1';
   }
 
   // Helper functions

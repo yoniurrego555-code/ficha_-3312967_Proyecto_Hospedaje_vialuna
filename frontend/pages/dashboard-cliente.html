@@ -1,11 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="pageTitle">Dashboard Cliente | ViaLuna</title>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <!-- SheetJS -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="../css/admin-theme.css">
 </head>
+
 <body>
   <div class="page-shell">
     <div class="dashboard-shell">
@@ -15,7 +23,7 @@
         <span class="hamburger"></span>
         <span class="hamburger"></span>
       </button>
-      
+
       <aside class="sidebar">
         <a class="brand sidebar__brand" href="#dashboard" data-view="dashboard">
           <span class="brand__mark">VL</span>
@@ -25,15 +33,23 @@
           </span>
         </a>
 
-        <nav class="sidebar__nav" aria-label="Menu cliente">
-          <a class="active" href="#dashboard" data-view="dashboard">Dashboard</a>
-          <a href="#reservas" data-view="reservas">Mis reservas</a>
-          <a href="#nueva-reserva" data-view="nueva-reserva">Nueva reserva</a>
+        <nav class="sidebar__nav admin-nav" aria-label="Menu cliente">
+          <a class="admin-link active" href="#dashboard" data-view="dashboard">
+            <i class="fa-solid fa-chart-pie nav-icon"></i> <span class="nav-text">Dashboard</span>
+          </a>
+          <a class="admin-link" href="#reservas" data-view="reservas">
+            <i class="fa-solid fa-calendar-days nav-icon"></i> <span class="nav-text">Mis reservas</span>
+          </a>
+          <a class="admin-link" href="#nueva-reserva" data-view="nueva-reserva">
+            <i class="fa-solid fa-calendar-plus nav-icon"></i> <span class="nav-text">Nueva reserva</span>
+          </a>
         </nav>
 
-        <div class="sidebar__footer">
+        <div class="sidebar-footer">
           <span class="user-chip" id="userName">Cliente</span>
-          <button type="button" class="btn-ghost" id="logoutBtn">Cerrar sesión</button>
+          <button type="button" class="logout-btn" id="logoutBtn">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="nav-text">Cerrar sesión</span>
+          </button>
         </div>
       </aside>
 
@@ -42,7 +58,7 @@
           <!-- Content will be loaded dynamically here -->
         </div>
       </main>
-      
+
       <!-- Sidebar Overlay -->
       <div class="sidebar-overlay" id="sidebarOverlay"></div>
     </div>
@@ -50,4 +66,5 @@
 
   <script type="module" src="../js/dashboard-cliente.js"></script>
 </body>
+
 </html>

@@ -17,6 +17,7 @@ import {
   sessionMatchesValue
 } from "../core/api.js";
 import { consumeAccessDeniedMessage, getAppUrl, logout } from "../core/authGuard.js";
+import { renderPremiumPagination, showAlert } from "./ui-utils.js";
 
 const TODAY = new Date().toISOString().split("T")[0];
 const ESTADO_ACTIVA = 1;
@@ -38,8 +39,11 @@ const state = {
   selectedRoomId: "",
   selectedPackageIds: new Set(),
   selectedServiceIds: new Set(),
+  selectedServiceIds: new Set(),
   editingReservationId: null,
-  currentStep: 1
+  currentStep: 1,
+  currentPage: 1,
+  itemsPerPage: 10
 };
 
 const refs = {
@@ -76,7 +80,7 @@ const refs = {
   totalPaquetesResumen: document.getElementById("totalPaquetesResumen"),
   totalServiciosResumen: document.getElementById("totalServiciosResumen"),
   clientsTable: document.getElementById("clientsTable"),
-  reservasTable: document.getElementById("reservasTable"),
+  reservasTable: document.getElementById("reservationsTableBody"),
   profile: document.getElementById("clientProfile"),
   statusSummary: document.getElementById("statusSummary"),
   stepPills: document.querySelectorAll("[data-step-pill]"),
@@ -94,7 +98,13 @@ function getFullName(person) {
 }
 
 function getStatusName(reserva) {
-  return String(reserva?.estado?.nombre || "Sin estado").trim();
+  if (typeof reserva?.estado === 'object' && reserva.estado !== null) {
+    return String(reserva.estado.nombre || reserva.estado.NombreEstadoReserva || "Sin estado").trim();
+  }
+  if (reserva?.estado == 1) return 'Activa';
+  if (reserva?.estado == 2) return 'Cancelada';
+  if (reserva?.estado == 3) return 'Finalizada';
+  return String(reserva?.estado || "Sin estado").trim();
 }
 
 function setFormFeedback(message = "", type = "") {
@@ -131,9 +141,20 @@ function getVisibleReservas() {
   if (isAdmin) {
     return state.reservas;
   }
-
   return state.reservas.filter((reserva) => reservationBelongsToSession(reserva, session));
 }
+
+window.reservasModule = {
+  goToPage: (page) => {
+    state.currentPage = page;
+    renderReservasTable();
+  },
+  changeItemsPerPage: (newSize) => {
+    state.itemsPerPage = Number(newSize);
+    state.currentPage = 1;
+    renderReservasTable();
+  }
+};
 
 function getSelectedClient() {
   return getVisibleClientes().find((cliente) => String(cliente.NroDocumento) === String(state.selectedClientId)) || null;
@@ -184,6 +205,21 @@ function resolveRoomImage(imageName) {
   }
 
   return getAppUrl(`assets/images/rooms/${String(imageName).replace(/^(\.\.\/)+assets\/images\/rooms\//, "")}`);
+}
+
+function resolveServiceImage(servicio) {
+  const itemNameRaw = servicio.nombre || servicio.NombreServicio || servicio.Nombre || '';
+  const itemDesc = servicio.descripcion || servicio.Descripcion || '';
+  const fullText = `${itemNameRaw} ${itemDesc}`.toLowerCase();
+
+  if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relajacion')) {
+    return getAppUrl('assets/images/service/SPA.png');
+  } else if (fullText.includes('caballo') || fullText.includes('cabalgata')) {
+    return getAppUrl('assets/images/service/cabalgata.png');
+  } else if (fullText.includes('caminata') || fullText.includes('guiado') || fullText.includes('recorrido')) {
+    return getAppUrl('assets/images/service/caminata.png');
+  }
+  return getAppUrl('assets/images/service/SPA.png');
 }
 
 function syncDateLimits() {
@@ -312,21 +348,15 @@ function renderClientOptions() {
   refs.clienteSelect.value = state.selectedClientId;
 }
 
-function updateClientSummary() {
-  const cliente = isAdmin ? getSelectedClient() : state.cliente;
 
-  if (refs.documentoInput) {
-    refs.documentoInput.value = cliente?.NroDocumento || "";
-  }
-
-  if (refs.clienteEmail) {
-    refs.clienteEmail.value = cliente?.Email || "";
-  }
-
-  if (refs.clienteTelefono) {
-    refs.clienteTelefono.value = cliente?.Telefono || "";
-  }
+if (refs.clienteEmail) {
+  refs.clienteEmail.value = cliente?.Email || "";
 }
+
+if (refs.clienteTelefono) {
+  refs.clienteTelefono.value = cliente?.Telefono || "";
+}
+
 
 function renderClientsTable() {
   if (!refs.clientsTable) {
@@ -483,22 +513,31 @@ function renderPackages() {
       const selected = state.selectedPackageIds.has(Number(paquete.IDPaquete));
       const compatibility = validatePackageCompatibility(paquete);
 
+      const imgSrc = paquete.ImagenUrl || paquete.Imagen || paquete.imagen || paquete.ImagenPaquete || getAppUrl('assets/images/placeholder.png');
+
       return `
-        <article class="selection-card ${selected ? "is-selected" : ""}">
-          <div class="selection-card__header">
-            <h3>${paquete.NombrePaquete}</h3>
-            <div class="selection-card__price-block">
-              <strong>$${formatCurrency(paquete.Precio)}</strong>
-              <span class="selection-card__inline-total">${selected ? "Agregado" : "Disponible"}</span>
-            </div>
+        <article class="selection-card ${selected ? "is-selected" : ""}" style="display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: white;">
+          <div style="height: 120px; overflow: hidden; width: 100%; background: #f9fafb;">
+            <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='${getAppUrl('assets/images/placeholder.png')}'">
           </div>
-          <p>${paquete.Descripcion || "Paquete sin descripcion registrada."}</p>
-          <p class="muted-text">Habitacion: ${paquete.HabitacionIncluidaNombre || "No asignada"}</p>
-          <p class="muted-text">Servicio incluido: ${paquete.ServicioIncluidoNombre || "No definido"}</p>
-          ${!compatibility.compatible && getSelectedRoom() ? `<p class="feedback error">${compatibility.message}</p>` : ""}
-          <button type="button" class="${selected ? "btn-secondary" : "btn-primary"}" data-package="${paquete.IDPaquete}">
-            ${selected ? "Quitar" : "Agregar"}
-          </button>
+          <div style="padding: 15px; flex-grow: 1; display: flex; flex-direction: column;">
+            <div class="selection-card__header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+              <h3 style="margin: 0; font-size: 1.1rem;">${paquete.NombrePaquete}</h3>
+              <div class="selection-card__price-block" style="text-align: right;">
+                <strong style="color: var(--brand); display: block;">$${formatCurrency(paquete.Precio)}</strong>
+                <span class="selection-card__inline-total" style="font-size: 0.75rem; color: var(--muted);">${selected ? "Agregado" : "Disponible"}</span>
+              </div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--muted); line-height: 1.4; margin: 0 0 10px 0; flex-grow: 1;">${paquete.Descripcion || "Paquete sin descripcion registrada."}</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.8rem;">
+              <span class="muted-text">Habitacion: ${paquete.HabitacionIncluidaNombre || "No asignada"}</span>
+              <span class="muted-text">Servicio: ${paquete.ServicioIncluidoNombre || "No definido"}</span>
+            </div>
+            ${!compatibility.compatible && getSelectedRoom() ? `<p class="feedback error" style="margin-bottom: 10px;">${compatibility.message}</p>` : ""}
+            <button type="button" class="${selected ? "btn-secondary" : "btn-primary"}" data-package="${paquete.IDPaquete}" style="width: 100%; padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; background: ${selected ? '#f8fafc' : 'var(--brand)'}; color: ${selected ? 'var(--ink)' : 'white'};">
+              ${selected ? "Quitar" : "Agregar"}
+            </button>
+          </div>
         </article>
       `;
     })
@@ -561,20 +600,27 @@ function renderServices() {
       const selected = state.selectedServiceIds.has(Number(servicio.IDServicio));
 
       return `
-        <article class="selection-card ${selected ? "is-selected" : ""}">
-          <div class="selection-card__header">
-            <h3>${servicio.NombreServicio}</h3>
-            <div class="selection-card__price-block">
-              <strong>$${formatCurrency(servicio.Costo)}</strong>
-              <span class="selection-card__inline-total">${selected ? "Agregado" : "Disponible"}</span>
-            </div>
+        <article class="selection-card ${selected ? "is-selected" : ""}" style="display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: white;">
+          <div style="height: 120px; overflow: hidden; width: 100%;">
+            <img src="${resolveServiceImage(servicio)}" alt="${servicio.NombreServicio}" style="width: 100%; height: 100%; object-fit: cover;">
           </div>
-          <p>${servicio.Descripcion || "Sin descripcion registrada."}</p>
-          <p class="muted-text">Duracion: ${servicio.Duracion || "No definida"}</p>
-          <p class="muted-text">Capacidad maxima: ${servicio.CantidadMaximaPersonas || "No definida"}</p>
-          <button type="button" class="${selected ? "btn-secondary" : "btn-primary"}" data-service="${servicio.IDServicio}">
-            ${selected ? "Quitar" : "Agregar"}
-          </button>
+          <div style="padding: 15px; flex-grow: 1; display: flex; flex-direction: column;">
+            <div class="selection-card__header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+              <h3 style="margin: 0; font-size: 1.1rem;">${servicio.NombreServicio}</h3>
+              <div class="selection-card__price-block" style="text-align: right;">
+                <strong style="color: var(--brand); display: block;">$${formatCurrency(servicio.Costo)}</strong>
+                <span class="selection-card__inline-total" style="font-size: 0.75rem; color: var(--muted);">${selected ? "Agregado" : "Disponible"}</span>
+              </div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--muted); line-height: 1.4; margin: 0 0 10px 0; flex-grow: 1;">${servicio.Descripcion || "Sin descripcion registrada."}</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 0.8rem;">
+              <span class="muted-text">Duracion: ${servicio.Duracion || "No definida"}</span>
+              <span class="muted-text">Max: ${servicio.CantidadMaximaPersonas || "No definida"} Pers</span>
+            </div>
+            <button type="button" class="${selected ? "btn-secondary" : "btn-primary"}" data-service="${servicio.IDServicio}" style="width: 100%; padding: 8px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; background: ${selected ? '#f8fafc' : 'var(--brand)'}; color: ${selected ? 'var(--ink)' : 'white'};">
+              ${selected ? "Quitar" : "Agregar"}
+            </button>
+          </div>
         </article>
       `;
     })
@@ -648,59 +694,89 @@ function renderReservasTable() {
     return;
   }
 
-  const reservas = getVisibleReservas();
+  const searchInput = document.getElementById('searchReservations');
+  const statusFilter = document.getElementById('filterStatus');
+  const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+  const filterStatus = statusFilter ? statusFilter.value : '';
+
+  let reservas = getVisibleReservas();
+
+  // Filtros
+  if (searchTerm) {
+    reservas = reservas.filter(r =>
+      String(r.id_reserva).toLowerCase().includes(searchTerm) ||
+      (r.cliente?.nombreCompleto || '').toLowerCase().includes(searchTerm) ||
+      (r.nr_documento || '').toLowerCase().includes(searchTerm) ||
+      (r.habitacion?.nombre || '').toLowerCase().includes(searchTerm)
+    );
+  }
+
+  if (filterStatus) {
+    reservas = reservas.filter(r => {
+      // 1: Confirmada, 2: Cancelada, 3: Finalizada
+      const statusId = r.estado?.id || r.estado || '';
+      return String(statusId) === String(filterStatus);
+    });
+  }
 
   if (!reservas.length) {
-    refs.reservasTable.innerHTML = `<p class="empty-state">${isAdmin ? "Aun no hay reservas registradas." : "Aun no tienes reservas registradas."}</p>`;
+    refs.reservasTable.innerHTML = `<tr><td colspan="10" class="px-6 py-10 text-center text-muted font-semibold">${isAdmin ? "No hay reservas registradas." : "No tienes reservas registradas."}</td></tr>`;
+    renderPremiumPagination('reservasPaginationContainer', state, 0, 'reservasModule');
     return;
   }
 
-  refs.reservasTable.innerHTML = `
-    <div class="table-shell">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            ${isAdmin ? "<th>Cliente</th>" : ""}
-            <th>Habitacion</th>
-            <th>Fechas</th>
-            <th>Paquetes</th>
-            <th>Servicios</th>
-            <th>Metodo</th>
-            <th>Estado</th>
-            <th>Total</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${reservas.map((reserva) => {
-            const isCancelled = Number(reserva.estado?.id) === ESTADO_CANCELADA || getStatusName(reserva).toLowerCase().includes("cancel");
+  const totalItems = reservas.length;
+  const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+  const paginated = reservas.slice(startIndex, startIndex + state.itemsPerPage);
 
-            return `
-              <tr>
-                <td>#${reserva.id_reserva}</td>
-                ${isAdmin ? `<td>${reserva.cliente?.nombreCompleto || reserva.nr_documento || "Sin cliente"}</td>` : ""}
-                <td>${reserva.habitacion?.nombre || "Sin habitacion"}</td>
-                <td>
-                  ${reserva.fecha_inicio || "--"} al ${reserva.fecha_fin || "--"}<br>
-                  <span class="muted-text">Entrada: ${reserva.hora_entrada || "--:--"} · Salida: ${reserva.hora_salida || "--:--"}</span>
-                </td>
-                <td>${(reserva.paquetes || []).map((paquete) => paquete.nombre).join(", ") || "Sin paquetes"}</td>
-                <td>${(reserva.servicios || []).map((servicio) => servicio.nombre).join(", ") || "Sin servicios"}</td>
-                <td>${reserva.metodoPago?.nombre || "Sin metodo"}</td>
-                <td><span class="badge">${getStatusName(reserva)}</span></td>
-                <td>$${formatCurrency(reserva.total)}</td>
-                <td class="table-actions">
-                  ${isAdmin ? `<button type="button" class="btn-ghost" data-edit="${reserva.id_reserva}">Editar</button>` : ""}
-                  ${isCancelled ? '<span class="muted-text">Sin acciones</span>' : `<button type="button" class="btn-danger" data-delete="${reserva.id_reserva}">Cancelar</button>`}
-                </td>
-              </tr>
-            `;
-          }).join("")}
-        </tbody>
-      </table>
-    </div>
-  `;
+  refs.reservasTable.innerHTML = paginated.map((reserva) => {
+    const isCancelled = Number(reserva.estado?.id) === ESTADO_CANCELADA || getStatusName(reserva).toLowerCase().includes("cancel");
+    const statusName = getStatusName(reserva);
+    let statusClass = "bg-gray-100 text-gray-700";
+    if (statusName.toLowerCase().includes("activ") || statusName.toLowerCase().includes("confirm")) statusClass = "bg-emerald-100 text-emerald-700";
+    else if (statusName.toLowerCase().includes("cancel")) statusClass = "bg-rose-100 text-rose-700";
+    else if (statusName.toLowerCase().includes("finaliz")) statusClass = "bg-blue-100 text-blue-700";
+
+    return `
+      <tr class="hover:bg-gray-50/50 transition-colors group">
+        <td class="px-6 py-4 font-semibold text-brand-deep">#${reserva.id_reserva}</td>
+        ${isAdmin ? `<td class="px-6 py-4 font-medium text-ink"><div class="flex flex-col"><span>${reserva.cliente?.nombreCompleto || "Sin cliente"}</span><span class="text-[10px] text-muted">${reserva.nr_documento || ""}</span></div></td>` : ""}
+        <td class="px-6 py-4 font-medium text-ink">${reserva.habitacion?.nombre || "Sin hab."}</td>
+        <td class="px-6 py-4">
+          <div class="flex flex-col text-xs">
+            <span class="font-semibold text-ink">${reserva.fecha_inicio || "--"} <i class="fa-solid fa-arrow-right text-brand mx-1"></i> ${reserva.fecha_fin || "--"}</span>
+            <span class="text-muted">E: ${reserva.hora_entrada || "--:--"} · S: ${reserva.hora_salida || "--:--"}</span>
+          </div>
+        </td>
+        <td class="px-6 py-4 font-bold text-brand-deep">$${formatCurrency(reserva.total)}</td>
+        <td class="px-6 py-4"><span class="px-3 py-1 rounded-full text-xs font-bold ${statusClass}">${statusName}</span></td>
+        <td class="px-6 py-4">
+          <div class="flex gap-2 justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <button type="button" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-brand hover:text-white text-brand-deep flex items-center justify-center transition-colors cursor-pointer border-none" data-detail="${reserva.id_reserva}" title="Ver Detalle"><i class="fa-solid fa-eye"></i></button>
+            ${isAdmin ? `<button type="button" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-blue-500 hover:text-white text-blue-600 flex items-center justify-center transition-colors cursor-pointer border-none" data-edit="${reserva.id_reserva}" title="Editar"><i class="fa-solid fa-pen"></i></button>` : ""}
+            ${isCancelled ? '' : `<button type="button" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-rose-500 hover:text-white text-rose-600 flex items-center justify-center transition-colors cursor-pointer border-none" data-delete="${reserva.id_reserva}" title="Cancelar"><i class="fa-solid fa-ban"></i></button>`}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  // Inject pagination container if it doesn't exist
+  let paginationDiv = document.getElementById('reservasPaginationContainer');
+  if (!paginationDiv) {
+    paginationDiv = document.createElement('div');
+    paginationDiv.id = 'reservasPaginationContainer';
+    const section = document.getElementById('reservationsListSection');
+    if (section) section.appendChild(paginationDiv);
+  }
+
+  renderPremiumPagination('reservasPaginationContainer', state, totalItems, 'reservasModule');
+
+  refs.reservasTable.querySelectorAll("[data-detail]").forEach((button) => {
+    button.addEventListener("click", () => {
+      mostrarDetalleReserva(Number(button.dataset.detail));
+    });
+  });
 
   refs.reservasTable.querySelectorAll("[data-edit]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -712,7 +788,15 @@ function renderReservasTable() {
     button.addEventListener("click", async () => {
       const reservationId = Number(button.dataset.delete);
 
-      if (!window.confirm("Se cancelara la reserva seleccionada. Deseas continuar?")) {
+      const confirmRes = await Swal.fire({
+        title: '¿Cancelar Reserva?',
+        text: 'Se cancelara la reserva seleccionada. Deseas continuar?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, continuar',
+        cancelButtonText: 'No'
+      });
+      if (!confirmRes.isConfirmed) {
         return;
       }
 
@@ -736,6 +820,65 @@ function renderReservasTable() {
       }
     });
   });
+}
+
+function mostrarDetalleReserva(id) {
+  const reserva = state.reservas.find((item) => Number(item.id_reserva) === id);
+  if (!reserva) return;
+
+  const modal = document.getElementById('reservaDetalleModal');
+  if (!modal) return;
+
+  // Llenar datos básicos
+  document.getElementById('detalleReservaID').textContent = `ID: #${reserva.id_reserva}`;
+  document.getElementById('detResClienteNombre').textContent = reserva.cliente?.nombreCompleto || reserva.nr_documento || "Cliente Anónimo";
+  document.getElementById('detResClienteDoc').textContent = `Doc: ${reserva.nr_documento || "--"}`;
+  document.getElementById('detResClienteEmail').textContent = `Email: ${reserva.cliente?.email || "--"}`;
+  document.getElementById('detResClienteTel').textContent = `Tel: ${reserva.cliente?.telefono || "--"}`;
+
+  document.getElementById('detResHabNombre').textContent = reserva.habitacion?.nombre || "Sin habitación";
+  document.getElementById('detResHabPrecio').textContent = reserva.habitacion?.costo ? `COP $${formatCurrency(reserva.habitacion.costo)} / noche` : "--";
+
+  document.getElementById('detResFechaInicio').textContent = reserva.fecha_inicio || "--";
+  document.getElementById('detResFechaFin').textContent = reserva.fecha_fin || "--";
+
+  document.getElementById('detResMetodoPago').textContent = reserva.metodoPago?.nombre || "Sin método";
+
+  const statusName = getStatusName(reserva);
+  let statusClass = "bg-gray-100 text-gray-700";
+  if (statusName.toLowerCase().includes("activ") || statusName.toLowerCase().includes("confirm")) statusClass = "bg-emerald-100 text-emerald-700";
+  else if (statusName.toLowerCase().includes("cancel")) statusClass = "bg-rose-100 text-rose-700";
+  else if (statusName.toLowerCase().includes("finaliz")) statusClass = "bg-blue-100 text-blue-700";
+
+  const badge = document.getElementById('detResEstadoBadge');
+  badge.textContent = statusName;
+  badge.className = `inline-block px-3 py-1 rounded-full text-xs font-bold mt-1 ${statusClass}`;
+
+  document.getElementById('detResTotal').textContent = `$${formatCurrency(reserva.total)}`;
+
+  // Grid de servicios y paquetes
+  const gridContainer = document.getElementById('detResServiciosGrid');
+  let extrasHtml = '';
+
+  if (reserva.paquetes && reserva.paquetes.length > 0) {
+    reserva.paquetes.forEach(p => {
+      extrasHtml += `<div class="p-3 bg-white rounded-xl border border-gray-100 flex items-center gap-2 shadow-sm"><div class="w-8 h-8 rounded-lg bg-brand/10 text-brand flex items-center justify-center text-sm"><i class="fa-solid fa-gift"></i></div><span>${p.nombre}</span></div>`;
+    });
+  }
+  if (reserva.servicios && reserva.servicios.length > 0) {
+    reserva.servicios.forEach(s => {
+      extrasHtml += `<div class="p-3 bg-white rounded-xl border border-gray-100 flex items-center gap-2 shadow-sm"><div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center text-sm"><i class="fa-solid fa-wand-magic-sparkles"></i></div><span>${s.nombre}</span></div>`;
+    });
+  }
+
+  if (!extrasHtml) {
+    extrasHtml = `<div class="col-span-full p-3 bg-white rounded-xl border border-gray-100 text-center italic">No incluye paquetes ni servicios adicionales.</div>`;
+  }
+
+  gridContainer.innerHTML = extrasHtml;
+
+  // Mostrar modal
+  modal.classList.remove('hidden');
 }
 
 function renderClientProfile() {

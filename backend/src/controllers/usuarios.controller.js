@@ -46,6 +46,13 @@ exports.login = (req, res) => {
 };
 
 exports.crear = (req, res) => {
+  console.log("📥 Crear Usuario - Body:", req.body);
+  if (req.file) {
+    console.log("🖼️ Crear Usuario - File:", req.file);
+    const host = req.get("host") || "localhost:3000";
+    req.body.AvatarUsuario = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+  }
+
   service.crear(req.body)
     .then(result => res.json({
       mensaje: "Creado correctamente",
@@ -67,6 +74,13 @@ exports.crear = (req, res) => {
 
 // 🔹 ACTUALIZAR
 exports.actualizar = (req, res) => {
+  console.log("📥 Actualizar Usuario - Body:", req.body);
+  if (req.file) {
+    console.log("🖼️ Actualizar Usuario - File:", req.file);
+    const host = req.get("host") || "localhost:3000";
+    req.body.AvatarUsuario = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+  }
+
   service.actualizar(req.params.id, req.body)
     .then(() => res.json({ mensaje: "Actualizado" }))
     .catch(err => {

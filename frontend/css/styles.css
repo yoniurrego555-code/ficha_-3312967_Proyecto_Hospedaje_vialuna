@@ -56,20 +56,19 @@ h1 {
     color: #ffdd59;
 }
 
-/* Contenedor de habitaciones horizontal */
+/* Contenedor de habitaciones: responsive grid que envuelve tarjetas */
 #habitacionesContainer {
     display: flex;
-    flex-wrap: nowrap; /* Evita que se vayan a la siguiente línea */
+    flex-wrap: wrap; /* Permite que las cards bajen a la siguiente línea */
     gap: 20px;
-    justify-content: flex-start; /* O center si quieres centrarlas */
-    overflow-x: auto; /* Scroll horizontal si hay muchas habitaciones */
+    justify-content: center;
     width: 100%;
     padding-bottom: 10px;
 }
 
 /* Cards de habitaciones */
 .card {
-    flex: 0 0 auto; /* Mantiene ancho fijo y evita que se encojan */
+    flex: 0 1 220px; /* base flexible para responsive */
     background-color: #1b1f35;
     border-radius: 12px;
     padding: 20px;
@@ -127,6 +126,21 @@ input {
     border: 1px solid #444;
     background-color: #11152b;
     color: #e0e0e0;
+}
+
+/* Ajustes responsive: cartas ocupan 100% en pantallas pequeñas */
+@media (max-width: 700px) {
+    #habitacionesContainer {
+        justify-content: center;
+    }
+    .card {
+        flex: 1 1 100%;
+        width: 100%;
+    }
+}
+
+@media (min-width: 701px) and (max-width: 1000px) {
+    .card { flex: 1 1 45%; width: 45%; }
 }
 
 input::placeholder {
