@@ -1,59 +1,68 @@
 const service = require("../services/paquetes.service");
 
+// 🔹 LISTAR
 exports.listar = (req, res) => {
   service.listar()
-    .then(data => {
-      console.log("Paquetes OK:", data.length);
-      res.json(data);
-    })
-    .catch(error => {
-      console.error(error);
-      res.status(500).json({ error: "Error al listar", detalle: error.message });
+    .then(data => res.json(data))
+    .catch(err => {
+      console.error("❌ ERROR:", err);
+      res.status(500).json({ error: "Error al listar" });
     });
 };
 
+// 🔹 OBTENER
 exports.obtener = (req, res) => {
   service.obtener(req.params.id)
-    .then(data => {
-      if (!data) return res.status(404).json({ error: "Paquete no encontrado" });
-      res.json(data);
-    })
-    .catch(error => {
-      console.error(error);
-      res.status(500).json({ error: "Error al obtener", detalle: error.message });
+    .then(data => res.json(data))
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ error: "Error al obtener" });
     });
 };
 
+// 🔹 CREAR
 exports.crear = (req, res) => {
-  console.log("CREAR PAQUETE BODY:", req.body);
+  console.log("📥 Crear Paquete - Body:", req.body);
+  if (req.file) {
+    console.log("🖼️ Crear Paquete - File:", req.file);
+    const host = req.get("host") || "localhost:3000";
+    req.body.ImagenUrl = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+  }
 
   service.crear(req.body)
-    .then(result => res.status(201).json({
+    .then(result => res.json({
       mensaje: "Creado correctamente",
       resultado: result
     }))
-    .catch(error => {
-      console.error(error);
-      res.status(500).json({ error: "Error al crear", detalle: error.message });
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ error: "Error al crear" });
     });
 };
 
+// 🔹 ACTUALIZAR
 exports.actualizar = (req, res) => {
-  console.log("ACTUALIZAR PAQUETE BODY:", req.body);
+  console.log("📥 Actualizar Paquete - Body:", req.body);
+  if (req.file) {
+    console.log("🖼️ Actualizar Paquete - File:", req.file);
+    const host = req.get("host") || "localhost:3000";
+    req.body.ImagenUrl = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+  }
 
   service.actualizar(req.params.id, req.body)
-    .then(result => res.json({ mensaje: "Actualizado", resultado: result }))
-    .catch(error => {
-      console.error(error);
-      res.status(500).json({ error: "Error al actualizar", detalle: error.message });
+    .then(() => res.json({ mensaje: "Actualizado" }))
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ error: "Error al actualizar" });
     });
 };
 
+// 🔹 ELIMINAR
 exports.eliminar = (req, res) => {
   service.eliminar(req.params.id)
-    .then(result => res.json({ mensaje: "Eliminado", resultado: result }))
-    .catch(error => {
-      console.error(error);
-      res.status(500).json({ error: "Error al eliminar", detalle: error.message });
+    .then(() => res.json({ mensaje: "Eliminado" }))
+    .catch(err => {
+      console.error(err);
+      res.status(500).json({ error: "Error al eliminar" });
     });
 };

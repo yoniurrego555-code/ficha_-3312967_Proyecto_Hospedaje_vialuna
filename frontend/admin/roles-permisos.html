@@ -1,5 +1,5 @@
-﻿<!-- ==========================================================================
-   VISTA DE ROLES Y PERMISOS - MODERNIZACIÃ“N DUAL DE 2 COLUMNAS (VIA LUNA)
+<!-- ==========================================================================
+   VISTA DE ROLES Y PERMISOS - MODERNIZACIÓN DUAL DE 2 COLUMNAS (VIA LUNA)
    ========================================================================== -->
 
 <!-- Header Section -->
@@ -10,10 +10,10 @@
   </div>
   <div class="flex gap-2">
     <button class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 cursor-pointer border-none text-xs" onclick="window.rolesPermisosModule.showNewRoleModal()">
-      <span>âž•</span> Nuevo Rol
+      <span><i class="fa-solid fa-plus"></i></span> Nuevo Rol
     </button>
     <button class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-light/10 text-brand-deep font-semibold hover:bg-brand-light/20 transition-all duration-300 cursor-pointer border-none text-xs" onclick="window.rolesPermisosModule.showNewPermissionModal()">
-      <span>ðŸ”‘</span> Nuevo Permiso
+      <span><i class="fa-solid fa-key"></i></span> Nuevo Permiso
     </button>
   </div>
 </header>
@@ -25,15 +25,15 @@
   <div class="lg:col-span-5 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-4">
     <div class="flex items-center justify-between border-b border-gray-100 pb-3">
       <h2 class="m-0 text-base font-extrabold text-brand-deep flex items-center gap-2">
-        <span>ðŸ‘¥</span> Perfiles de Rol 
+        <span><i class="fa-solid fa-users"></i></span> Perfiles de Rol 
         <span id="rolesCountBadge" class="text-[10px] bg-brand/10 text-brand-deep px-2 py-0.5 rounded-full font-bold">0</span>
       </h2>
     </div>
 
-    <!-- Lista de cards de roles dinÃ¡micos -->
+    <!-- Lista de cards de roles dinámicos -->
     <div id="rolesCardsContainer" class="flex flex-col gap-3 max-h-[600px] overflow-y-auto pr-1">
       <div class="flex items-center justify-center p-8 text-muted text-xs italic">
-        <span class="animate-spin text-sm mr-2">â³</span> Cargando roles de seguridad...
+        <span class="animate-spin text-sm mr-2"><i class="fa-solid fa-spinner fa-spin"></i></span> Cargando roles de seguridad...
       </div>
     </div>
   </div>
@@ -44,12 +44,12 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
       <div>
         <h2 class="m-0 text-base font-extrabold text-brand-deep flex items-center gap-2">
-          <span>ðŸ”</span> Configurar Permisos
+          <span><i class="fa-solid fa-lock"></i></span> Configurar Permisos
         </h2>
         <p id="selectedRoleIndicator" class="m-0 text-xs text-muted mt-1 font-semibold">Seleccione un rol de la lista para gestionar sus accesos.</p>
       </div>
       
-      <!-- Controles de cabecera rÃ¡pida -->
+      <!-- Controles de cabecera rápida -->
       <div id="panelHeaderControls" class="flex items-center gap-2 hidden">
         <button class="px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-brand-deep font-bold hover:bg-gray-100 cursor-pointer text-[10px] transition" onclick="window.rolesPermisosModule.selectAllPermissions(true)">
           Select All
@@ -63,22 +63,21 @@
     <!-- Contenido del Panel de Permisos Agrupados -->
     <div id="permissionsPanelBody" class="flex flex-col gap-4 max-h-[550px] overflow-y-auto pr-1">
       <div class="flex flex-col items-center justify-center p-12 text-center text-muted">
-        <span class="text-4xl mb-2">ðŸ‘ˆ</span>
+        <span class="text-4xl mb-2"><i class="fa-solid fa-hand-point-left"></i></span>
         <p class="m-0 font-bold text-brand-deep text-sm">Selecciona un Rol</p>
         <p class="m-0 text-xs mt-1 text-muted max-w-[240px]">Para editar, otorgar o denegar accesos en tiempo real, elige uno de los roles del panel izquierdo.</p>
       </div>
     </div>
 
-    <!-- Botones de AcciÃ³n Finales (Guardar/Restablecer) -->
+    <!-- Botones de Acción Finales (Guardar/Restablecer) -->
     <div id="panelFooterActions" class="flex items-center justify-between border-t border-gray-100 pt-4 mt-2 hidden">
       <button class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-muted hover:bg-gray-50 font-bold cursor-pointer text-xs transition duration-200" onclick="window.rolesPermisosModule.resetCurrentSelection()">
-        ðŸ”„ Restablecer
+        <i class="fa-solid fa-rotate-right"></i> Restablecer
       </button>
       <button class="px-5 py-2.5 rounded-xl bg-brand hover:bg-brand-deep text-white font-extrabold shadow-md shadow-brand/10 cursor-pointer text-xs transition duration-200 border-none" onclick="window.rolesPermisosModule.saveCurrentAssignments()">
-        ðŸ’¾ Guardar Asignaciones
+        <i class="fa-solid fa-floppy-disk"></i> Guardar Asignaciones
       </button>
     </div>
   </div>
 
 </div>
-

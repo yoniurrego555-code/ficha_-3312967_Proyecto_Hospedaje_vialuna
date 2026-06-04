@@ -7,18 +7,8 @@ const obtener = () => {
         h.NombreHabitacion AS HabitacionIncluidaNombre,
         h.Descripcion AS HabitacionIncluidaDescripcion,
         h.Costo AS HabitacionIncluidaCosto,
-        CASE h.NombreHabitacion
-          WHEN 'Doble' THEN 2
-          WHEN 'Sencilla' THEN 1
-          WHEN 'Familiar Deluxe' THEN 5
-          ELSE 2
-        END AS HabitacionIncluidaCapacidad,
-        CASE h.NombreHabitacion
-          WHEN 'Doble' THEN 'doble-confort.svg'
-          WHEN 'Sencilla' THEN 'sencilla-serena.svg'
-          WHEN 'Familiar Deluxe' THEN 'familiar-deluxe.svg'
-          ELSE 'doble-confort.svg'
-        END AS HabitacionIncluidaImagen,
+        h.CapacidadMaximaPersonas AS HabitacionIncluidaCapacidad,
+        h.ImagenUrl AS HabitacionIncluidaImagen,
       s.NombreServicio AS ServicioIncluidoNombre,
       s.Descripcion AS ServicioIncluidoDescripcion
     FROM paquetes p
@@ -40,18 +30,8 @@ const obtenerPorId = (id) => {
         h.NombreHabitacion AS HabitacionIncluidaNombre,
         h.Descripcion AS HabitacionIncluidaDescripcion,
         h.Costo AS HabitacionIncluidaCosto,
-        CASE h.NombreHabitacion
-          WHEN 'Doble' THEN 2
-          WHEN 'Sencilla' THEN 1
-          WHEN 'Familiar Deluxe' THEN 5
-          ELSE 2
-        END AS HabitacionIncluidaCapacidad,
-        CASE h.NombreHabitacion
-          WHEN 'Doble' THEN 'doble-confort.svg'
-          WHEN 'Sencilla' THEN 'sencilla-serena.svg'
-          WHEN 'Familiar Deluxe' THEN 'familiar-deluxe.svg'
-          ELSE 'doble-confort.svg'
-        END AS HabitacionIncluidaImagen
+        h.CapacidadMaximaPersonas AS HabitacionIncluidaCapacidad,
+        h.ImagenUrl AS HabitacionIncluidaImagen
       FROM paquetes p
       LEFT JOIN habitacion h
         ON h.IDHabitacion = p.IDHabitacion
@@ -90,16 +70,17 @@ const obtenerPorId = (id) => {
 const crear = (data) => {
   return db.query(
     `INSERT INTO paquetes 
-    (NombrePaquete, ImagenPaquete, Descripcion, IDHabitacion, IDServicio, Precio, Estado)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    (NombrePaquete, ImagenPaquete, Descripcion, IDHabitacion, IDServicio, Precio, Estado, ImagenUrl)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.NombrePaquete,
-      data.ImagenPaquete,
+      data.ImagenPaquete || null,
       data.Descripcion,
-      data.IDHabitacion,
-      data.IDServicio,
+      data.IDHabitacion || null,
+      data.IDServicio || null,
       data.Precio,
-      data.Estado
+      data.Estado,
+      data.ImagenUrl || null
     ]
   ).then(([result]) => result);
 };
@@ -108,16 +89,17 @@ const crear = (data) => {
 const actualizar = (id, data) => {
   return db.query(
     `UPDATE paquetes SET 
-    NombrePaquete = ?, ImagenPaquete = ?, Descripcion = ?, IDHabitacion = ?, IDServicio = ?, Precio = ?, Estado = ?
+    NombrePaquete = ?, ImagenPaquete = ?, Descripcion = ?, IDHabitacion = ?, IDServicio = ?, Precio = ?, Estado = ?, ImagenUrl = ?
     WHERE IDPaquete = ?`,
     [
       data.NombrePaquete,
-      data.ImagenPaquete,
+      data.ImagenPaquete || null,
       data.Descripcion,
-      data.IDHabitacion,
-      data.IDServicio,
+      data.IDHabitacion || null,
+      data.IDServicio || null,
       data.Precio,
       data.Estado,
+      data.ImagenUrl || null,
       id
     ]
   ).then(([result]) => result);
@@ -131,7 +113,7 @@ const eliminar = (id) => {
   ).then(([result]) => result);
 };
 
-// 🔥 EXPORTAR (ESTO ES LO QUE TE FALTABA)
+// 🔥 EXPORTAR
 module.exports = {
   obtener,
   obtenerPorId,

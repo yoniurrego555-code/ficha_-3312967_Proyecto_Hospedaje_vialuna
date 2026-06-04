@@ -64,8 +64,10 @@ async function buildSelect(whereClause = "", params = []) {
     columns.has("TipoDocumento") ? "u.TipoDocumento" : "NULL AS TipoDocumento",
     columns.has("NumeroDocumento") ? "u.NumeroDocumento" : "NULL AS NumeroDocumento",
     columns.has("Pais") ? "u.Pais" : "NULL AS Pais",
+    columns.has("Departamento") ? "u.Departamento" : "NULL AS Departamento",
     columns.has("Direccion") ? "u.Direccion" : "NULL AS Direccion",
     columns.has("IDRol") ? "u.IDRol" : "NULL AS IDRol",
+    columns.has("AvatarUsuario") ? "u.AvatarUsuario" : "NULL AS AvatarUsuario",
     "r.Nombre AS NombreRol"
   ];
 
@@ -101,9 +103,11 @@ async function buildWritePayload(data) {
     TipoDocumento: columns.has("TipoDocumento") ? data.TipoDocumento || null : undefined,
     NumeroDocumento: columns.has("NumeroDocumento") ? data.NumeroDocumento || null : undefined,
     Pais: columns.has("Pais") ? data.Pais || null : undefined,
+    Departamento: columns.has("Departamento") ? data.Departamento || null : undefined,
     Direccion: columns.has("Direccion") ? data.Direccion || null : undefined,
     Estado: columns.has("Estado") ? Number(data.Estado ?? 1) : undefined,
-    IDRol: columns.has("IDRol") ? data.IDRol : undefined
+    IDRol: columns.has("IDRol") ? data.IDRol : undefined,
+    AvatarUsuario: columns.has("AvatarUsuario") ? data.AvatarUsuario || null : undefined
   };
 }
 
@@ -226,7 +230,17 @@ const actualizarPassword = async (id, password) => {
   ).then(([result]) => result);
 };
 
-const eliminar = (id) => {
+const eliminar = async (id) => {
+  const query = await buildSelect("WHERE u.IDUsuario = ?", [id]);
+  const [rows] = await db.query(query.sql, query.params);
+  const usuario = rows[0];
+  if (usuario) {
+    const unameLowerDel = String(usuario.Username || usuario.Nombre || '').toLowerCase();
+    if (unameLowerDel === 'yoni' || unameLowerDel === 'zury' || unameLowerDel.includes('yoni') || unameLowerDel.includes('zury')) {
+      throw new Error("No se puede eliminar a un Súper Admin protegido del sistema.");
+    }
+  }
+
   return db.query(
     "DELETE FROM usuarios WHERE IDUsuario = ?",
     [id]

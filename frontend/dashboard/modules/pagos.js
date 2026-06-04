@@ -10,6 +10,9 @@ class PagosModule {
       procesados: 0,
       pendientes: 0
     };
+    this.currentPage = 1;
+    this.itemsPerPage = 10;
+    this.currentFilteredData = [];
   }
 
   async initialize() {
@@ -49,7 +52,7 @@ class PagosModule {
     // Simular pagos del mes (esto debería venir de una API real de pagos)
     const fechaActual = new Date();
     const mesActual = fechaActual.getMonth();
-    const añoActual = fechaActual.getFullYear();
+    const anioActual = fechaActual.getFullYear();
     
     // Para demostración, simulamos algunos pagos
     const esteMes = Math.floor(Math.random() * 20) + 5;
@@ -91,42 +94,7 @@ class PagosModule {
   }
 
   renderTable() {
-    const tbody = this.container.querySelector("#pagosTableBody");
-    if (!tbody) return;
-
-    if (this.pagos.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center">No hay métodos de pago registrados</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = this.pagos.map(pago => `
-      <tr>
-        <td>${pago.id || pago.ID}</td>
-        <td>${pago.nombre || pago.Nombre || '-'}</td>
-        <td>
-          <span class="status-badge ${this.getTipoClass(pago.tipo || pago.Tipo)}">
-            ${pago.tipo || pago.Tipo || 'Sin tipo'}
-          </span>
-        </td>
-        <td>${pago.descripcion ? (pago.descripcion.length > 50 ? pago.descripcion.substring(0, 50) + '...' : pago.descripcion) : (pago.Descripcion ? (pago.Descripcion.length > 50 ? pago.Descripcion.substring(0, 50) + '...' : pago.Descripcion) : '-')}</td>
-        <td>${pago.comision ? `${Number(pago.comision || pago.Comision || 0).toFixed(2)}%` : '-'}</td>
-        <td>
-          <span class="status-badge ${this.getStatusClass(pago.estado || pago.EstadoNombre)}">
-            ${pago.estado || pago.EstadoNombre || 'Sin estado'}
-          </span>
-        </td>
-        <td>
-          <div class="action-buttons">
-            <button class="btn-icon btn-edit" onclick="window.pagosModule.edit(${pago.id || pago.ID})" title="Editar">
-              ✏️
-            </button>
-            <button class="btn-icon btn-delete" onclick="window.pagosModule.delete(${pago.id || pago.ID})" title="Eliminar">
-              🗑️
-            </button>
-          </div>
-        </td>
-      </tr>
-    `).join('');
+    this.renderFilteredTable(this.pagos);
   }
 
   getTipoClass(tipo) {
@@ -184,6 +152,7 @@ class PagosModule {
       (p.tipo || p.Tipo || '').toLowerCase().includes(searchTerm) ||
       (p.id || p.ID || '').toString().includes(searchTerm)
     );
+    this.currentPage = 1;
     this.renderFilteredTable(filtered);
   }
 
@@ -205,19 +174,29 @@ class PagosModule {
       );
     }
     
+    this.currentPage = 1;
     this.renderFilteredTable(filtered);
   }
 
   renderFilteredTable(filtered) {
+    this.currentFilteredData = filtered;
     const tbody = this.container.querySelector("#pagosTableBody");
     if (!tbody) return;
 
-    if (filtered.length === 0) {
+    const totalPages = Math.ceil(filtered.length / this.itemsPerPage) || 1;
+    if (this.currentPage > totalPages) this.currentPage = totalPages;
+    
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    const paginatedData = filtered.slice(start, end);
+
+    if (paginatedData.length === 0) {
       tbody.innerHTML = '<tr><td colspan="8" class="text-center">No se encontraron métodos de pago</td></tr>';
+      this._renderPaginationControls(0);
       return;
     }
 
-    tbody.innerHTML = filtered.map(pago => `
+    tbody.innerHTML = paginatedData.map(pago => `
       <tr>
         <td>${pago.id || pago.ID}</td>
         <td>${pago.nombre || pago.Nombre || '-'}</td>
@@ -236,15 +215,49 @@ class PagosModule {
         <td>
           <div class="action-buttons">
             <button class="btn-icon btn-edit" onclick="window.pagosModule.edit(${pago.id || pago.ID})" title="Editar">
-              ✏️
+              <i class="fa-solid fa-pen"></i>
             </button>
             <button class="btn-icon btn-delete" onclick="window.pagosModule.delete(${pago.id || pago.ID})" title="Eliminar">
-              🗑️
+              <i class="fa-solid fa-trash"></i>
             </button>
           </div>
         </td>
       </tr>
     `).join('');
+    
+    this._renderPaginationControls(totalPages);
+  }
+
+  _renderPaginationControls(totalPages) {
+    const table = this.container.querySelector("table");
+    const tableWrapper = table ? table.parentElement : null;
+    if (!tableWrapper) return;
+    
+    let paginationDiv = this.container.querySelector('#paginationContainer');
+    if (!paginationDiv) {
+      paginationDiv = document.createElement('div');
+      paginationDiv.id = 'paginationContainer';
+      paginationDiv.className = 'pagination';
+      tableWrapper.parentElement.insertBefore(paginationDiv, tableWrapper.nextSibling);
+    }
+    
+    if (totalPages <= 1) {
+      paginationDiv.innerHTML = '';
+      return;
+    }
+    
+    let buttonsHTML = '';
+    for (let i = 1; i <= totalPages; i++) {
+        const activeClass = i === this.currentPage ? 'active' : '';
+        buttonsHTML += `<button onclick="window.pagosModule.goToPage(${i})" class="page-item ${activeClass}">${i}</button>`;
+    }
+    
+    paginationDiv.innerHTML = buttonsHTML;
+  }
+  
+  goToPage(page) {
+    this.currentPage = page;
+    this.renderFilteredTable(this.currentFilteredData);
   }
 
   showNewPaymentModal() {
@@ -295,7 +308,7 @@ class PagosModule {
                 Cancelar
               </button>
               <button type="submit" class="btn-primary">
-                💾 Guardar Método
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Método
               </button>
             </div>
           </form>
@@ -313,10 +326,10 @@ class PagosModule {
 
       try {
         await createMetodoPago(formData);
-        alert('Método de pago creado exitosamente');
+        showAlert('Información', 'Método de pago creado exitosamente', 'info');
         this.showList();
       } catch (error) {
-        alert('Error creando método de pago: ' + error.message);
+        showAlert('Error', 'Error creando método de pago: ' + error.message, 'error');
       }
     });
     
@@ -327,7 +340,7 @@ class PagosModule {
   edit(id) {
     const pago = this.pagos.find(p => p.id == id || p.ID == id);
     if (!pago) {
-      alert('Método de pago no encontrado');
+      Swal.fire('Error', 'Método de pago no encontrado', 'error');
       return;
     }
 
@@ -378,7 +391,7 @@ class PagosModule {
                 Cancelar
               </button>
               <button type="submit" class="btn-primary">
-                💾 Guardar Cambios
+                <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
               </button>
             </div>
           </form>
@@ -400,10 +413,10 @@ class PagosModule {
         };
 
         await updateMetodoPago(id, formData);
-        alert('Método de pago actualizado exitosamente');
+        showAlert('Información', 'Método de pago actualizado exitosamente', 'info');
         this.showList();
       } catch (error) {
-        alert('Error actualizando método de pago: ' + error.message);
+        showAlert('Error', 'Error actualizando método de pago: ' + error.message, 'error');
       }
     });
     
@@ -412,38 +425,50 @@ class PagosModule {
   }
 
   async delete(id) {
-    if (confirm('¿Está seguro de que desea eliminar este método de pago?')) {
+    const confirmRes = await Swal.fire({
+      title: '¿Eliminar Método de Pago?',
+      text: '¿Está seguro de que desea eliminar este método de pago?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (confirmRes.isConfirmed) {
       try {
         await deleteMetodoPago(id);
-        alert('Método de pago eliminado exitosamente');
+        showAlert('Información', 'Método de pago eliminado exitosamente', 'info');
         await this.loadData();
         this.render();
       } catch (error) {
-        alert('Error eliminando método de pago: ' + error.message);
+        showAlert('Error', 'Error eliminando método de pago: ' + error.message, 'error');
       }
     }
   }
 
   exportData() {
-    const csvContent = [
-      ['ID', 'Nombre', 'Tipo', 'Descripción', 'Comisión', 'Estado'],
-      ...this.pagos.map(p => [
-        p.id || p.ID,
-        p.nombre || p.Nombre,
-        p.tipo || p.Tipo,
-        p.descripcion ? (p.descripcion.length > 50 ? p.descripcion.substring(0, 50) + '...' : p.descripcion) : (p.Descripcion ? (p.Descripcion.length > 50 ? p.Descripcion.substring(0, 50) + '...' : p.Descripcion) : '-'),
-        p.comision || p.Comision,
-        p.estado || p.EstadoNombre
-      ])
-    ].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'metodos_pago.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
+    if (!this.pagos.length) {
+      showAlert('Atención', "No hay métodos de pago para exportar", 'warning');
+      return;
+    }
+    
+    if (typeof XLSX === 'undefined') {
+        showAlert('Error', 'La librería SheetJS no está cargada.', 'error');
+        return;
+    }
+    
+    const ws_data = this.pagos.map(p => ({
+        "ID": p.id || p.ID || "",
+        "Nombre": p.nombre || p.Nombre || "",
+        "Tipo": p.tipo || p.Tipo || "",
+        "Descripción": p.descripcion ? (p.descripcion.length > 50 ? p.descripcion.substring(0, 50) + '...' : p.descripcion) : (p.Descripcion ? (p.Descripcion.length > 50 ? p.Descripcion.substring(0, 50) + '...' : p.Descripcion) : '-'),
+        "Comisión (%)": p.comision || p.Comision || 0,
+        "Estado": p.estado || p.EstadoNombre || ""
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(ws_data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "MetodosPago");
+    XLSX.writeFile(wb, `metodos_pago_vialuna_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   showError(title, message) {

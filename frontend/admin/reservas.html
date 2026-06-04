@@ -1,12 +1,12 @@
-﻿<!-- ==========================================================================
-   VISTA DE RESERVAS - MODERNIZACIÃ“N COMPLETA (VIA LUNA)
+<!-- ==========================================================================
+   VISTA DE RESERVAS - MODERNIZACIÓN COMPLETA (VIA LUNA)
    ========================================================================== -->
 
 <!-- Header Section -->
 <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
   <div>
     <h1 class="text-2xl font-bold text-brand-deep tracking-tight m-0">Reservas</h1>
-    <p class="text-sm text-muted mt-1 m-0">GestiÃ³n integral de estancias, huÃ©spedes y servicios del hotel.</p>
+    <p class="text-sm text-muted mt-1 m-0">Gestión integral de estancias, huéspedes y servicios del hotel.</p>
   </div>
   <div>
     <button class="flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 cursor-pointer border-none" id="showReservationFormBtn">
@@ -19,7 +19,7 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
   <!-- Total Reservas -->
   <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-    <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner">ðŸ“…</div>
+    <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner"><i class="fa-regular fa-calendar"></i></div>
     <div>
       <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Total Reservas</p>
       <h3 id="totalReservations" class="m-0 text-xl font-bold text-brand-deep mt-0.5">0</h3>
@@ -28,7 +28,7 @@
   
   <!-- Activas / Confirmadas -->
   <div class="p-5 bg-emerald-50/40 rounded-2xl border border-emerald-100/50 border-l-4 border-l-emerald-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-emerald-600 font-bold">âœ“</div>
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-emerald-600 font-bold">✓</div>
     <div>
       <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Confirmadas</p>
       <h3 id="activeReservations" class="m-0 text-xl font-bold text-emerald-700 mt-0.5">0</h3>
@@ -37,7 +37,7 @@
 
   <!-- Check-ins Hoy -->
   <div class="p-5 bg-purple-50/40 rounded-2xl border border-purple-100/50 border-l-4 border-l-purple-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-purple-600 font-bold">âœ¨</div>
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-purple-600 font-bold"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
     <div>
       <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Check-ins Hoy</p>
       <h3 id="todayReservations" class="m-0 text-xl font-bold text-purple-700 mt-0.5">0</h3>
@@ -46,7 +46,7 @@
 
   <!-- Ingresos Totales -->
   <div class="p-5 bg-amber-50/40 rounded-2xl border border-amber-100/50 border-l-4 border-l-amber-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-amber-600 font-bold">ðŸ’°</div>
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-amber-600 font-bold">💰</div>
     <div>
       <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Ingresos Totales</p>
       <h3 id="monthlyRevenue" class="m-0 text-xl font-bold text-amber-700 mt-0.5">$0</h3>
@@ -60,12 +60,12 @@
   <div class="flex flex-col sm:flex-row justify-between items-stretch gap-4 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm mb-6">
     <div class="flex-1 max-w-md">
       <div class="relative">
-        <span class="absolute inset-y-0 left-3 flex items-center text-muted text-sm">ðŸ”</span>
-        <input type="text" id="searchReservations" placeholder="Buscar por cliente, habitaciÃ³n o ID..." class="w-full h-11 pl-9 pr-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all duration-300 text-sm">
+        <span class="absolute inset-y-0 left-3 flex items-center text-muted text-sm"><i class="fa-solid fa-eye"></i></span>
+        <input type="text" id="searchReservations" placeholder="Buscar por cliente, habitación o ID..." class="w-full min-h-[44px] py-2.5 pl-9 pr-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all duration-300 text-sm">
       </div>
     </div>
     <div class="flex gap-2">
-      <select id="filterStatus" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
+      <select id="filterStatus" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
         <option value="">Todos los estados</option>
         <option value="1">Confirmada (Activa)</option>
         <option value="2">Cancelada</option>
@@ -76,143 +76,156 @@
 
   <!-- Data Table SaaS Premium -->
   <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-    <div class="overflow-x-auto">
+    <div class="responsive-scroll">
       <table class="w-full border-collapse text-left text-sm text-gray-500">
         <thead class="bg-gray-50/75 border-b border-gray-100 text-brand-deep font-bold">
           <tr>
             <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">ID</th>
-            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Cliente</th>
-            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Hab.</th>
-            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Periodo</th>
-            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Total</th>
+            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Huésped</th>
+            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Habitación</th>
+            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Fecha Inicio</th>
+            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Fecha Fin</th>
             <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Estado</th>
+            <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider">Total</th>
             <th class="px-6 py-4 font-bold text-xs uppercase tracking-wider text-center">Acciones</th>
           </tr>
         </thead>
         <tbody id="reservationsTableBody" class="divide-y divide-gray-50 bg-white">
-          <tr>
-            <td colspan="7" class="px-6 py-10 text-center text-muted font-semibold">
-              <div class="flex items-center justify-center gap-2">
-                <span class="animate-spin text-lg">â³</span> Cargando reservas del hotel...
-              </div>
-            </td>
-          </tr>
+          <!-- Filas generadas por JS -->
         </tbody>
       </table>
     </div>
+    <div id="paginationContainer" class="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-100 bg-white w-full"></div>
   </div>
 </section>
 
 <!-- SECTION: CREATE RESERVATION FORM -->
-<section id="reservationFormSection" style="display: none;" class="transition-all duration-300">
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-    <!-- Form Content Left -->
-    <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
+<section id="reservationFormSection" style="display: none;" class="transition-all duration-300 w-full box-border">
+    <div class="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 items-start w-full box-border min-w-0">
+    <!-- Form Content Left (Fluye naturalmente) -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-8 w-full box-border min-w-0 relative">
+    <button id="backToListInlineBtn" onclick="" class="px-4 py-2 bg-gray-50 border border-gray-200 text-brand-deep text-xs font-bold rounded-xl hover:bg-gray-100 cursor-pointer transition-all duration-300" style="display:none; position:fixed; left:16px; top:96px; z-index:9999; box-shadow:0 6px 18px rgba(16,24,40,0.08);">
+      ← Volver a la lista
+    </button>
       <div class="border-b border-gray-100 pb-5 mb-6">
-        <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">ðŸ“… Registrar Nueva Reserva</h2>
-        <p class="text-sm text-muted mt-1 m-0">Complete la informaciÃ³n bÃ¡sica del huÃ©sped y personalice su estancia.</p>
+        <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2"><i class="fa-regular fa-calendar"></i> Registrar Nueva Reserva</h2>
+        <p class="text-sm text-muted mt-1 m-0">Complete la información básica del huésped y personalice su estancia.</p>
       </div>
 
-      <form id="reservationForm" class="flex flex-col gap-6 m-0 p-0 bg-transparent border-none">
-        <!-- Grid Basic Info -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">HuÃ©sped:</label>
-            <select id="clienteSelect" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer" required>
-              <option value="">Seleccionar cliente...</option>
-            </select>
-          </div>
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Documento:</label>
-            <input type="text" id="documentoInput" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-100 text-sm font-semibold focus:outline-none cursor-not-allowed" readonly>
-          </div>
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Fecha Entrada:</label>
-            <input type="date" id="fechaInicio" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" required>
-          </div>
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Fecha Salida:</label>
-            <input type="date" id="fechaFin" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" required>
-          </div>
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Hora Entrada:</label>
-            <input type="time" id="horaEntrada" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" value="14:00">
-          </div>
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Hora Salida:</label>
-            <input type="time" id="horaSalida" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" value="11:00">
+      <form id="reservationForm" class="flex flex-col gap-8 m-0 p-0 bg-transparent border-none w-full box-border">
+        
+        <!-- 1. Información del Huésped -->
+        <div class="flex flex-col gap-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 border-b border-gray-50 pb-2"><i class="fa-solid fa-user"></i> 1. Información del Huésped</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Huésped:</label>
+              <select id="clienteSelect" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer w-full box-border" required>
+                <option value="">Seleccionar cliente...</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Documento:</label>
+              <input type="text" id="documentoInput" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-sm font-semibold focus:outline-none cursor-not-allowed w-full box-border" readonly>
+            </div>
           </div>
         </div>
 
-        <!-- Room Selection Card Grid -->
-        <div class="border-t border-gray-100 pt-6 mt-4">
-          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider mb-4 flex items-center gap-2">ðŸ¨ HabitaciÃ³n Disponible</h3>
-          <div id="roomSelection" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- 2. Fechas y Horarios -->
+        <div class="flex flex-col gap-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 border-b border-gray-50 pb-2"><i class="fa-regular fa-clock"></i> 2. Fechas y Horarios</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Fecha Entrada:</label>
+              <input type="date" id="fechaInicio" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 w-full box-border" required>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Fecha Salida:</label>
+              <input type="date" id="fechaFin" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 w-full box-border" required>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Hora Entrada:</label>
+              <input type="time" id="horaEntrada" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 w-full box-border" value="14:00">
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Hora Salida:</label>
+              <input type="time" id="horaSalida" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 w-full box-border" value="11:00">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Habitación Seleccionada -->
+        <div class="flex flex-col gap-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 border-b border-gray-50 pb-2"><i class="fa-solid fa-hotel"></i> 3. Habitación Seleccionada</h3>
+          <div id="roomSelection" class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full box-border">
             <div class="text-center py-6 text-muted font-semibold col-span-2">Cargando habitaciones...</div>
           </div>
         </div>
 
-        <!-- Packages Selection Grid -->
-        <div class="border-t border-gray-100 pt-6 mt-4">
-          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider mb-4 flex items-center gap-2">ðŸŽ Paquetes Especiales</h3>
-          <div id="packagesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div class="text-center py-6 text-muted font-semibold col-span-2">Cargando paquetes...</div>
-          </div>
-        </div>
-
-        <!-- Additional Services selection -->
-        <div class="border-t border-gray-100 pt-6 mt-4">
-          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider mb-4 flex items-center gap-2">âœ¨ Servicios Adicionales</h3>
-          <div id="servicesGrid" class="flex flex-col gap-3">
+        <!-- 4. Servicios Adicionales -->
+        <div class="flex flex-col gap-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 border-b border-gray-50 pb-2"><i class="fa-solid fa-wand-magic-sparkles"></i> 4. Servicios Adicionales</h3>
+          <div id="servicesGrid" class="flex flex-col gap-3 w-full box-border">
             <div class="text-center py-6 text-muted font-semibold">Cargando servicios...</div>
           </div>
         </div>
 
-        <!-- Payment and Initial State Details -->
-        <div class="border-t border-gray-100 pt-6 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">MÃ©todo de Pago:</label>
-            <select id="metodoPago" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer" required>
-              <option value="">Seleccionar mÃ©todo...</option>
-              <option value="1">Efectivo</option>
-              <option value="2">Tarjeta DÃ©bito/CrÃ©dito</option>
-              <option value="3">Transferencia Bancaria</option>
-            </select>
+        <!-- 5. Paquetes Especiales -->
+        <div class="flex flex-col gap-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 border-b border-gray-50 pb-2">🎁 5. Paquetes Especiales</h3>
+          <div id="packagesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full box-border">
+            <div class="text-center py-6 text-muted font-semibold col-span-2">Cargando paquetes...</div>
           </div>
-          <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial:</label>
-            <select id="estadoReserva" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer" required>
-              <option value="1">Confirmada (Activa)</option>
-              <option value="2">Pendiente</option>
-            </select>
+        </div>
+
+        <!-- 6. Pago y Confirmación -->
+        <div class="flex flex-col gap-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 border-b border-gray-50 pb-2"><i class="fa-solid fa-credit-card"></i> 6. Confirmación</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Método de Pago:</label>
+              <select id="metodoPago" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer w-full box-border" required>
+                <option value="">Seleccionar método...</option>
+                <option value="1">Efectivo</option>
+                <option value="2">Tarjeta Débito/Crédito</option>
+                <option value="3">Transferencia Bancaria</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial:</label>
+              <select id="estadoReserva" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer w-full box-border" required>
+                <option value="1">Confirmada (Activa)</option>
+                <option value="2">Pendiente</option>
+              </select>
+            </div>
           </div>
         </div>
 
         <!-- Form Action Buttons -->
-        <div class="border-t border-gray-100 pt-6 mt-4 flex justify-end gap-3">
-          <button type="button" id="clearFormBtn" class="px-5 py-3 rounded-xl border border-gray-200 text-muted font-semibold bg-white hover:bg-gray-50 transition-all duration-300 cursor-pointer text-sm">Limpiar Formulario</button>
-          <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm">Confirmar y Crear Reserva ðŸš€</button>
+        <div class="border-t border-gray-100 pt-6 mt-2 flex flex-col sm:flex-row justify-end gap-3 w-full box-border">
+          <button type="button" id="clearFormBtn" class="px-5 py-3 rounded-xl border border-gray-200 text-muted font-semibold bg-white hover:bg-gray-50 transition-all duration-300 cursor-pointer text-sm w-full sm:w-auto box-border">Limpiar Formulario</button>
+          <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm w-full sm:w-auto box-border">Confirmar y Crear Reserva 🚀</button>
         </div>
       </form>
     </div>
 
-    <!-- Summary Sidebar Content Right -->
-    <aside class="sticky top-6 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-      <div class="bg-brand-deep text-white p-5 text-center">
-        <h3 class="m-0 text-base font-bold tracking-wide">Resumen de Estancia</h3>
+    <!-- Summary Sidebar Content Right (Sticky en Desktop) -->
+    <aside class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col w-full box-border xl:sticky xl:top-6" style="max-height: calc(100vh - 48px);">
+      <div class="bg-brand-deep text-white p-5 text-center shrink-0">
+        <h3 class="m-0 text-base font-bold tracking-wide">Resumen de Costos</h3>
       </div>
       
-      <div class="p-6 flex flex-col gap-6">
+      <div class="p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
         <!-- Room details -->
         <div id="summaryRoom" class="flex flex-col gap-3 pb-5 border-b border-gray-100">
-          <p class="text-xs text-center text-muted italic my-4">Sin habitaciÃ³n seleccionada</p>
+          <p class="text-xs text-center text-muted italic my-4">Sin habitación seleccionada</p>
         </div>
 
         <!-- Packages included -->
         <div>
           <h4 class="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Paquetes Seleccionados</h4>
           <div id="summaryPackages" class="flex flex-col gap-2">
-            <p class="text-xs text-muted italic m-0">NingÃºn paquete seleccionado</p>
+            <p class="text-xs text-muted italic m-0">Ningún paquete seleccionado</p>
           </div>
         </div>
 
@@ -220,12 +233,12 @@
         <div class="pb-5 border-b border-gray-100">
           <h4 class="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Servicios Adicionales</h4>
           <div id="summaryServices" class="flex flex-col gap-2">
-            <p class="text-xs text-muted italic m-0">NingÃºn servicio seleccionado</p>
+            <p class="text-xs text-muted italic m-0">Ningún servicio seleccionado</p>
           </div>
         </div>
 
         <!-- Summary Totals -->
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col gap-2 mt-auto pt-4 shrink-0">
           <div class="flex justify-between items-center text-xs text-muted font-semibold">
             <span>Subtotal:</span>
             <span id="subtotal">$0</span>
@@ -237,9 +250,9 @@
         </div>
       </div>
 
-      <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-center">
-        <button id="cancelNewReservationBtn" class="w-full py-2.5 rounded-xl border border-dashed border-brand/40 text-brand-deep font-bold hover:bg-brand/5 active:scale-98 transition-all duration-300 cursor-pointer bg-white text-xs">
-          â† Volver al listado de reservas
+      <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-center shrink-0">
+        <button id="cancelNewReservationBtn" class="w-full py-3 rounded-xl border border-dashed border-brand/40 text-brand-deep font-bold hover:bg-brand/5 active:scale-98 transition-all duration-300 cursor-pointer bg-white text-xs box-border">
+          ← Volver al listado de reservas
         </button>
       </div>
     </aside>
@@ -266,11 +279,11 @@
     </div>
 
     <div class="flex flex-col gap-6">
-      <!-- Grid: Cliente & HabitaciÃ³n -->
+      <!-- Grid: Cliente & Habitación -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Cliente info -->
         <div class="p-5 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-3">
-          <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">HuÃ©sped Principal</h4>
+          <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">Huésped Principal</h4>
           <div>
             <strong id="detResClienteNombre" class="block text-base text-ink">Cargando...</strong>
             <span id="detResClienteDoc" class="block text-xs text-muted mt-1">Doc: --</span>
@@ -279,9 +292,9 @@
           </div>
         </div>
 
-        <!-- HabitaciÃ³n info -->
+        <!-- Habitación info -->
         <div class="p-5 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-3">
-          <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">HabitaciÃ³n Reservada</h4>
+          <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">Habitación Reservada</h4>
           <div>
             <strong id="detResHabNombre" class="block text-base text-brand-deep">Cargando...</strong>
             <span id="detResHabPrecio" class="block text-xs text-brand font-semibold mt-1">--</span>
@@ -296,7 +309,7 @@
           <span class="text-muted text-xs block">Fecha Entrada</span>
           <strong id="detResFechaInicio" class="text-brand-deep block mt-0.5">--</strong>
         </div>
-        <div class="text-brand text-lg">âž”</div>
+        <div class="text-brand text-lg">➔</div>
         <div class="text-right">
           <span class="text-muted text-xs block">Fecha Salida</span>
           <strong id="detResFechaFin" class="text-brand-deep block mt-0.5">--</strong>
@@ -314,7 +327,7 @@
       <!-- Pago, Total & Estado -->
       <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span class="text-xs text-muted font-bold uppercase tracking-wider block">MÃ©todo de Pago</span>
+          <span class="text-xs text-muted font-bold uppercase tracking-wider block">Método de Pago</span>
           <strong id="detResMetodoPago" class="text-brand-deep block mt-1">--</strong>
         </div>
         <div>
@@ -334,3 +347,205 @@
   </article>
 </div>
 
+    <script type="module">
+      import { apiUrl, getConnectionErrorMessage } from '../js/shared/api-config.js';
+      import { renderPremiumPagination } from '../dashboard/modules/ui-utils.js';
+
+      const token = localStorage.getItem('token');
+
+      const searchInput = document.getElementById('searchReservations');
+      const statusSelect = document.getElementById('filterStatus');
+      const tableBody = document.getElementById('reservationsTableBody');
+      const paginationContainer = document.getElementById('paginationContainer');
+      const showFormBtn = document.getElementById('showReservationFormBtn');
+      const reservationListSection = document.getElementById('reservationsListSection');
+      const reservationFormSection = document.getElementById('reservationFormSection');
+      const cancelNewReservationBtn = document.getElementById('cancelNewReservationBtn');
+      const backToListInlineBtn = document.getElementById('backToListInlineBtn');
+
+      let allReservations = [];
+      let filteredReservations = [];
+
+      const statePagination = {
+        currentPage: 1,
+        itemsPerPage: 10
+      };
+
+      // Exponer la API para la paginación compartida
+      window.reservasPublicModule = {
+        goToPage: (page) => { statePagination.currentPage = page; renderPage(); },
+        changeItemsPerPage: (newSize) => { statePagination.itemsPerPage = Number(newSize); statePagination.currentPage = 1; renderPage(); }
+      };
+
+      function formatMoney(val) {
+        return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Number(val || 0));
+      }
+
+      function showMessageInTable(message) {
+        tableBody.innerHTML = `<tr><td colspan="8" class="px-6 py-10 text-center text-sm text-muted font-semibold">${message}</td></tr>`;
+      }
+
+      async function fetchReservations() {
+        try {
+          const headers = {};
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+
+          const res = await fetch(apiUrl('reservas'), { headers });
+          if (!res.ok) {
+            if (res.status === 401) {
+              showMessageInTable('Necesitas iniciar sesión para ver las reservas.');
+              return;
+            }
+            throw new Error('Error al obtener reservas');
+          }
+
+          const data = await res.json();
+          allReservations = Array.isArray(data) ? data : (data.data || []);
+          applyFiltersAndRender();
+        } catch (err) {
+          const msg = getConnectionErrorMessage('reservas');
+          showMessageInTable(msg);
+          console.error(err);
+        }
+      }
+
+      function applyFiltersAndRender() {
+        const q = String(searchInput.value || '').trim().toLowerCase();
+        const status = String(statusSelect.value || '');
+
+        filteredReservations = allReservations.filter((r) => {
+          if (status && String(r.estado?.id || '') !== status) return false;
+          if (!q) return true;
+          const candidate = [String(r.id_reserva || ''), (r.cliente?.nombreCompleto || ''), (r.habitacion?.nombre || '')].join(' ').toLowerCase();
+          return candidate.includes(q);
+        });
+
+        statePagination.currentPage = 1;
+        renderPage();
+      }
+
+      function renderPage() {
+          const pageSize = Number(statePagination.itemsPerPage) || 10;
+          const total = filteredReservations.length;
+          const totalPages = Math.max(1, Math.ceil(total / pageSize));
+          if (statePagination.currentPage > totalPages) statePagination.currentPage = totalPages;
+
+          const start = (statePagination.currentPage - 1) * pageSize;
+          const pageItems = filteredReservations.slice(start, start + pageSize);
+
+          if (!pageItems.length) {
+            showMessageInTable('No hay reservas para mostrar.');
+            paginationContainer.innerHTML = '';
+            return;
+          }
+
+          tableBody.innerHTML = pageItems.map((r) => {
+          const cliente = r.cliente?.nombreCompleto || '—';
+          const habitacion = r.habitacion?.nombre || '—';
+          const fechaInicio = r.fecha_inicio || r.fecha_reserva || '—';
+          const fechaFin = r.fecha_fin || '—';
+          const estadoNombre = r.estado?.nombre || '—';
+          
+          let estadoColor = 'bg-gray-100 text-gray-800';
+          if (estadoNombre.toLowerCase().includes('activ') || estadoNombre.toLowerCase().includes('confirm')) {
+            estadoColor = 'bg-emerald-100 text-emerald-800';
+          } else if (estadoNombre.toLowerCase().includes('cancel')) {
+            estadoColor = 'bg-red-100 text-red-800';
+          } else if (estadoNombre.toLowerCase().includes('pendient')) {
+            estadoColor = 'bg-amber-100 text-amber-800';
+          }
+
+          return `
+            <tr class="hover:bg-gray-50/50 transition-all duration-200">
+              <td class="px-6 py-4 font-semibold text-brand-deep">#${r.id_reserva}</td>
+              <td class="px-6 py-4 font-semibold text-gray-700">${cliente}</td>
+              <td class="px-6 py-4 font-semibold text-brand-deep">${habitacion}</td>
+              <td class="px-6 py-4 text-xs text-muted font-medium">${fechaInicio}</td>
+              <td class="px-6 py-4 text-xs text-muted font-medium">${fechaFin}</td>
+              <td class="px-6 py-4">
+                <span class="px-3 py-1 rounded-full text-[11px] font-bold ${estadoColor}">
+                  ${estadoNombre}
+                </span>
+              </td>
+              <td class="px-6 py-4 font-bold text-brand-deep">${totalStr}</td>
+              <td class="px-6 py-4">
+                <div class="action-group-modern justify-center">
+                  <button class="btn-action-modern view" data-id="${r.id_reserva}" title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
+                  <button class="btn-action-modern edit" data-id="${r.id_reserva}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                  <button class="btn-action-modern delete" data-id="${r.id_reserva}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </td>
+            </tr>`;
+        }).join('');
+
+        // Renderizar controles de paginación reutilizando helper común
+        renderPremiumPagination('paginationContainer', statePagination, total, 'reservasPublicModule');
+        attachRowButtons();
+      }
+
+      // fin renderPage
+
+      function attachRowButtons() {
+        tableBody.querySelectorAll('button[data-id]').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            const id = e.currentTarget.getAttribute('data-id');
+            const reserva = allReservations.find((r) => String(r.id_reserva) === String(id));
+            if (reserva) showReservationDetail(reserva);
+          });
+        });
+      }
+
+      function showReservationDetail(r) {
+        document.getElementById('detalleReservaID').textContent = `ID: #${r.id_reserva}`;
+        document.getElementById('detResClienteNombre').textContent = r.cliente?.nombreCompleto || '—';
+        document.getElementById('detResClienteDoc').textContent = `Doc: ${r.cliente?.nroDocumento || '—'}`;
+        document.getElementById('detResClienteEmail').textContent = `Email: ${r.cliente?.email || '—'}`;
+        document.getElementById('detResClienteTel').textContent = `Tel: ${r.cliente?.telefono || '—'}`;
+
+        document.getElementById('detResHabNombre').textContent = r.habitacion?.nombre || '—';
+        document.getElementById('detResHabPrecio').textContent = formatMoney(r.habitacion?.costo || r.total || 0);
+
+        document.getElementById('detResFechaInicio').textContent = r.fecha_inicio || '—';
+        document.getElementById('detResFechaFin').textContent = r.fecha_fin || '—';
+
+        const serviciosGrid = document.getElementById('detResServiciosGrid');
+        serviciosGrid.innerHTML = '';
+        (r.paquetes || []).forEach((p) => { serviciosGrid.innerHTML += `<div class="px-3 py-1 bg-gray-100 rounded-md text-xs font-semibold">${p.nombre}</div>`; });
+        (r.servicios || []).forEach((s) => { serviciosGrid.innerHTML += `<div class="px-3 py-1 bg-gray-100 rounded-md text-xs font-semibold">${s.nombre}</div>`; });
+
+        document.getElementById('detResMetodoPago').textContent = r.metodoPago?.nombre || '—';
+        document.getElementById('detResEstadoBadge').textContent = r.estado?.nombre || '—';
+        document.getElementById('detResTotal').textContent = formatMoney(r.total || 0);
+
+        document.getElementById('reservaDetalleModal').classList.remove('hidden');
+      }
+
+      // Event listeners
+      searchInput.addEventListener('input', () => applyFiltersAndRender());
+      statusSelect.addEventListener('change', () => applyFiltersAndRender());
+
+      // Mostrar formulario de nueva reserva y boton volver
+      showFormBtn?.addEventListener('click', () => {
+        if (reservationFormSection) reservationFormSection.style.display = 'block';
+        if (reservationListSection) reservationListSection.style.display = 'none';
+        // Asegurar que el botón de cancelar/volver esté visible
+        if (cancelNewReservationBtn) cancelNewReservationBtn.style.display = '';
+        if (backToListInlineBtn) backToListInlineBtn.style.display = '';
+      });
+
+      cancelNewReservationBtn?.addEventListener('click', () => {
+        if (reservationFormSection) reservationFormSection.style.display = 'none';
+        if (reservationListSection) reservationListSection.style.display = '';
+        if (backToListInlineBtn) backToListInlineBtn.style.display = 'none';
+      });
+
+      backToListInlineBtn?.addEventListener('click', () => {
+        if (reservationFormSection) reservationFormSection.style.display = 'none';
+        if (reservationListSection) reservationListSection.style.display = '';
+        if (cancelNewReservationBtn) cancelNewReservationBtn.style.display = 'none';
+        if (backToListInlineBtn) backToListInlineBtn.style.display = 'none';
+      });
+
+      // Inicializar
+      fetchReservations();
+    </script>

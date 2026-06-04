@@ -1,12 +1,12 @@
-﻿<!-- ==========================================================================
-   VISTA DE USUARIOS - GESTIÃ“N DE ACCESOS (VIA LUNA)
+<!-- ==========================================================================
+   VISTA DE USUARIOS - GESTIÓN DE ACCESOS (VIA LUNA)
    ========================================================================== -->
 
 <!-- Header Section -->
 <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
   <div>
     <h1 class="text-2xl font-bold text-brand-deep tracking-tight m-0">Usuarios</h1>
-    <p class="text-sm text-muted mt-1 m-0">AdministraciÃ³n de accesos y cuentas del personal del hotel.</p>
+    <p class="text-sm text-muted mt-1 m-0">Administración de accesos y cuentas del personal del hotel.</p>
   </div>
   <div>
     <button class="flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 cursor-pointer border-none" onclick="window.usuariosModule.showNewUserModal()">
@@ -19,7 +19,7 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
   <!-- Total Usuarios -->
   <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-    <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner">ðŸ‘¥</div>
+    <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner"><i class="fa-solid fa-users"></i></div>
     <div>
       <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Total Usuarios</p>
       <h3 id="totalUsuarios" class="m-0 text-xl font-bold text-brand-deep mt-0.5">0</h3>
@@ -28,7 +28,7 @@
   
   <!-- Administradores -->
   <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-    <div class="w-12 h-12 bg-brand/5 rounded-xl flex items-center justify-center text-xl text-brand-deep shadow-inner font-bold">ðŸ”</div>
+    <div class="w-12 h-12 bg-brand/5 rounded-xl flex items-center justify-center text-xl text-brand-deep shadow-inner font-bold"><i class="fa-solid fa-lock"></i></div>
     <div>
       <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Administradores</p>
       <h3 id="totalAdmins" class="m-0 text-xl font-bold text-brand-deep mt-0.5">0</h3>
@@ -37,7 +37,7 @@
 
   <!-- Clientes con Acceso -->
   <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-brand-light font-bold">ðŸ‘¤</div>
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-brand-light font-bold">👤</div>
     <div>
       <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Clientes (Acceso)</p>
       <h3 id="totalClients" class="m-0 text-xl font-bold text-brand-deep mt-0.5">0</h3>
@@ -46,7 +46,7 @@
 
   <!-- Usuarios Activos -->
   <div class="p-5 bg-emerald-50/40 rounded-2xl border border-emerald-100/50 border-l-4 border-l-emerald-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-emerald-600 font-bold">âœ“</div>
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-emerald-600 font-bold">✓</div>
     <div>
       <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Usuarios Activos</p>
       <h3 id="usuariosActivos" class="m-0 text-xl font-bold text-emerald-700 mt-0.5">0</h3>
@@ -59,13 +59,13 @@
   <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
     <!-- Buscador -->
     <div class="relative md:col-span-1">
-      <span class="absolute inset-y-0 left-3 flex items-center text-muted text-sm">ðŸ”</span>
-      <input type="text" id="searchUsuarios" placeholder="Buscar por nombre o correo..." class="w-full h-11 pl-9 pr-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all duration-300 text-sm">
+      <span class="absolute inset-y-0 left-3 flex items-center text-muted text-sm"><i class="fa-solid fa-eye"></i></span>
+      <input type="text" id="searchUsuarios" placeholder="Buscar por nombre o correo..." class="w-full min-h-[44px] py-2.5 pl-9 pr-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all duration-300 text-sm">
     </div>
     
     <!-- Filtro por Rol -->
     <div>
-      <select id="filterRol" class="w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
+      <select id="filterRol" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
         <option value="">Todos los roles</option>
         <option value="1">Administrador</option>
         <option value="2">Cliente</option>
@@ -74,7 +74,7 @@
 
     <!-- Filtro por Estado -->
     <div>
-      <select id="filterEstado" class="w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
+      <select id="filterEstado" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
         <option value="">Todos los estados</option>
         <option value="1">Activo</option>
         <option value="0">Inactivo</option>
@@ -82,15 +82,15 @@
     </div>
   </div>
   <div class="flex gap-2 justify-end items-center">
-    <button class="h-11 px-5 rounded-xl bg-gray-100 text-brand-deep font-semibold shadow-sm hover:bg-gray-200 active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm flex items-center gap-1.5" onclick="window.usuariosModule.exportData()">
-      <span>ðŸ“¥</span> Exportar
+    <button class="min-h-[44px] py-2.5 px-5 rounded-xl bg-gray-100 text-brand-deep font-semibold shadow-sm hover:bg-gray-200 active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm flex items-center gap-1.5" onclick="window.usuariosModule.exportData()">
+      <span>📥</span> Exportar
     </button>
   </div>
 </div>
 
 <!-- Data Table SaaS Premium -->
 <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-  <div class="overflow-x-auto">
+  <div class="responsive-scroll">
     <table class="w-full border-collapse text-left text-sm text-gray-500">
       <thead class="bg-gray-50/75 border-b border-gray-100 text-brand-deep font-bold">
         <tr>
@@ -106,7 +106,7 @@
         <tr>
           <td colspan="6" class="px-6 py-10 text-center text-muted font-semibold">
             <div class="flex items-center justify-center gap-2">
-              <span class="animate-spin text-lg">â³</span> Cargando usuarios...
+              <span class="animate-spin text-lg"><i class="fa-solid fa-spinner fa-spin"></i></span> Cargando usuarios...
             </div>
           </td>
         </tr>
@@ -114,4 +114,3 @@
     </table>
   </div>
 </div>
-

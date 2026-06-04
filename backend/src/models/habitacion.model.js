@@ -38,8 +38,12 @@ const obtener = () => {
       IDHabitacion,
       NombreHabitacion,
       ImagenHabitacion,
+      ImagenUrl,
       Descripcion,
       Costo,
+      CapacidadMaximaPersonas,
+      cantidad_camas,
+      tipo_camas,
       Estado,
       CASE Estado
         WHEN 1 THEN 'disponible'
@@ -60,8 +64,12 @@ const obtenerPorId = (id) => {
       IDHabitacion,
       NombreHabitacion,
       ImagenHabitacion,
+      ImagenUrl,
       Descripcion,
       Costo,
+      CapacidadMaximaPersonas,
+      cantidad_camas,
+      tipo_camas,
       Estado,
       CASE Estado
         WHEN 1 THEN 'disponible'
@@ -80,14 +88,18 @@ const obtenerPorId = (id) => {
 const crear = (data) => {
   return db.query(
     `INSERT INTO habitacion
-    (NombreHabitacion, ImagenHabitacion, Descripcion, Costo, Estado)
-    VALUES (?, ?, ?, ?, ?)`,
+    (NombreHabitacion, ImagenHabitacion, Descripcion, Costo, CapacidadMaximaPersonas, Estado, cantidad_camas, tipo_camas, ImagenUrl)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.NombreHabitacion,
       data.ImagenHabitacion || null,
       data.Descripcion,
       data.Costo,
-      normalizeEstado(data.Estado)
+      normalizeCapacidad(data),
+      normalizeEstado(data.Estado),
+      data.cantidad_camas || null,
+      data.tipo_camas || null,
+      data.ImagenUrl || null
     ]
   )
   .then(([result]) => result);
@@ -96,14 +108,19 @@ const crear = (data) => {
 const actualizar = (id, data) => {
   return db.query(
     `UPDATE habitacion SET 
-    NombreHabitacion = ?, ImagenHabitacion = ?, Descripcion = ?, Costo = ?, Estado = ?
+    NombreHabitacion = ?, ImagenHabitacion = ?, Descripcion = ?, Costo = ?, CapacidadMaximaPersonas = ?, Estado = ?,
+    cantidad_camas = ?, tipo_camas = ?, ImagenUrl = ?
     WHERE IDHabitacion = ?`,
     [
       data.NombreHabitacion,
       data.ImagenHabitacion || null,
       data.Descripcion,
       data.Costo,
+      normalizeCapacidad(data),
       normalizeEstado(data.Estado),
+      data.cantidad_camas || null,
+      data.tipo_camas || null,
+      data.ImagenUrl || null,
       id
     ]
   )

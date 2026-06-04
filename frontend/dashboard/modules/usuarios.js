@@ -5,8 +5,11 @@ import {
   updateUsuario,
   deleteUsuario,
   getRoles,
-  getReservas
+  getReservas,
+  getClientes,
+  toggleEstadoCliente
 } from "../core/api.js";
+import { showAlert, ICONS } from './ui-utils.js';
 
 class UsuariosModule {
   constructor(container) {
@@ -20,20 +23,23 @@ class UsuariosModule {
       clients: 0,
       activos: 0
     };
+    this.currentPage = 1;
+    this.itemsPerPage = 10;
+    this.currentFilteredData = [];
   }
 
   // Inicialización del módulo
   async initialize() {
-    console.log('🔄 Inicializando UsuariosModule...');
+    console.log('<i class="fa-solid fa-rotate-right"></i> Inicializando UsuariosModule...');
     try {
       await this.loadData();
-      console.log('✅ Datos de usuarios cargados');
+      console.log('<i class="fa-solid fa-check"></i> Datos de usuarios cargados');
       this.render();
-      console.log('✅ Renderizado completado');
+      console.log('<i class="fa-solid fa-check"></i> Renderizado completado');
       this.setupEventListeners();
-      console.log('✅ Escuchadores de eventos listos');
+      console.log('<i class="fa-solid fa-check"></i> Escuchadores de eventos listos');
     } catch (error) {
-      console.error('❌ Error en initialize:', error);
+      console.error('<i class="fa-solid fa-xmark"></i> Error en initialize:', error);
       this.showError("Error al cargar usuarios", "Asegúrese de que el servidor backend esté en ejecución.");
     }
   }
@@ -41,7 +47,7 @@ class UsuariosModule {
   // Cargar información desde la base de datos
   async loadData() {
     try {
-      const [usersResponse, rolesResponse, reservesResponse] = await Promise.all([
+      const [usersResponse, rolesResponse, reservesResponse, clientsResponse] = await Promise.all([
         getUsuarios().catch(err => {
           console.error("Error getUsuarios:", err);
           return [];
@@ -53,10 +59,33 @@ class UsuariosModule {
         getReservas().catch(err => {
           console.error("Error getReservas:", err);
           return [];
+        }),
+        getClientes().catch(err => {
+          console.error("Error getClientes:", err);
+          return [];
         })
       ]);
 
-      this.usuarios = usersResponse || [];
+      const mappedClients = (clientsResponse || []).map(c => ({
+        IDUsuario: `C_${c.NroDocumento}`,
+        NombreUsuario: c.Email || 'Huésped',
+        Nombre: c.Nombre,
+        Apellido: c.Apellido,
+        Email: c.Email,
+        Telefono: c.Telefono,
+        IDRol: c.IDRol || 2,
+        NombreRol: 'Cliente',
+        Estado: c.Estado,
+        NumeroDocumento: c.NroDocumento,
+        TipoDocumento: c.TipoDocumento,
+        Pais: c.Pais,
+        Departamento: c.Departamento,
+        Direccion: c.Direccion,
+        _isClient: true,
+        _originalId: c.NroDocumento
+      }));
+
+      this.usuarios = [...(usersResponse || []), ...mappedClients];
       this.roles = rolesResponse.data || rolesResponse || [];
       this.reservas = reservesResponse || [];
 
@@ -156,7 +185,7 @@ class UsuariosModule {
     setTimeout(() => {
       const tbody = this.container.querySelector("#usuariosTableBody");
       if (!tbody) {
-        console.error('❌ Tbody #usuariosTableBody no encontrado en el container');
+        console.error('<i class="fa-solid fa-xmark"></i> Tbody #usuariosTableBody no encontrado en el container');
         return;
       }
       this._renderTableContent(data, tbody);
@@ -164,12 +193,28 @@ class UsuariosModule {
   }
 
   _renderTableContent(data, tbody) {
-    if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-muted font-semibold">No hay usuarios registrados</td></tr>';
+    this.currentFilteredData = data;
+    
+    // Validate current page bounds
+    const totalPages = Math.ceil(data.length / this.itemsPerPage) || 1;
+    if (this.currentPage > totalPages) this.currentPage = totalPages;
+    
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    const paginatedData = data.slice(start, end);
+
+    if (!paginatedData.length) {
+      tbody.innerHTML = `<tr><td colspan="6">
+        <div class="col-span-full py-16 px-6 text-center bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center gap-3">
+          <span class="text-4xl">📭</span>
+          <h4 class="text-brand-deep font-bold text-lg m-0">No hay usuarios registrados</h4>
+          <p class="text-muted text-sm max-w-sm m-0 py-2 italic">Intenta cambiar los filtros de búsqueda o agrega un nuevo usuario desde el panel superior.</p>
+        </div>
+      </td></tr>`;
+      this._renderPaginationControls(0);
       return;
     }
-
-    const tableHTML = data.map((usuario) => {
+    const tableHTML = paginatedData.map((usuario) => {
       const id = usuario.IDUsuario;
       const nombreUsuario = usuario.NombreUsuario || usuario.Nombre || 'Sin Nombre';
       const apellido = usuario.Apellido || '';
@@ -190,6 +235,22 @@ class UsuariosModule {
         .join('')
         .toUpperCase() || 'U';
 
+      const unameLower = String(usuario.NombreUsuario || usuario.Nombre || '').toLowerCase();
+      const isProtected = unameLower === 'yoni' || unameLower === 'zury' || unameLower.includes('yoni') || unameLower.includes('zury');
+
+      const actionButtons = isProtected ? `
+            <div class="action-group-modern justify-center">
+              <button class="btn-action-modern view" onclick="window.usuariosModule.viewDetails('${id}')" title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
+              <button class="btn-action-modern locked" title="Protegido" disabled><i class="fa-solid fa-lock"></i></button>
+            </div>
+          ` : `
+            <div class="action-group-modern justify-center">
+              <button class="btn-action-modern view" onclick="window.usuariosModule.viewDetails('${id}')" title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
+              <button class="btn-action-modern edit" onclick="window.usuariosModule.showEditModal('${id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn-action-modern delete" onclick="window.usuariosModule.deleteUser('${id}')" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          `;
+
       return `
         <tr class="hover:bg-gray-50/50 transition-all duration-200">
           <td class="px-6 py-4">
@@ -209,15 +270,15 @@ class UsuariosModule {
           </td>
           <td class="px-6 py-4">
             <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${Number(usuario.IDRol) === 1 ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' : 'bg-blue-50 text-blue-800 border border-blue-100'}">
-              🛡️ ${rolName}
+              <i class="fa-solid fa-shield-halved"></i> ${rolName}
             </span>
           </td>
           <td class="px-6 py-4 font-semibold text-gray-500">${docNum}</td>
           <td class="px-6 py-4">
             <div class="flex items-center gap-3">
               <label class="relative inline-block w-11 h-6 m-0 cursor-pointer shrink-0">
-                <input type="checkbox" class="sr-only peer" ${status === '1' ? 'checked' : ''} 
-                       onchange="window.usuariosModule.changeStatus(${id}, this.checked ? 1 : 0)">
+                  <input type="checkbox" class="sr-only peer" ${status === '1' ? 'checked' : ''} 
+                    onchange='window.usuariosModule.changeStatus(${JSON.stringify(id)}, this.checked ? 1 : 0)'>
                 <span class="absolute inset-0 rounded-full bg-slate-200 peer-checked:bg-emerald-500 transition-colors duration-300 before:content-[''] before:absolute before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:rounded-full before:transition-transform before:duration-300 peer-checked:before:translate-x-5"></span>
               </label>
               <span class="px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition-all duration-300 ${status === '1' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
@@ -227,14 +288,14 @@ class UsuariosModule {
           </td>
           <td class="px-6 py-4">
             <div class="action-group-modern justify-center">
-              <button class="btn-action-modern view" onclick="window.usuariosModule.viewDetails(${id})" title="Ver detalle">
-                🔍
+              <button class="btn-action-modern view" onclick='window.usuariosModule.viewDetails(${JSON.stringify(id)})' title="Ver detalle">
+                <i class="fa-solid fa-eye"></i>
               </button>
-              <button class="btn-action-modern edit" onclick="window.usuariosModule.showEditModal(${id})" title="Editar">
-                ✏️
+              <button class="btn-action-modern edit" onclick='window.usuariosModule.showEditModal(${JSON.stringify(id)})' title="Editar">
+                <i class="fa-solid fa-pen"></i>
               </button>
-              <button class="btn-action-modern delete" onclick="window.usuariosModule.deleteUser(${id})" title="Eliminar">
-                🗑️
+              <button class="btn-action-modern delete" onclick='window.usuariosModule.deleteUser(${JSON.stringify(id)})' title="Eliminar">
+                <i class="fa-solid fa-trash"></i>
               </button>
             </div>
           </td>
@@ -243,6 +304,85 @@ class UsuariosModule {
     }).join('');
 
     tbody.innerHTML = tableHTML;
+    this._renderPaginationControls(totalPages);
+  }
+
+  _renderPaginationControls(totalPages) {
+    const table = this.container.querySelector("table");
+    const tableWrapper = table ? table.closest('.table-container') || table.parentElement : null;
+    if (!tableWrapper) return;
+    
+    const totalItems = this.currentFilteredData.length;
+    let paginationDiv = this.container.querySelector('#paginationContainer');
+    
+    if (!paginationDiv) {
+      paginationDiv = document.createElement('div');
+      paginationDiv.id = 'paginationContainer';
+      paginationDiv.className = 'flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 mt-6 border-t border-gray-100 bg-white w-full rounded-2xl shadow-sm';
+      tableWrapper.parentElement.insertBefore(paginationDiv, tableWrapper.nextSibling);
+    }
+    
+    if (totalItems === 0) {
+      paginationDiv.style.display = 'none';
+      return;
+    }
+    paginationDiv.style.display = 'flex';
+    
+    const startItem = ((this.currentPage - 1) * this.itemsPerPage) + 1;
+    const endItem = Math.min(this.currentPage * this.itemsPerPage, totalItems);
+    
+    let buttonsHTML = `
+        <button onclick="window.usuariosModule.goToPage(${Math.max(1, this.currentPage - 1)})" 
+                class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-brand transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                ${this.currentPage === 1 ? 'disabled' : ''}>
+            <i class="fa-solid fa-chevron-left text-xs"></i>
+        </button>
+    `;
+    
+    for (let i = 1; i <= totalPages; i++) {
+        if (totalPages > 7) {
+            if (i !== 1 && i !== totalPages && Math.abs(i - this.currentPage) > 1) {
+                if (i === 2 || i === totalPages - 1) buttonsHTML += `<span class="px-1 text-gray-400">...</span>`;
+                continue;
+            }
+        }
+        const activeClass = i === this.currentPage ? 'bg-brand text-white border-brand' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50';
+        buttonsHTML += `<button onclick="window.usuariosModule.goToPage(${i})" class="w-8 h-8 flex items-center justify-center rounded-lg border font-semibold text-xs cursor-pointer transition-colors ${activeClass}">${i}</button>`;
+    }
+
+    buttonsHTML += `
+        <button onclick="window.usuariosModule.goToPage(${Math.min(totalPages, this.currentPage + 1)})" 
+                class="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-brand transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
+                ${this.currentPage === totalPages ? 'disabled' : ''}>
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+        </button>
+    `;
+    
+    paginationDiv.innerHTML = `
+      <div class="flex items-center gap-4">
+          <span class="text-xs text-muted font-medium">Mostrando <strong class="text-brand-deep">${startItem}-${endItem}</strong> de <strong class="text-brand-deep">${totalItems}</strong> resultados</span>
+          <div class="hidden sm:flex items-center gap-2 border-l border-gray-200 pl-4">
+              <span class="text-[10px] text-muted font-bold uppercase tracking-wider">Filas:</span>
+              <select onchange="window.usuariosModule.changeItemsPerPage(this.value)" class="text-xs font-bold text-brand-deep bg-transparent border-none cursor-pointer focus:outline-none">
+                  <option value="10" ${this.itemsPerPage == 10 ? 'selected' : ''}>10</option>
+                  <option value="20" ${this.itemsPerPage == 20 ? 'selected' : ''}>20</option>
+                  <option value="50" ${this.itemsPerPage == 50 ? 'selected' : ''}>50</option>
+              </select>
+          </div>
+      </div>
+      <div class="flex gap-1.5 items-center">${buttonsHTML}</div>
+    `;
+  }
+  
+  changeItemsPerPage(value) {
+    this.itemsPerPage = Number(value);
+    this.currentPage = 1;
+    this.renderTable(this.currentFilteredData);
+  }
+  
+  goToPage(page) {
+    this.currentPage = page;
+    this.renderTable(this.currentFilteredData);
   }
 
   // Filtrar los datos reactivamente en la vista
@@ -267,15 +407,32 @@ class UsuariosModule {
       return matchesSearch && matchesRol && matchesEstado;
     });
 
+    this.currentPage = 1;
     this.renderTable(filtered);
   }
 
   // Cambiar estado del usuario
   async changeStatus(id, nuevoEstado) {
-    const usuario = this.usuarios.find(u => u.IDUsuario === id);
+    const usuario = this.usuarios.find(u => (u.IDUsuario || u.id_usuario || u.id) == id);
     if (!usuario) return;
 
-    if (!confirm(`¿Está seguro de cambiar el estado del usuario a ${nuevoEstado === 1 ? 'Activo' : 'Inactivo'}?`)) {
+    const unameLower = String(usuario.NombreUsuario || usuario.Nombre || '').toLowerCase();
+    if (unameLower === 'yoni' || unameLower === 'zury' || unameLower.includes('yoni') || unameLower.includes('zury')) {
+      showAlert('Advertencia', 'Este usuario es un Súper Admin y no se puede cambiar su estado.', 'warning');
+      this.render(); // Reset the UI toggle
+      return;
+    }
+
+    const result = await Swal.fire({ // confirmation kept as is
+      title: '¿Cambiar estado?',
+      text: `¿Está seguro de cambiar el estado del usuario a ${nuevoEstado === 1 ? 'Activo' : 'Inactivo'}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cambiar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!result.isConfirmed) {
       this.render();
       return;
     }
@@ -284,13 +441,17 @@ class UsuariosModule {
       usuario.Estado = nuevoEstado;
       
       // Intentamos llamar a la API
-      await updateUsuario(id, { ...usuario, Estado: nuevoEstado });
-      alert(`Estado del usuario actualizado a ${nuevoEstado === 1 ? 'Activo' : 'Inactivo'}`);
+      if (usuario._isClient) {
+        await toggleEstadoCliente(usuario._originalId, nuevoEstado);
+      } else {
+        await updateUsuario(id, { ...usuario, Estado: nuevoEstado });
+      }
+      showAlert('Información', `Estado del usuario actualizado a ${nuevoEstado === 1 ? 'Activo' : 'Inactivo'}`, 'success');
       await this.loadData();
       this.render();
     } catch (error) {
       console.error('Error actualizando estado:', error);
-      alert('Se actualizó el estado localmente (' + (error.message || 'Sin persistencia en servidor') + ')');
+      showAlert('Error', 'Se actualizó el estado localmente (' + (error.message || 'Sin persistencia en servidor') + ')', 'error');
       this.render();
     }
   }
@@ -300,61 +461,71 @@ class UsuariosModule {
     const usuario = this.usuarios.find(u => u.IDUsuario === id);
     if (!usuario) return;
 
+    const unameLowerDel = String(usuario.NombreUsuario || usuario.Nombre || '').toLowerCase();
+    if (unameLowerDel === 'yoni' || unameLowerDel === 'zury' || unameLowerDel.includes('yoni') || unameLowerDel.includes('zury')) {
+      showAlert('Advertencia', 'Este usuario es un Súper Admin y no se puede eliminar.', 'warning');
+      return;
+    }
+
     const nombreCompleto = `${usuario.NombreUsuario || usuario.Nombre || ''} ${usuario.Apellido || ''}`.trim();
-    if (!confirm(`¿Está seguro de eliminar de forma permanente al usuario "${nombreCompleto}"? Esta acción no se puede deshacer.`)) {
+    const confirmRes = await Swal.fire({
+      title: '¿Eliminar Usuario?',
+      text: `¿Está seguro de eliminar de forma permanente al usuario "${nombreCompleto}"? Esta acción no se puede deshacer.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!confirmRes.isConfirmed) {
       return;
     }
 
     try {
       await deleteUsuario(id);
-      alert('Usuario eliminado correctamente.');
+      showAlert('Información', 'Usuario eliminado correctamente.', 'success');
       await this.loadData();
       this.render();
     } catch (error) {
       console.error('Error eliminando usuario:', error);
-      alert('Error al eliminar usuario: ' + (error.message || 'Error de conexión'));
+      showAlert('Error', 'Error al eliminar usuario: ' + (error.message || 'Error de conexión'), 'error');
     }
   }
 
-  // Exportar lista de usuarios a formato CSV
+  // Exportar lista de usuarios a formato Excel con SheetJS
   exportData() {
     if (!this.usuarios.length) {
-      alert("No hay registros para exportar");
+      showAlert('Atención', "No hay registros para exportar", 'warning');
       return;
     }
-
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "ID,Nombre Usuario,Apellido,Email,Telefono,Documento,Tipo Documento,Rol,Estado\n";
-
-    this.usuarios.forEach(u => {
-      const row = [
-        u.IDUsuario || "",
-        u.NombreUsuario || u.Nombre || "",
-        u.Apellido || "",
-        u.Email || "",
-        u.Telefono || "",
-        u.NumeroDocumento || u.NroDocumento || "",
-        u.TipoDocumento || "CC",
-        u.NombreRol || (Number(u.IDRol) === 1 ? "Administrador" : "Cliente"),
-        u.Estado !== undefined && String(u.Estado) === '0' ? "Inactivo" : "Activo"
-      ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(",");
-      csvContent += row + "\n";
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `usuarios_vialuna_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    
+    if (typeof XLSX === 'undefined') {
+        showAlert('Error', 'La librería SheetJS no está cargada.', 'error');
+        return;
+    }
+    
+    const ws_data = this.usuarios.map(u => ({
+        "ID": u.IDUsuario || "",
+        "Nombre Usuario": u.NombreUsuario || u.Nombre || "",
+        "Apellido": u.Apellido || "",
+        "Email": u.Email || "",
+        "Teléfono": u.Telefono || "",
+        "Documento": u.NumeroDocumento || u.NroDocumento || "",
+        "Tipo Documento": u.TipoDocumento || "CC",
+        "Rol": u.NombreRol || (Number(u.IDRol) === 1 ? "Administrador" : "Cliente"),
+        "Estado": u.Estado !== undefined && String(u.Estado) === '0' ? "Inactivo" : "Activo"
+    }));
+    
+    const ws = XLSX.utils.json_to_sheet(ws_data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Usuarios");
+    XLSX.writeFile(wb, `usuarios_vialuna_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 
   // Visualizar detalles del usuario en pantalla
   viewDetails(id) {
     const usuario = this.usuarios.find(u => u.IDUsuario === id);
     if (!usuario) {
-      alert('Usuario no encontrado');
+      showAlert('Error', 'Usuario no encontrado', 'error');
       return;
     }
 
@@ -383,7 +554,7 @@ class UsuariosModule {
     this.container.innerHTML = `
       <div class="max-w-3xl mx-auto p-6 sm:p-8 bg-white border border-gray-100 rounded-3xl shadow-sm">
         <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
-          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">🔍 Perfil del Usuario</h2>
+          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2"><i class="fa-solid fa-eye"></i> Perfil del Usuario</h2>
           <button onclick="window.usuariosModule.showList()" class="px-4 py-2 bg-gray-50 border border-gray-200 text-brand-deep text-xs font-bold rounded-xl hover:bg-gray-100 cursor-pointer transition-all duration-300">
             ← Volver a la lista
           </button>
@@ -400,10 +571,10 @@ class UsuariosModule {
               <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider mt-1">Nombre de usuario: ${usuario.NombreUsuario || usuario.Nombre}</p>
               <div class="flex flex-wrap items-center gap-2 mt-3 justify-center sm:justify-start">
                 <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  🛡️ ${rolName}
+                  <i class="fa-solid fa-shield-halved"></i> ${rolName}
                 </span>
                 <span class="px-3 py-1 rounded-full text-xs font-bold ${status === '1' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">
-                  ${status === '1' ? '🟢 Activo' : '🔴 Inactivo'}
+                  ${status === '1' ? '<i class="fa-solid fa-circle text-emerald-500 mr-1"></i> Activo' : '<i class="fa-solid fa-circle text-red-500 mr-1"></i> Inactivo'}
                 </span>
               </div>
             </div>
@@ -434,6 +605,10 @@ class UsuariosModule {
                 <span class="font-bold text-brand-deep">${usuario.Pais || 'No especificado'}</span>
               </div>
               <div class="flex flex-col gap-1">
+                <span class="text-xs text-muted font-semibold uppercase tracking-wide">Departamento:</span>
+                <span class="font-bold text-brand-deep">${usuario.Departamento || 'No especificado'}</span>
+              </div>
+              <div class="flex flex-col gap-1">
                 <span class="text-xs text-muted font-semibold uppercase tracking-wide">Dirección física:</span>
                 <span class="font-bold text-brand-deep">${usuario.Direccion || 'No especificada'}</span>
               </div>
@@ -443,11 +618,11 @@ class UsuariosModule {
           <!-- Historial de Reservas Relacionadas -->
           <div class="p-6 bg-white rounded-2xl border border-gray-100">
             <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0 mb-4 border-b border-gray-200/50 pb-2 flex items-center justify-between">
-              <span>📅 Reservas Asignadas / Realizadas</span>
+              <span><i class="fa-regular fa-calendar"></i> Reservas Asignadas / Realizadas</span>
               <span class="text-[10px] bg-brand/10 text-brand-deep px-2 py-0.5 rounded-full font-bold">${usuarioReservas.length} Reservas</span>
             </h4>
             
-            <div class="overflow-x-auto">
+            <div class="responsive-scroll">
               ${usuarioReservas.length > 0 ? `
                 <table class="w-full text-left text-xs border-collapse">
                   <thead>
@@ -481,17 +656,17 @@ class UsuariosModule {
 
           <!-- Metadatos de la cuenta -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-muted border-t border-gray-100 pt-4">
-            <div>🔑 ID Sistema: #${usuario.IDUsuario}</div>
-            <div class="sm:text-right">📅 Registrado en BD: Miembro Activo</div>
+            <div><i class="fa-solid fa-key"></i> ID Sistema: #${usuario.IDUsuario}</div>
+            <div class="sm:text-right"><i class="fa-regular fa-calendar"></i> Registrado en BD: Miembro Activo</div>
           </div>
 
           <!-- Botones de Acción -->
           <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
-            <button onclick="window.usuariosModule.showEditModal(${id})" class="px-5 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep cursor-pointer transition-all border-none text-xs">
-              ✏️ Editar Datos
+            <button onclick='window.usuariosModule.showEditModal(${JSON.stringify(id)})' class="px-5 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep cursor-pointer transition-all border-none text-xs">
+              <i class="fa-solid fa-pen"></i> Editar Datos
             </button>
-            <button onclick="window.usuariosModule.changeStatus(${id}, ${status === '1' ? 0 : 1})" class="px-5 py-3 rounded-xl border border-gray-200 text-brand-deep font-semibold bg-white hover:bg-gray-50 cursor-pointer transition-all text-xs">
-              🔄 Cambiar Estado (Activo/Inactivo)
+            <button onclick='window.usuariosModule.changeStatus(${JSON.stringify(id)}, ${status === '1' ? 0 : 1})' class="px-5 py-3 rounded-xl border border-gray-200 text-brand-deep font-semibold bg-white hover:bg-gray-50 cursor-pointer transition-all text-xs">
+              <i class="fa-solid fa-rotate-right"></i> Cambiar Estado (Activo/Inactivo)
             </button>
           </div>
         </div>
@@ -501,86 +676,108 @@ class UsuariosModule {
 
   // Mostrar modal de registro de nuevo usuario
   showNewUserModal() {
-    this.container.innerHTML = `
-      <div class="max-w-2xl mx-auto p-6 sm:p-8 bg-white border border-gray-100 rounded-3xl shadow-sm">
-        <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
-          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">➕ Registrar Nuevo Usuario</h2>
-          <button onclick="window.usuariosModule.showList()" class="px-4 py-2 bg-gray-50 border border-gray-200 text-brand-deep text-xs font-bold rounded-xl hover:bg-gray-100 cursor-pointer transition-all duration-300">
-            ← Volver a la lista
-          </button>
-        </div>
-
-        <form id="newUserForm" class="flex flex-col gap-5 m-0 p-0">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Nombre de Usuario *</label>
-              <input type="text" id="newUsername" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" placeholder="Ej: admin_luna" required>
+    const modalHtml = `
+      <div id="userModalOverlay" class="fixed inset-0 modal-premium-backdrop z-[1000] flex items-center justify-center p-4 transition-all duration-300">
+        <article class="bg-white rounded-2xl w-full max-w-3xl shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300">
+          
+          <div class="flex justify-between items-center p-6 border-b border-gray-100 bg-white z-10 shrink-0">
+            <div>
+              <h3 class="text-xl font-bold text-brand-deep m-0">Nuevo Usuario</h3>
+              <p class="text-xs text-muted mt-1 m-0">Completa la información para registrar un nuevo usuario.</p>
             </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Contraseña *</label>
-              <input type="password" id="newPassword" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" placeholder="Mínimo 6 caracteres" required>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Nombre Completo *</label>
-              <input type="text" id="newNombre" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" placeholder="Nombre" required>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Apellido *</label>
-              <input type="text" id="newApellido" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" placeholder="Apellido" required>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Email *</label>
-              <input type="email" id="newEmail" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" placeholder="correo@vialuna.com" required>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Teléfono</label>
-              <input type="tel" id="newTelefono" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" placeholder="Número de contacto">
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Tipo Documento</label>
-              <select id="newTipoDocumento" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
-                <option value="CC">Cédula de Ciudadanía</option>
-                <option value="TI">Tarjeta de Identidad</option>
-                <option value="CE">Cédula de Extranjería</option>
-                <option value="Pasaporte">Pasaporte</option>
-              </select>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Número Documento *</label>
-              <input type="number" id="newNroDocumento" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" placeholder="Solo números" required>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">País</label>
-              <input type="text" id="newPais" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" value="Colombia">
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Dirección</label>
-              <input type="text" id="newDireccion" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" placeholder="Dirección física">
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Rol Asignado *</label>
-              <select id="newRol" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer" required>
-                ${this.roles.map(r => `<option value="${r.IDRol}">${r.Nombre}</option>`).join('')}
-              </select>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial</label>
-              <select id="newEstado" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
-                <option value="1">Activo</option>
-                <option value="0">Inactivo</option>
-              </select>
+            <div class="flex items-center gap-3">
+              <button type="button" onclick="document.getElementById('userModalOverlay').remove()" class="px-4 py-2 rounded-xl bg-gray-50 text-muted font-semibold hover:bg-gray-100 transition-colors border border-gray-200 cursor-pointer text-sm">Cancelar</button>
+              <button type="submit" form="newUserForm" class="px-5 py-2 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep shadow-md shadow-brand/20 transition-all border-none cursor-pointer text-sm">Guardar usuario</button>
             </div>
           </div>
 
-          <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-            <button type="button" onclick="window.usuariosModule.showList()" class="px-5 py-3 rounded-xl border border-gray-200 text-muted font-semibold bg-white hover:bg-gray-50 cursor-pointer transition-all duration-300 text-sm">Cancelar</button>
-            <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm">➕ Registrar</button>
+          <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-gray-50/30">
+            <form id="newUserForm" class="flex flex-col gap-6 m-0">
+              <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Tipo Documento</label>
+                    <select id="newTipoDocumento" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all cursor-pointer">
+                      <option value="CC">Cédula de Ciudadanía</option>
+                      <option value="TI">Tarjeta de Identidad</option>
+                      <option value="CE">Cédula de Extranjería</option>
+                      <option value="Pasaporte">Pasaporte</option>
+                    </select>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Número Documento <span class="text-red-500">*</span></label>
+                    <input type="text" id="newNroDocumento" maxlength="20" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Solo números" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Nombre Completo <span class="text-red-500">*</span></label>
+                    <input type="text" id="newNombre" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Nombre" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Apellido <span class="text-red-500">*</span></label>
+                    <input type="text" id="newApellido" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Apellido" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Email <span class="text-red-500">*</span></label>
+                    <input type="email" id="newEmail" maxlength="100" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="correo@vialuna.com" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Teléfono <span class="text-red-500">*</span></label>
+                    <input type="tel" id="newTelefono" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Número de contacto" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">País <span class="text-red-500">*</span></label>
+                    <input type="text" id="newPais" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" value="Colombia" oninput="this.value = this.value.replace(/[0-9]/g, '')" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Departamento <span class="text-red-500">*</span></label>
+                    <input type="text" id="newDepartamento" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Departamento o Estado" oninput="this.value = this.value.replace(/[0-9]/g, '')" required>
+                  </div>
+                  <div class="flex flex-col gap-2 sm:col-span-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Dirección</label>
+                    <input type="text" id="newDireccion" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Dirección física">
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Login (Usuario) <span class="text-red-500">*</span></label>
+                    <input type="text" id="newUsername" maxlength="50" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Ej: admin_luna" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Contraseña <span class="text-red-500">*</span></label>
+                    <input type="password" id="newPassword" maxlength="50" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Mínimo 6 caracteres" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Rol Asignado <span class="text-red-500">*</span></label>
+                    <select id="newRol" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all cursor-pointer" required>
+                      ${this.roles.map(r => `<option value="${r.IDRol}">${r.Nombre}</option>`).join('')}
+                    </select>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Estado Inicial</label>
+                    <select id="newEstado" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all cursor-pointer">
+                      <option value="1">Activo</option>
+                      <option value="0">Inactivo</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </form>
           </div>
-        </form>
+        </article>
       </div>
     `;
 
-    const form = this.container.querySelector("#newUserForm");
+    const existing = document.getElementById('userModalOverlay');
+    if (existing) existing.remove();
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    setTimeout(() => {
+      const modal = document.getElementById('userModalOverlay');
+      if(modal) {
+          modal.querySelector('article').classList.remove('scale-95');
+          modal.querySelector('article').classList.add('scale-100');
+      }
+    }, 10);
+
+    const form = document.getElementById("newUserForm");
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       this.saveNewUser();
@@ -590,37 +787,64 @@ class UsuariosModule {
   // Guardar el nuevo usuario por medio de la API
   async saveNewUser() {
     const payload = {
-      Nombre: this.container.querySelector("#newNombre").value,
-      Apellido: this.container.querySelector("#newApellido").value,
-      Email: this.container.querySelector("#newEmail").value,
-      Telefono: this.container.querySelector("#newTelefono").value,
-      Username: this.container.querySelector("#newUsername").value,
-      Password: this.container.querySelector("#newPassword").value,
-      TipoDocumento: this.container.querySelector("#newTipoDocumento").value,
-      NumeroDocumento: parseInt(this.container.querySelector("#newNroDocumento").value),
-      Pais: this.container.querySelector("#newPais").value,
-      Direccion: this.container.querySelector("#newDireccion").value,
-      IDRol: parseInt(this.container.querySelector("#newRol").value),
-      Estado: parseInt(this.container.querySelector("#newEstado").value)
+      Nombre: document.getElementById("newNombre").value,
+      Apellido: document.getElementById("newApellido").value,
+      Email: document.getElementById("newEmail").value,
+      Telefono: document.getElementById("newTelefono").value,
+      Username: document.getElementById("newUsername").value,
+      Password: document.getElementById("newPassword").value,
+      TipoDocumento: document.getElementById("newTipoDocumento").value,
+      NumeroDocumento: parseInt(document.getElementById("newNroDocumento").value),
+      Pais: document.getElementById("newPais").value,
+      Departamento: document.getElementById("newDepartamento").value,
+      Direccion: document.getElementById("newDireccion").value,
+      IDRol: parseInt(document.getElementById("newRol").value),
+      Estado: parseInt(document.getElementById("newEstado").value)
     };
 
     try {
       console.log('Enviando creación de usuario:', payload);
       await createUsuario(payload);
-      alert('Usuario creado exitosamente');
+      showAlert('Información', 'Usuario creado exitosamente', 'success');
+      document.getElementById('userModalOverlay').remove();
       await this.loadData();
-      this.showList();
+      this.renderTable(this.usuarios);
     } catch (error) {
       console.error('Error guardando usuario:', error);
-      alert('Error al registrar usuario: ' + (error.message || 'Error en campos o correo duplicado'));
+      showAlert('Error', 'Error al registrar usuario: ' + (error.message || 'Error en campos o correo duplicado'), 'error');
     }
   }
 
   // Mostrar modal de edición
-  showEditModal(id) {
-    const usuario = this.usuarios.find(u => u.IDUsuario === id);
+  async showEditModal(id) {
+    const usuario = this.usuarios.find(u => u.IDUsuario === id || u.IDUsuario == id);
     if (!usuario) {
-      alert('Usuario no encontrado');
+      showAlert('Error', 'Usuario no encontrado', 'error');
+      return;
+    }
+
+    if (usuario._isClient) {
+      if (!window.clientesModule) {
+        const { renderClientes } = await import('./clientes.js');
+        const dummy = document.createElement('div');
+        renderClientes(dummy);
+      }
+      
+      const originalSaveClient = window.clientesModule.saveClient.bind(window.clientesModule);
+      window.clientesModule.saveClient = async (cid) => {
+         await originalSaveClient(cid);
+         await this.loadData();
+         this.renderTable(this.usuarios);
+         window.clientesModule.saveClient = originalSaveClient;
+      };
+      
+      window.clientesModule.edit(usuario._originalId);
+      return;
+    }
+
+    const unameLowerEdit = String(usuario.NombreUsuario || usuario.Nombre || '').toLowerCase();
+    if (unameLowerEdit === 'yoni' || unameLowerEdit === 'zury' || unameLowerEdit.includes('yoni') || unameLowerEdit.includes('zury')) {
+      showAlert('Advertencia', 'Este usuario es un Súper Admin y no puede ser editado.', 'warning');
       return;
     }
 
@@ -632,126 +856,213 @@ class UsuariosModule {
     const docNum = usuario.NumeroDocumento || usuario.NroDocumento || '';
     const pais = usuario.Pais || 'Colombia';
     const direccion = usuario.Direccion || '';
+    const departamento = usuario.Departamento || '';
     const rolId = usuario.IDRol || 1;
     const status = usuario.Estado !== undefined ? String(usuario.Estado) : '1';
 
-    this.container.innerHTML = `
-      <div class="max-w-2xl mx-auto p-6 sm:p-8 bg-white border border-gray-100 rounded-3xl shadow-sm">
-        <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
-          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">✏️ Editar Usuario: ${nombre}</h2>
-          <button onclick="window.usuariosModule.showList()" class="px-4 py-2 bg-gray-50 border border-gray-200 text-brand-deep text-xs font-bold rounded-xl hover:bg-gray-100 cursor-pointer transition-all duration-300">
-            ← Volver a la lista
-          </button>
-        </div>
-
-        <form id="editUserForm" class="flex flex-col gap-5 m-0 p-0">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Nombre de Usuario (Login)</label>
-              <input type="text" id="editUsername" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-100 text-sm font-semibold focus:outline-none cursor-not-allowed" value="${nombre}" readonly>
+    const modalHtml = `
+      <div id="editUserModalOverlay" class="fixed inset-0 modal-premium-backdrop z-[1000] flex items-center justify-center p-4 transition-all duration-300">
+        <article class="bg-white rounded-2xl w-full max-w-3xl shadow-2xl border border-gray-100 flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300">
+          
+          <div class="flex justify-between items-center p-6 border-b border-gray-100 bg-white z-10 shrink-0">
+            <div>
+              <h3 class="text-xl font-bold text-brand-deep m-0">Editar Usuario: ${nombre}</h3>
+              <p class="text-xs text-muted mt-1 m-0">Modifica la información del usuario.</p>
             </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Contraseña (Dejar vacío para mantener)</label>
-              <input type="password" id="editPassword" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" placeholder="Nueva contraseña">
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Nombre Completo *</label>
-              <input type="text" id="editNombre" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" value="${nombre}" required>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Apellido *</label>
-              <input type="text" id="editApellido" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" value="${apellido}" required>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Email *</label>
-              <input type="email" id="editEmail" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" value="${email}" required>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Teléfono</label>
-              <input type="tel" id="editTelefono" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" value="${telefono}">
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Tipo Documento</label>
-              <select id="editTipoDocumento" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
-                <option value="CC" ${docType === 'CC' ? 'selected' : ''}>Cédula de Ciudadanía</option>
-                <option value="TI" ${docType === 'TI' ? 'selected' : ''}>Tarjeta de Identidad</option>
-                <option value="CE" ${docType === 'CE' ? 'selected' : ''}>Cédula de Extranjería</option>
-                <option value="Pasaporte" ${docType === 'Pasaporte' ? 'selected' : ''}>Pasaporte</option>
-              </select>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Número Documento</label>
-              <input type="number" id="editNroDocumento" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-100 text-sm font-semibold focus:outline-none cursor-not-allowed" value="${docNum}" readonly>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">País</label>
-              <input type="text" id="editPais" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" value="${pais}">
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Dirección</label>
-              <input type="text" id="editDireccion" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20" value="${direccion}">
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Rol Asignado *</label>
-              <select id="editRol" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer" required>
-                ${this.roles.map(r => `<option value="${r.IDRol}" ${Number(rolId) === Number(r.IDRol) ? 'selected' : ''}>${r.Nombre}</option>`).join('')}
-              </select>
-            </div>
-            <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado</label>
-              <select id="editEstado" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
-                <option value="1" ${status === '1' ? 'selected' : ''}>Activo</option>
-                <option value="0" ${status === '0' ? 'selected' : ''}>Inactivo</option>
-              </select>
+            <div class="flex items-center gap-3">
+              <button type="button" onclick="document.getElementById('editUserModalOverlay').remove()" class="px-4 py-2 rounded-xl bg-gray-50 text-muted font-semibold hover:bg-gray-100 transition-colors border border-gray-200 cursor-pointer text-sm">Cancelar</button>
+              <button type="submit" form="editUserForm" class="px-5 py-2 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep shadow-md shadow-brand/20 transition-all border-none cursor-pointer text-sm">Guardar Cambios</button>
             </div>
           </div>
 
-          <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-            <button type="button" onclick="window.usuariosModule.showList()" class="px-5 py-3 rounded-xl border border-gray-200 text-muted font-semibold bg-white hover:bg-gray-50 cursor-pointer transition-all duration-300 text-sm">Cancelar</button>
-            <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm">💾 Guardar Cambios</button>
+          <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-gray-50/30">
+            <form id="editUserForm" class="flex flex-col gap-6 m-0">
+              <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Tipo Documento</label>
+                    <select id="editTipoDocumento" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all cursor-pointer">
+                      <option value="CC" ${docType === 'CC' ? 'selected' : ''}>Cédula de Ciudadanía</option>
+                      <option value="TI" ${docType === 'TI' ? 'selected' : ''}>Tarjeta de Identidad</option>
+                      <option value="CE" ${docType === 'CE' ? 'selected' : ''}>Cédula de Extranjería</option>
+                      <option value="Pasaporte" ${docType === 'Pasaporte' ? 'selected' : ''}>Pasaporte</option>
+                    </select>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Número Documento <span class="text-red-500">*</span></label>
+                    <input type="text" id="editNroDocumento" value="${docNum}" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-sm font-semibold focus:outline-none cursor-not-allowed" readonly>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Nombre Completo <span class="text-red-500">*</span></label>
+                    <input type="text" id="editNombre" value="${nombre}" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Apellido <span class="text-red-500">*</span></label>
+                    <input type="text" id="editApellido" value="${apellido}" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Email <span class="text-red-500">*</span></label>
+                    <input type="email" id="editEmail" value="${email}" maxlength="100" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Teléfono <span class="text-red-500">*</span></label>
+                    <input type="tel" id="editTelefono" value="${telefono}" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">País <span class="text-red-500">*</span></label>
+                    <input type="text" id="editPais" value="${pais}" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Departamento <span class="text-red-500">*</span></label>
+                    <input type="text" id="editDepartamento" value="${departamento}" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required>
+                  </div>
+                  <div class="flex flex-col gap-2 sm:col-span-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Dirección</label>
+                    <input type="text" id="editDireccion" value="${direccion}" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Rol Asignado</label>
+                    <select id="editRol" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all cursor-pointer">
+                      ${this.roles.map(r => `<option value="${r.IDRol}" ${Number(r.IDRol) === Number(rolId) ? 'selected' : ''}>${r.Nombre}</option>`).join('')}
+                    </select>
+                  </div>
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Estado</label>
+                    <select id="editEstado" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all cursor-pointer">
+                      <option value="1" ${status === '1' ? 'selected' : ''}>Activo</option>
+                      <option value="0" ${status === '0' ? 'selected' : ''}>Inactivo</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </form>
           </div>
-        </form>
+        </article>
       </div>
     `;
 
-    const form = this.container.querySelector("#editUserForm");
+    const existing = document.getElementById('editUserModalOverlay');
+    if (existing) existing.remove();
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    setTimeout(() => {
+      const modal = document.getElementById('editUserModalOverlay');
+      if(modal) {
+          modal.querySelector('article').classList.remove('scale-95');
+          modal.querySelector('article').classList.add('scale-100');
+      }
+    }, 10);
+
+    const form = document.getElementById("editUserForm");
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       this.saveEditUser(id);
     });
   }
 
-  // Guardar modificaciones del usuario por API
+  // Guardar la edición de un usuario
   async saveEditUser(id) {
-    const editPassword = this.container.querySelector("#editPassword").value;
-    
     const payload = {
-      Nombre: this.container.querySelector("#editNombre").value,
-      Apellido: this.container.querySelector("#editApellido").value,
-      Email: this.container.querySelector("#editEmail").value,
-      Telefono: this.container.querySelector("#editTelefono").value,
-      Username: this.container.querySelector("#editNombre").value, // Mantener NombreUsuario mapeado
-      TipoDocumento: this.container.querySelector("#editTipoDocumento").value,
-      Pais: this.container.querySelector("#editPais").value,
-      Direccion: this.container.querySelector("#editDireccion").value,
-      IDRol: parseInt(this.container.querySelector("#editRol").value),
-      Estado: parseInt(this.container.querySelector("#editEstado").value)
+      Nombre: document.getElementById("editNombre").value,
+      Apellido: document.getElementById("editApellido").value,
+      Email: document.getElementById("editEmail").value,
+      Telefono: document.getElementById("editTelefono").value,
+      TipoDocumento: document.getElementById("editTipoDocumento").value,
+      Pais: document.getElementById("editPais").value,
+      Departamento: document.getElementById("editDepartamento").value,
+      Direccion: document.getElementById("editDireccion").value,
+      IDRol: parseInt(document.getElementById("editRol").value),
+      Estado: parseInt(document.getElementById("editEstado").value)
     };
-
-    if (editPassword) {
-      payload.Password = editPassword;
-      payload.Contrasena = editPassword;
-    }
 
     try {
       console.log('Enviando actualización de usuario:', payload);
+      // Clear previous inline errors
+      document.querySelectorAll('#editUserForm .error-message').forEach(e => { e.classList.add('hidden'); e.textContent = ''; });
+
+      // Basic validations
+      const nombreVal = String(document.getElementById("editNombre").value || '').trim();
+      const apellidoVal = String(document.getElementById("editApellido").value || '').trim();
+      const emailVal = String(document.getElementById("editEmail").value || '').trim();
+      const telefonoVal = String(document.getElementById("editTelefono").value || '').trim();
+
+      let hasError = false;
+      if (!nombreVal || /\d/.test(nombreVal)) { const el = document.querySelector('.error-message[data-for="editNombre"]'); if (el) { el.classList.remove('hidden'); el.textContent = 'Nombre inválido.'; } hasError = true; }
+      if (!apellidoVal || /\d/.test(apellidoVal)) { const el = document.querySelector('.error-message[data-for="editApellido"]'); if (el) { el.classList.remove('hidden'); el.textContent = 'Apellido inválido.'; } hasError = true; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) { const el = document.querySelector('.error-message[data-for="editEmail"]'); if (el) { el.classList.remove('hidden'); el.textContent = 'Email inválido.'; } hasError = true; }
+      if (telefonoVal && !/^[0-9]{7,15}$/.test(telefonoVal)) { const el = document.querySelector('.error-message[data-for="editTelefono"]'); if (el) { el.classList.remove('hidden'); el.textContent = 'Teléfono inválido.'; } hasError = true; }
+
+      if (hasError) { showAlert('Error', 'Corrige los campos marcados.', 'error'); return; }
+
       await updateUsuario(id, payload);
-      alert('Usuario actualizado correctamente');
+      showAlert('Información', 'Usuario actualizado correctamente', 'info');
       await this.loadData();
       this.showList();
     } catch (error) {
       console.error('Error editando usuario:', error);
-      alert('Error al guardar cambios: ' + (error.message || 'Error en conexión'));
+      showAlert('Error', 'Error al guardar cambios: ' + (error.message || 'Error en conexión'), 'error');
+    }
+  }
+
+  // Eliminar un usuario
+  async deleteUser(id) {
+    const usuario = this.usuarios.find(u => u.IDUsuario === id || u.IDUsuario == id);
+    if (!usuario) return;
+
+    if (usuario._isClient) {
+      const confirm = await Swal.fire({
+        title: '¿Eliminar Huésped/Cliente?',
+        text: "Esta acción no se puede deshacer.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (confirm.isConfirmed) {
+        try {
+          const { deleteCliente } = await import('../core/api.js');
+          await deleteCliente(usuario._originalId);
+          showAlert('Eliminado', 'El huésped ha sido eliminado correctamente.', 'success');
+          await this.loadData();
+          this.renderTable(this.usuarios);
+        } catch (error) {
+          console.error('Error al eliminar cliente:', error);
+          showAlert('Error', 'No se pudo eliminar el huésped. Es posible que tenga reservas asociadas.', 'error');
+        }
+      }
+      return;
+    }
+
+    const unameLower = String(usuario.NombreUsuario || usuario.Nombre || '').toLowerCase();
+    if (unameLower === 'yoni' || unameLower === 'zury' || unameLower.includes('yoni') || unameLower.includes('zury')) {
+      showAlert('Advertencia', 'Este usuario es un Súper Admin y no puede ser eliminado.', 'warning');
+      return;
+    }
+
+    const confirm = await Swal.fire({
+      title: '¿Eliminar Usuario?',
+      text: "Esta acción no se puede deshacer.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        await deleteUsuario(id);
+        showAlert('Eliminado', 'El usuario ha sido eliminado correctamente.', 'success');
+        await this.loadData();
+        this.renderTable(this.usuarios);
+      } catch (error) {
+        console.error('Error al eliminar usuario:', error);
+        showAlert('Error', 'No se pudo eliminar el usuario. Es posible que tenga registros asociados.', 'error');
+      }
     }
   }
 
@@ -759,11 +1070,11 @@ class UsuariosModule {
   showError(title, message) {
     this.container.innerHTML = `
       <div class="flex flex-col items-center justify-center p-12 text-center bg-white border border-gray-100 rounded-3xl shadow-sm">
-        <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center text-3xl mb-4 shadow-inner">❌</div>
+        <div class="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center text-3xl mb-4 shadow-inner"><i class="fa-solid fa-xmark"></i></div>
         <h2 class="text-xl font-bold text-brand-deep mb-2">${title}</h2>
         <p class="text-muted text-sm mb-6 max-w-md">${message}</p>
         <button onclick="location.reload()" class="px-6 py-3 bg-brand hover:bg-brand-deep text-white font-semibold rounded-xl transition cursor-pointer border-none text-sm shadow-md shadow-brand/10">
-          🔄 Recargar página
+          <i class="fa-solid fa-rotate-right"></i> Recargar página
         </button>
       </div>
     `;

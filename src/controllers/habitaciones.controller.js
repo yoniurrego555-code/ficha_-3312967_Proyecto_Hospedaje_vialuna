@@ -2,6 +2,7 @@ const HabitacionesService = require('../services/habitaciones.service');
 
 const HabitacionesController = {
     crear: (req, res) => {
+        console.log('[habitaciones.controller] crear - body:', req.body);
         HabitacionesService.crearHabitacion(req.body)
             .then((result) => res.status(201).json({
                 ok: true,
@@ -24,6 +25,7 @@ const HabitacionesController = {
     },
 
     actualizar: (req, res) => {
+        console.log('[habitaciones.controller] actualizar - id:', req.params.id, 'body:', req.body);
         HabitacionesService.actualizarHabitacion(req.params.id, req.body)
             .then(() => res.json({ ok: true, mensaje: 'Habitacion actualizada correctamente' }))
             .catch((err) => res.status(400).json({ ok: false, mensaje: err.toString() }));
