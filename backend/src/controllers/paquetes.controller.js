@@ -1,54 +1,59 @@
 const service = require("../services/paquetes.service");
 
-// 🔹 LISTAR
 exports.listar = (req, res) => {
   service.listar()
-    .then(data => res.json(data))
-    .catch(err => {
-      console.error("❌ ERROR:", err);
-      res.status(500).json({ error: "Error al listar" });
+    .then(data => {
+      console.log("Paquetes OK:", data.length);
+      res.json(data);
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ error: "Error al listar", detalle: error.message });
     });
 };
 
-// 🔹 OBTENER
 exports.obtener = (req, res) => {
   service.obtener(req.params.id)
-    .then(data => res.json(data))
-    .catch(err => {
-      console.error(err);
-      res.status(500).json({ error: "Error al obtener" });
+    .then(data => {
+      if (!data) return res.status(404).json({ error: "Paquete no encontrado" });
+      res.json(data);
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ error: "Error al obtener", detalle: error.message });
     });
 };
 
-// 🔹 CREAR
 exports.crear = (req, res) => {
+  console.log("CREAR PAQUETE BODY:", req.body);
+
   service.crear(req.body)
-    .then(result => res.json({
+    .then(result => res.status(201).json({
       mensaje: "Creado correctamente",
       resultado: result
     }))
-    .catch(err => {
-      console.error(err);
-      res.status(500).json({ error: "Error al crear" });
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ error: "Error al crear", detalle: error.message });
     });
 };
 
-// 🔹 ACTUALIZAR
 exports.actualizar = (req, res) => {
+  console.log("ACTUALIZAR PAQUETE BODY:", req.body);
+
   service.actualizar(req.params.id, req.body)
-    .then(() => res.json({ mensaje: "Actualizado" }))
-    .catch(err => {
-      console.error(err);
-      res.status(500).json({ error: "Error al actualizar" });
+    .then(result => res.json({ mensaje: "Actualizado", resultado: result }))
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ error: "Error al actualizar", detalle: error.message });
     });
 };
 
-// 🔹 ELIMINAR
 exports.eliminar = (req, res) => {
   service.eliminar(req.params.id)
-    .then(() => res.json({ mensaje: "Eliminado" }))
-    .catch(err => {
-      console.error(err);
-      res.status(500).json({ error: "Error al eliminar" });
+    .then(result => res.json({ mensaje: "Eliminado", resultado: result }))
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ error: "Error al eliminar", detalle: error.message });
     });
 };

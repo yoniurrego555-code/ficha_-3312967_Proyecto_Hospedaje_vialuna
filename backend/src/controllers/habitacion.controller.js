@@ -1,14 +1,13 @@
 const service = require("../services/habitacion.service");
 
-// 🔹 LISTAR
 exports.listar = (req, res) => {
     service.listar()
         .then(data => {
-            console.log("📦 Habitacion:", data); // 🔥 DEBUG
+            console.log("Habitaciones OK:", data.length);
             res.json(data);
         })
         .catch(error => {
-            console.error("❌ ERROR LISTAR HABITACION:", error); // 🔥 CLAVE
+            console.error(error);
             res.status(500).json({
                 error: "Error al listar habitacion",
                 detalle: error.message
@@ -16,45 +15,69 @@ exports.listar = (req, res) => {
         });
 };
 
-// 🔹 CREAR
 exports.crear = (req, res) => {
+    console.log("CREAR HABITACION BODY:", req.body);
+
     service.crear(req.body)
-        .then(() => res.json({ mensaje: "Creado correctamente" }))
+        .then(result => res.status(201).json({
+            mensaje: "Creado correctamente",
+            resultado: result
+        }))
         .catch(error => {
-            console.error("❌ ERROR CREAR:", error);
-            res.status(400).json(error);
+            console.error(error);
+            res.status(500).json({
+                error: "Error al crear habitacion",
+                detalle: error.message
+            });
         });
 };
 
-// 🔹 ACTUALIZAR
 exports.actualizar = (req, res) => {
+    console.log("ACTUALIZAR HABITACION BODY:", req.body);
+
     service.actualizar(req.params.id, req.body)
-        .then(() => res.json({ mensaje: "Actualizado correctamente" }))
+        .then(result => res.json({
+            mensaje: "Actualizado correctamente",
+            resultado: result
+        }))
         .catch(error => {
-            console.error("❌ ERROR ACTUALIZAR:", error);
-            res.status(400).json(error);
+            console.error(error);
+            res.status(500).json({
+                error: "Error al actualizar habitacion",
+                detalle: error.message
+            });
         });
 };
 
-// 🔹 OBTENER POR ID
 exports.obtener = (req, res) => {
-    service.listar()
+    service.obtener(req.params.id)
         .then(data => {
-            const item = data.find(x => x.IDHabitacion == req.params.id);
-            res.json(item);
+            if (!data) {
+                return res.status(404).json({ error: "Habitacion no encontrada" });
+            }
+
+            res.json(data);
         })
         .catch(error => {
-            console.error("❌ ERROR OBTENER:", error);
-            res.status(500).json(error);
+            console.error(error);
+            res.status(500).json({
+                error: "Error al obtener habitacion",
+                detalle: error.message
+            });
         });
 };
 
-// 🔹 ELIMINAR
 exports.eliminar = (req, res) => {
     service.eliminar(req.params.id)
-        .then(() => res.json({ mensaje: "Eliminado correctamente" }))
+        .then(result => res.json({
+            mensaje: "Eliminado correctamente",
+            resultado: result
+        }))
         .catch(error => {
-            console.error("❌ ERROR ELIMINAR:", error);
-            res.status(400).json(error);
+            console.error(error);
+            res.status(500).json({
+                error: "Error al eliminar habitacion",
+                detalle: error.message
+            });
         });
 };

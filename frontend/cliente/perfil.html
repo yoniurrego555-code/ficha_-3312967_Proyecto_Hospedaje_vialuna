@@ -3,117 +3,100 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Perfil | ViaLuna</title>
-  <link rel="stylesheet" href="../css/admin-theme.css">
-  <link rel="stylesheet" href="css/style.css">
+  <title>Mi Perfil | Via Luna</title>
+  <link rel="stylesheet" href="dashboard.css">
 </head>
-<body>
-  <div class="layout">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <h1>🏨 VIA LUNA</h1>
-        <p class="sidebar-description">Portal del Cliente. Gestiona tus reservas y perfil de forma sencilla.</p>
+<body class="resort-dashboard">
+  <main class="resort-shell">
+    <nav class="resort-navbar resort-navbar-solid" aria-label="Navegacion cliente">
+      <a class="resort-brand" href="dashboard.html" aria-label="Via Luna">
+        <strong>Via Luna</strong>
+        <span>Hospedaje</span>
+      </a>
+
+      <div class="resort-links">
+        <a href="dashboard.html">Inicio</a>
+        <a href="reservas.html">Mis reservas</a>
+        
+        <a class="active" href="perfil.html">Mi perfil</a>
       </div>
 
-      <nav class="admin-nav" aria-label="Menú cliente">
-        <a class="admin-link" href="dashboard.html" data-view="dashboard">• Dashboard</a>
-        <a class="admin-link" href="reservas.html" data-view="reservas">• Mis Reservas</a>
-        <a class="admin-link" href="nueva-reserva.html" data-view="nueva-reserva">• Nueva Reserva</a>
-        <a class="admin-link active" href="perfil.html" data-view="perfil">• Mi Perfil</a>
-      </nav>
-
-      <div class="sidebar-footer">
-        <div class="user-info" id="userInfo">
-          <span class="user-name" id="userNameDisplay">Cargando...</span>
-          <span class="user-role">Cliente</span>
-        </div>
-        <button class="logout-btn" id="logoutBtn">
-          🚪 Cerrar sesión
-        </button>
+      <div class="resort-user">
+        <span class="user-avatar" id="userInitial">V</span>
+        <span><strong id="userNameDisplay">Cliente</strong></span>
+        <button id="logoutBtn" type="button" aria-label="Cerrar sesión">Cerrar sesión</button>
       </div>
-    </aside>
+    </nav>
 
-    <!-- Main Content -->
-    <main class="content">
-      <header class="module-header">
-        <div class="header-left">
-          <h1>Mi Perfil</h1>
-          <p>Administra tu información personal y configuración de cuenta.</p>
-        </div>
+    <section class="premium-page">
+      <header class="premium-page-head">
+        <p class="section-kicker">Cuenta</p>
+        <h1>Mi perfil</h1>
+        <p>Tu información personal para una estancia tranquila en Via Luna.</p>
       </header>
 
-      <div class="dashboard-grid">
-        <!-- Información Personal -->
-        <div class="panel">
-          <div class="panel-header">
-            <h3>Información Personal</h3>
+      <section class="premium-profile-grid">
+        <article class="premium-panel profile-panel">
+          <div class="premium-panel-head">
+            <h2>Información personal</h2>
+            <button type="button" class="package-btn" id="editProfileBtn">Editar perfil</button>
           </div>
-          <form id="perfilForm">
-            <div class="field">
-              <label>Tipo de Documento</label>
-              <select id="tipo_documento" name="tipo_documento" required>
-                <option value="CC">Cédula de Ciudadanía</option>
-                <option value="TI">Tarjeta de Identidad</option>
-                <option value="CE">Cédula de Extranjería</option>
-                <option value="Pasaporte">Pasaporte</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Número de Documento (No editable)</label>
-              <input type="text" id="documento" readonly style="background: #f0f0f0;">
-            </div>
-            <div class="field">
-              <label>Nombres</label>
-              <input type="text" id="nombres" name="nombres" required>
-            </div>
-            <div class="field">
-              <label>Apellidos</label>
-              <input type="text" id="apellidos" name="apellidos" required>
-            </div>
-            <div class="field">
-              <label>Email (No editable)</label>
-              <input type="email" id="email" readonly style="background: #f0f0f0;">
-            </div>
-            <div class="field">
-              <label>Teléfono</label>
-              <input type="text" id="telefono" name="telefono">
-            </div>
-            <div class="form-actions" style="margin-top: 20px;">
-              <button type="submit" class="btn-primary">Actualizar Información</button>
-            </div>
-          </form>
-        </div>
 
-        <!-- Cambio de Contraseña -->
-        <div class="panel">
-          <div class="panel-header">
-            <h3>Seguridad</h3>
-          </div>
-          <form id="passwordForm">
-            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 20px;">
-              Te recomendamos usar una contraseña fuerte que no uses en otros sitios.
-            </p>
-            <div class="field">
-              <label>Contraseña Actual</label>
-              <input type="password" name="current_password" required>
-            </div>
-            <div class="field">
-              <label>Nueva Contraseña</label>
-              <input type="password" name="new_password" required minlength="6">
-            </div>
-            <div class="field">
-              <label>Confirmar Nueva Contraseña</label>
-              <input type="password" name="confirm_password" required minlength="6">
-            </div>
-            <div class="form-actions" style="margin-top: 20px;">
-              <button type="submit" class="btn-secondary">Cambiar Contraseña</button>
+          <form id="perfilForm" class="premium-form readonly-profile">
+            <label class="premium-field">
+              <span>Nombre completo</span>
+              <input type="text" id="nombreCompleto" name="nombre_completo" readonly>
+            </label>
+            <label class="premium-field">
+              <span>Documento</span>
+              <input type="text" id="documento" readonly>
+            </label>
+            <label class="premium-field">
+              <span>Correo</span>
+              <input type="email" id="email" readonly>
+            </label>
+            <label class="premium-field">
+              <span>Teléfono</span>
+              <input type="text" id="telefono" name="telefono" readonly>
+            </label>
+            <label class="premium-field">
+              <span>Fecha de nacimiento</span>
+              <input type="date" id="fechaNacimiento" name="fecha_nacimiento" readonly>
+            </label>
+            <input type="hidden" id="tipo_documento" name="tipo_documento" value="CC">
+            <div class="premium-actions profile-save-actions">
+              <button type="button" class="btn-glass light" id="cancelEditBtn">Cancelar</button>
+              <button type="submit" class="package-btn">Guardar cambios</button>
             </div>
           </form>
-        </div>
-      </div>
-    </main>
-  </div>
+        </article>
+
+        <article class="premium-panel profile-panel">
+          <div class="premium-panel-head">
+            <h2>Cambiar contraseña</h2>
+          </div>
+
+          <form id="passwordForm" class="premium-form">
+            <label class="premium-field">
+              <span>Contraseña actual</span>
+              <input type="password" name="current_password" required>
+            </label>
+            <label class="premium-field">
+              <span>Nueva contraseña</span>
+              <input type="password" name="new_password" required minlength="6">
+            </label>
+            <label class="premium-field">
+              <span>Confirmar contraseña</span>
+              <input type="password" name="confirm_password" required minlength="6">
+            </label>
+            <div class="premium-actions">
+              <button type="submit" class="package-btn">Cambiar contraseña</button>
+            </div>
+          </form>
+        </article>
+      </section>
+    </section>
+  </main>
 
   <script type="module" src="js/perfilCliente.js"></script>
 </body>

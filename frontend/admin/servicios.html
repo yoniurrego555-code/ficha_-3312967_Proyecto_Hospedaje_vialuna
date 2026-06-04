@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -11,7 +11,7 @@
         <section class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
             <div>
                 <h1 class="text-2xl font-bold text-brand-deep tracking-tight m-0">Servicios</h1>
-                <p class="text-sm text-muted mt-1 m-0">Gestiona las experiencias, actividades y servicios adicionales ofrecidos a los huéspedes.</p>
+                <p class="text-sm text-muted mt-1 m-0">Gestiona las experiencias, actividades y servicios adicionales ofrecidos a los huÃ©spedes.</p>
             </div>
             <button class="flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 cursor-pointer border-none" id="btnNuevoServicio">
                 <span class="text-lg font-bold">+</span> Nuevo servicio
@@ -21,21 +21,21 @@
         <!-- Metrics Grid -->
         <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-                <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner">✨</div>
+                <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner">âœ¨</div>
                 <div>
                     <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Total servicios</p>
                     <h3 id="metricTotal" class="m-0 text-xl font-bold text-brand-deep mt-0.5">0</h3>
                 </div>
             </div>
             <div class="p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100/50 border-l-4 border-l-emerald-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-xl shadow-sm text-emerald-600 font-bold">✓</div>
+                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-xl shadow-sm text-emerald-600 font-bold">âœ“</div>
                 <div>
                     <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Activos</p>
                     <h3 id="metricActivos" class="m-0 text-xl font-bold text-emerald-700 mt-0.5">0</h3>
                 </div>
             </div>
             <div class="p-5 bg-red-50/50 rounded-2xl border border-red-100/50 border-l-4 border-l-red-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-xl shadow-sm text-red-600 font-bold">✕</div>
+                <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-xl shadow-sm text-red-600 font-bold">âœ•</div>
                 <div>
                     <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Inactivos</p>
                     <h3 id="metricInactivos" class="m-0 text-xl font-bold text-red-700 mt-0.5">0</h3>
@@ -47,7 +47,7 @@
         <section class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-8">
             <div class="flex flex-col gap-2">
                 <label class="text-[11px] font-bold text-brand-deep uppercase tracking-wider">Buscar Experiencia</label>
-                <input type="text" id="buscador" placeholder="Nombre o descripción del servicio..." class="px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-ink focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm">
+                <input type="text" id="buscador" placeholder="Nombre o descripciÃ³n del servicio..." class="px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-ink focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm">
             </div>
             <div class="flex flex-col gap-2">
                 <label class="text-[11px] font-bold text-brand-deep uppercase tracking-wider">Filtro Estado</label>
@@ -58,14 +58,14 @@
                 </select>
             </div>
             <button class="px-5 py-2.5 rounded-xl bg-emerald-50 text-brand-deep font-semibold hover:bg-emerald-100 active:scale-95 transition-all duration-300 text-sm border-none shadow-sm cursor-pointer h-[42px] flex items-center justify-center gap-2" id="btnLimpiarFiltros">
-                🔄 Limpiar filtros
+                ðŸ”„ Limpiar filtros
             </button>
         </section>
 
         <!-- Services Grid -->
         <section id="serviciosContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div class="col-span-full py-12 text-center text-muted font-medium bg-white rounded-2xl border border-gray-100">
-                <span class="inline-block animate-spin mr-2">⏳</span> Cargando servicios de Via Luna...
+                <span class="inline-block animate-spin mr-2">â³</span> Cargando servicios de Via Luna...
             </div>
         </section>
 
@@ -91,8 +91,8 @@
                     </div>
 
                     <div class="flex flex-col gap-1.5">
-                        <label for="descripcion" class="text-xs font-bold text-brand-deep uppercase tracking-wider">Descripción</label>
-                        <textarea id="descripcion" name="descripcion" placeholder="Detalles de la experiencia, duración y qué incluye..." style="height: 90px;" class="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm resize-none"></textarea>
+                        <label for="descripcion" class="text-xs font-bold text-brand-deep uppercase tracking-wider">DescripciÃ³n</label>
+                        <textarea id="descripcion" name="descripcion" placeholder="Detalles de la experiencia, duraciÃ³n y quÃ© incluye..." style="height: 90px;" class="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand/40 focus:ring focus:ring-brand/10 focus:outline-none transition-all duration-200 text-sm resize-none"></textarea>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -145,17 +145,17 @@
                     <!-- Room Metrics Tags -->
                     <div class="grid grid-cols-3 gap-3 text-center">
                         <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <span class="block text-lg">⏳</span>
-                            <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">Duración</span>
+                            <span class="block text-lg">â³</span>
+                            <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">DuraciÃ³n</span>
                             <strong class="block text-sm text-brand-deep mt-0.5">2 Horas Aprox.</strong>
                         </div>
                         <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <span class="block text-lg">👥</span>
+                            <span class="block text-lg">ðŸ‘¥</span>
                             <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">Capacidad</span>
                             <strong class="block text-sm text-brand-deep mt-0.5">Grupal / Pareja</strong>
                         </div>
                         <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <span class="block text-lg">⛰️</span>
+                            <span class="block text-lg">â›°ï¸</span>
                             <span class="block text-xs text-muted font-bold uppercase tracking-wider mt-1">Lugar</span>
                             <strong class="block text-sm text-brand-deep mt-0.5">Instalaciones</strong>
                         </div>
@@ -163,7 +163,7 @@
 
                     <!-- Description -->
                     <div class="flex flex-col gap-2">
-                        <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider m-0">Descripción de la Experiencia</h4>
+                        <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider m-0">DescripciÃ³n de la Experiencia</h4>
                         <p id="detalleDescripcion" class="text-sm text-muted leading-relaxed m-0">
                             Detalles del servicio...
                         </p>
@@ -171,19 +171,19 @@
 
                     <!-- Included Elements -->
                     <div class="flex flex-col gap-3">
-                        <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider m-0">¿Qué Incluye esta Actividad?</h4>
+                        <h4 class="text-sm font-bold text-brand-deep uppercase tracking-wider m-0">Â¿QuÃ© Incluye esta Actividad?</h4>
                         <div class="grid grid-cols-2 gap-3 text-xs font-semibold text-muted">
                             <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                🛡️ <span>Equipos de Seguridad & Guía</span>
+                                ðŸ›¡ï¸ <span>Equipos de Seguridad & GuÃ­a</span>
                             </div>
                             <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                🥤 <span>Refrigerio Campestre Tradicional</span>
+                                ðŸ¥¤ <span>Refrigerio Campestre Tradicional</span>
                             </div>
                             <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                📸 <span>Registro Fotográfico de Recuerdo</span>
+                                ðŸ“¸ <span>Registro FotogrÃ¡fico de Recuerdo</span>
                             </div>
                             <div class="flex items-center gap-2 p-2.5 bg-gray-50/50 rounded-xl border border-gray-100/50">
-                                🚑 <span>Póliza de Asistencia Médica</span>
+                                ðŸš‘ <span>PÃ³liza de Asistencia MÃ©dica</span>
                             </div>
                         </div>
                     </div>

@@ -1,12 +1,12 @@
-<!-- Pagos Header -->
+﻿<!-- Pagos Header -->
 <header class="module-header">
   <div class="header-left">
     <h1>Pagos</h1>
-    <p>Gestión de métodos de pago y transacciones</p>
+    <p>GestiÃ³n de mÃ©todos de pago y transacciones</p>
   </div>
   <div class="header-right">
     <button class="btn-primary" onclick="window.pagosModule.showNewPaymentModal()">
-      <span>➕</span> Nuevo Pago
+      <span>âž•</span> Nuevo Pago
     </button>
   </div>
 </header>
@@ -15,42 +15,42 @@
 <div class="metrics-grid">
   <div class="metric-card">
     <div class="metric-header">
-      <div class="metric-title">Total Métodos</div>
-      <div class="metric-icon blue">💳</div>
+      <div class="metric-title">Total MÃ©todos</div>
+      <div class="metric-icon blue">ðŸ’³</div>
     </div>
     <div class="metric-value" id="totalPagos">0</div>
     <div class="metric-change">
-      <span>📊</span> Total del sistema
+      <span>ðŸ“Š</span> Total del sistema
     </div>
   </div>
   <div class="metric-card">
     <div class="metric-header">
       <div class="metric-title">Pagos Mes</div>
-      <div class="metric-icon green">📅</div>
+      <div class="metric-icon green">ðŸ“…</div>
     </div>
     <div class="metric-value" id="pagosMes">$0</div>
     <div class="metric-change positive">
-      <span>↑</span> Este mes
+      <span>â†‘</span> Este mes
     </div>
   </div>
   <div class="metric-card">
     <div class="metric-header">
       <div class="metric-title">Procesados</div>
-      <div class="metric-icon amber">✅</div>
+      <div class="metric-icon amber">âœ…</div>
     </div>
     <div class="metric-value" id="pagosProcesados">0</div>
     <div class="metric-change">
-      <span>⚡</span> Completados
+      <span>âš¡</span> Completados
     </div>
   </div>
   <div class="metric-card">
     <div class="metric-header">
       <div class="metric-title">Pendientes</div>
-      <div class="metric-icon purple">⏳</div>
+      <div class="metric-icon purple">â³</div>
     </div>
     <div class="metric-value" id="pagosPendientes">0</div>
     <div class="metric-change negative">
-      <span>⏱️</span> En espera
+      <span>â±ï¸</span> En espera
     </div>
   </div>
 </div>
@@ -58,9 +58,9 @@
 <!-- Search and Filters -->
 <div class="search-section">
   <div class="search-container">
-    <input type="text" id="searchPagos" placeholder="Buscar método de pago..." class="search-input">
+    <input type="text" id="searchPagos" placeholder="Buscar mÃ©todo de pago..." class="search-input">
     <button class="btn-secondary" onclick="window.pagosModule.search()">
-      <span>🔍</span> Buscar
+      <span>ðŸ”</span> Buscar
     </button>
   </div>
   <div class="filter-container">
@@ -82,10 +82,10 @@
 <!-- Pagos Table -->
 <div class="table-card">
   <div class="table-header">
-    <h3 class="table-title">Métodos de Pago</h3>
+    <h3 class="table-title">MÃ©todos de Pago</h3>
     <div class="table-actions">
       <button class="btn-secondary" onclick="window.pagosModule.exportData()">
-        <span>📥</span> Exportar
+        <span>ðŸ“¥</span> Exportar
       </button>
     </div>
   </div>
@@ -96,8 +96,8 @@
           <th>ID</th>
           <th>Nombre</th>
           <th>Tipo</th>
-          <th>Descripción</th>
-          <th>Comisión</th>
+          <th>DescripciÃ³n</th>
+          <th>ComisiÃ³n</th>
           <th>Estado</th>
           <th>Acciones</th>
         </tr>
@@ -108,3 +108,4 @@
     </table>
   </div>
 </div>
+

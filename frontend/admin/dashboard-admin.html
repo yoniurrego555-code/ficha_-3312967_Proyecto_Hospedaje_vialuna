@@ -1,0 +1,97 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="pageTitle">Dashboard Admin | ViaLuna</title>
+  <link rel="stylesheet" href="../css/admin.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      corePlugins: {
+        preflight: false,
+      },
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              DEFAULT: '#3d7c62',
+              deep: '#245543',
+              light: '#5b8f63'
+            },
+            ink: '#173029',
+            muted: '#5f766d',
+            ok: '#1f6a4d',
+            danger: '#9f473c',
+            paper: '#eef7f0'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar Toggle Button -->
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+      <span class="hamburger"></span>
+      <span class="hamburger"></span>
+      <span class="hamburger"></span>
+    </button>
+    
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <h1>VIA LUNA</h1>
+      </div>
+
+      <nav class="admin-nav" aria-label="Panel administrativo">
+        <a class="admin-link active" href="#dashboard" data-view="dashboard">
+          <span class="nav-icon">ðŸ“Š</span> Dashboard
+        </a>
+        <a class="admin-link" href="#clientes" data-view="clientes">
+          <span class="nav-icon">ðŸ‘¥</span> Clientes
+        </a>
+        <a class="admin-link" href="#reservas" data-view="reservas">
+          <span class="nav-icon">ðŸ“…</span> Reservas
+        </a>
+        <a class="admin-link" href="#habitaciones" data-view="habitaciones">
+          <span class="nav-icon">ðŸ¨</span> Habitaciones
+        </a>
+        <a class="admin-link" href="#servicios" data-view="servicios">
+          <span class="nav-icon">ðŸ”§</span> Servicios
+        </a>
+        <a class="admin-link" href="#paquetes" data-view="paquetes">
+          <span class="nav-icon">ðŸ“¦</span> Paquetes
+        </a>
+        <a class="admin-link" href="#usuarios" data-view="usuarios">
+          <span class="nav-icon">ðŸ‘¥</span> Usuarios
+        </a>
+        <a class="admin-link" href="#roles-permisos" data-view="roles-permisos">
+          <span class="nav-icon">ðŸ”</span> Roles & Permisos
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="logout-btn" id="logoutBtn">
+          ðŸšª Cerrar sesiÃ³n
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+      <div id="contenido">
+        <!-- Content will be loaded dynamically here -->
+      </div>
+    </main>
+    
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  </div>
+
+  <script type="module" src="../js/dashboard-admin.js"></script>
+</body>
+</html>
+
+

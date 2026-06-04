@@ -1,196 +1,444 @@
 import { logout, isClientSession, isAdminSession, getSession } from "../../dashboard/core/authGuard.js";
-import { getReservas } from "../../dashboard/core/api.js";
+import { getReservas, getHabitaciones, getPaquetes, getServicios } from "../../dashboard/core/api.js";
 
-console.log('📡 dashboardCliente.js detectado');
+const fallbackRoomImage = "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1100&q=85";
+const fallbackPackageImage = "https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=900&q=85";
+
+let habitacionesCache = [];
+let paquetesCache = [];
+let serviciosCache = [];
+
+function getClientName(session) {
+    return session?.nombre || session?.NombreCompleto || session?.Nombres || session?.Nombre || "Cliente";
+}
+
+function getClientId(session) {
+    return session?.id_cliente || session?.IDCliente || session?.NroDocumento || session?.IDUsuario || session?.id;
+}
+
+function getHabitacionName(reserva) {
+    return reserva?.habitacion?.nombre || reserva?.NombreHabitacion || reserva?.Habitacion || reserva?.id_habitacion || reserva?.IDHabitacion || "Habitacion Via Luna";
+}
+
+function normalizeText(text) {
+    return String(text || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function imageFromBlob(value) {
+    if (!value) return "";
+    if (typeof value === "string") {
+        if (value === "[object Object]") return "";
+        if (value.startsWith("data:") || value.startsWith("http") || value.startsWith("../") || value.startsWith("./")) return value;
+        if (value.length > 80) return `data:image/jpeg;base64,${value}`;
+    }
+    if (value.data && Array.isArray(value.data)) {
+        const bytes = new Uint8Array(value.data);
+        let binary = "";
+        bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+        if (binary.startsWith("http") || binary.startsWith("data:") || binary.startsWith("../") || binary.startsWith("./")) return binary;
+        if (binary === "[object Object]") return "";
+        return `data:image/jpeg;base64,${btoa(binary)}`;
+    }
+    return "";
+}
+
+function imageForRoom(room) {
+    const dbImage = imageFromBlob(room.ImagenUrl || room.ImagenHabitacion || room.imagen || room.imagenHabitacion);
+    if (dbImage) return dbImage;
+    const text = normalizeText(`${room.NombreHabitacion || room.nombre || ""} ${room.Descripcion || room.descripcion || ""}`);
+    if (text.includes("familiar")) return "../assets/images/rooms/familiar.png";
+    if (text.includes("pareja") || text.includes("doble")) return "../assets/images/rooms/parejas.png";
+    if (text.includes("individual") || text.includes("sencilla")) return "../assets/images/rooms/individual.png";
+    return fallbackRoomImage;
+}
+
+function imageForPackage(pack) {
+    return imageFromBlob(pack.ImagenUrl || pack.ImagenPaquete || pack.imagen || pack.imagenPaquete) || fallbackPackageImage;
+}
+
+function isActive(item) {
+    const value = String(item?.Estado ?? item?.estado ?? "").toLowerCase();
+    return ["", "1", "true", "activo", "activa", "disponible"].includes(value);
+}
+
+function getRoomId(room) {
+    return room.IDHabitacion || room.id_habitacion || room.id || "";
+}
+
+function getPackageId(pack) {
+    return pack.IDPaquete || pack.id || "";
+}
+
+function getServiceId(service) {
+    return service.IDServicio || service.id || "";
+}
+
+function getRoomCapacity(room) {
+    return room.CapacidadMaximaPersonas || room.capacidadMaximaPersonas || room.Capacidad || room.capacidad || "";
+}
+
+function getRoomBeds(room) {
+    return room.cantidad_camas || room.CantidadCamas || room.camas || room.Camas || "";
+}
+
+function getRoomBedType(room) {
+    return room.tipo_camas || room.TipoCamas || room.tipo_cama || room.TipoCama || "";
+}
 
 async function init() {
-    console.log('🚀 Inicializando Dashboard Cliente...');
-
     try {
-        // 1. Verificar autenticación y rol
         const session = getSession();
-        const token = localStorage.getItem('vialuna_token');
-
-        console.log('📊 Estado de la sesión:', { 
-            haySesion: !!session, 
-            hayToken: !!token, 
-            rol: session?.rol || session?.IDRol || 'N/A' 
-        });
+        const token = localStorage.getItem("vialuna_token");
 
         if (!session || !token) {
-            console.warn('⚠️ No hay sesión activa, redirigiendo a login...');
-            window.location.href = '../pages/login.html';
+            window.location.href = "../auth/login.html";
             return;
         }
 
         if (isAdminSession(session)) {
-            console.warn('⚠️ Usuario es admin, redirigiendo a panel administrativo...');
-            window.location.href = '../pages/dashboard-admin.html';
+            window.location.href = "../admin/dashboard-admin.html";
             return;
         }
 
         if (!isClientSession(session)) {
-            console.error('❌ Acceso denegado: el usuario no tiene rol de cliente');
-            alert('Acceso denegado. No tienes permisos de cliente.');
-            window.location.href = '../pages/login.html';
+            window.location.href = "../auth/login.html";
             return;
         }
 
-        // 2. Mostrar información del usuario
-        const userName = session.NombreCompleto || session.Nombres || session.Nombre || 'Cliente';
-        const displayElem = document.getElementById('userNameDisplay');
-        const welcomeElem = document.getElementById('welcomeName');
+        const userName = getClientName(session);
+        setText("userNameDisplay", userName);
+        setText("welcomeName", userName);
+        setText("userInitial", userName.trim().charAt(0).toUpperCase() || "V");
 
-        if (displayElem) displayElem.textContent = userName;
-        if (welcomeElem) welcomeElem.textContent = userName;
-
-        // 3. Cargar datos del Dashboard
-        const idCliente = session.id_cliente || session.IDCliente || session.id;
-        if (idCliente) {
-            await cargarDatosDashboard(idCliente);
-        } else {
-            console.error('❌ No se encontró ID de cliente en la sesión:', session);
-        }
-
-        // 4. Configurar Logout
-        const logoutBtn = document.getElementById('logoutBtn');
+        const logoutBtn = document.getElementById("logoutBtn");
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', (e) => {
-                e.preventDefault();
+            logoutBtn.addEventListener("click", (event) => {
+                event.preventDefault();
                 logout();
             });
         }
 
-        // 5. Fecha actual
-        const dateElem = document.getElementById('currentDate');
-        if (dateElem) {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            dateElem.textContent = new Date().toLocaleDateString('es-ES', options);
-        }
+        registrarEventosDetalle();
 
+        const idCliente = getClientId(session);
+        await Promise.all([
+            idCliente ? cargarReservas(idCliente) : Promise.resolve(),
+            cargarHabitaciones(),
+            cargarPaquetes(),
+            cargarServicios()
+        ]);
     } catch (error) {
-        console.error('❌ Error crítico en la inicialización:', error);
+        console.error("Error critico en dashboard cliente:", error);
     }
 }
 
-async function cargarDatosDashboard(idCliente) {
-    try {
-        console.log(`📥 Cargando reservas para cliente ID: ${idCliente}`);
-        const reservas = await getReservas({ id_cliente: idCliente });
-        console.log('📋 Reservas obtenidas:', reservas);
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+}
 
-        if (!Array.isArray(reservas)) {
-            console.error('La respuesta de reservas no es un array:', reservas);
+async function cargarReservas(idCliente) {
+    try {
+        const reservas = await getReservas({ id_cliente: idCliente });
+        const list = Array.isArray(reservas) ? reservas : [];
+        const todayStr = new Date().toISOString().split("T")[0];
+
+        const enCurso = list.find((r) => {
+            const fechaInicio = String(r.fecha_inicio || r.FechaInicio || "").split("T")[0];
+            const fechaFin = String(r.fecha_fin || r.FechaFin || "").split("T")[0];
+            return fechaInicio <= todayStr && fechaFin >= todayStr;
+        });
+
+        if (enCurso) {
+            renderizarProximaReserva(enCurso);
             return;
         }
 
-        // Calcular Métricas
-        const total = reservas.length;
-        const activas = reservas.filter(r => String(r.Estado) == '1' || r.Estado == 'activa' || r.Estado == 'confirmada').length;
-        const finalizadas = reservas.filter(r => String(r.Estado) == '2' || r.Estado == 'completada').length;
-        const pendientes = reservas.filter(r => r.Estado == 'pendiente' || String(r.Estado) == '0').length;
+        const proxima = list
+            .filter((r) => String(r.fecha_inicio || r.FechaInicio || "").split("T")[0] >= todayStr)
+            .sort((a, b) => String(a.fecha_inicio || a.FechaInicio || "").localeCompare(String(b.fecha_inicio || b.FechaInicio || "")))[0];
 
-        // Actualizar UI Métricas
-        const updateMetric = (id, val) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = val;
-        };
-
-        updateMetric('totalReservas', total);
-        updateMetric('reservasActivas', activas);
-        updateMetric('reservasFinalizadas', finalizadas);
-        updateMetric('reservasPendientes', pendientes);
-
-        // Renderizar Tabla Reciente
-        renderizarTablaReciente(reservas.slice(0, 5));
-
-        // Encontrar próxima reserva
-        const proxima = reservas
-            .filter(r => new Date(r.fecha_inicio) >= new Date())
-            .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))[0];
-
-        renderizarProximaReserva(proxima);
-
+        renderizarProximaReserva(proxima || null);
     } catch (error) {
-        console.error('Error cargando datos del dashboard:', error);
+        console.error("Error cargando reservas:", error);
+        renderizarProximaReserva(null);
     }
-}
-
-function renderizarTablaReciente(reservas) {
-    const tbody = document.getElementById('recentReservationsTable');
-    if (!tbody) return;
-
-    if (reservas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No tienes reservas registradas.</td></tr>';
-        return;
-    }
-
-    tbody.innerHTML = reservas.map(r => `
-        <tr>
-            <td>#${r.id_reserva || r.IDReserva}</td>
-            <td>Hab. ${r.id_habitacion || r.IDHabitacion || 'N/A'}</td>
-            <td>${r.fecha_inicio || r.FechaInicio}</td>
-            <td>${r.fecha_fin || r.FechaFin}</td>
-            <td><span class="status-badge ${getStatusClass(r.Estado)}">${getStatusText(r.Estado)}</span></td>
-            <td>$${Number(r.total || r.Total || 0).toLocaleString('es-CO')}</td>
-        </tr>
-    `).join('');
 }
 
 function renderizarProximaReserva(reserva) {
-    const container = document.getElementById('nextReservationCard');
+    const container = document.getElementById("nextReservationCard");
     if (!container) return;
 
     if (!reserva) {
-        container.innerHTML = '<p class="empty-msg">No tienes reservas próximas programadas.</p>';
+        container.innerHTML = `
+            <div class="stay-icon" aria-hidden="true">VL</div>
+            <div class="stay-info">
+                <span>Proxima estancia</span>
+                <h2>No tienes reservas activas.</h2>
+                <p>Reserva una nueva experiencia cuando quieras volver.</p>
+            </div>
+            <a class="stay-arrow" href="nueva-reserva.html" aria-label="Reservar ahora">></a>
+            <div class="stay-actions">
+                <a class="btn-primary" href="nueva-reserva.html">Reservar ahora</a>
+                <a class="btn-glass" href="reservas.html">Ver historial</a>
+            </div>
+        `;
         return;
     }
 
+    const start = String(reserva.fecha_inicio || reserva.FechaInicio || "").split("T")[0];
+    const end = String(reserva.fecha_fin || reserva.FechaFin || "").split("T")[0];
+    const nights = getNights(start, end);
+    const room = getHabitacionName(reserva);
+    const estado = reserva?.estado?.nombre || reserva?.Estado || reserva?.NombreEstadoReserva || "Confirmada";
+    const total = formatMoney(reserva.total || reserva.Total || reserva.TotalPagado || 0);
+
     container.innerHTML = `
-        <div class="reservation-highlight">
-            <h4>Habitación #${reserva.id_habitacion || reserva.IDHabitacion}</h4>
-            <div class="reservation-details">
-                <p>📅 <strong>Desde:</strong> ${reserva.fecha_inicio || reserva.FechaInicio}</p>
-                <p>📅 <strong>Hasta:</strong> ${reserva.fecha_fin || reserva.FechaFin}</p>
-                <p>💰 <strong>Total:</strong> $${Number(reserva.total || reserva.Total || 0).toLocaleString('es-CO')}</p>
-                <p>🏷️ <strong>Estado:</strong> ${getStatusText(reserva.Estado)}</p>
-            </div>
-            <a href="reservas.html" class="btn-primary" style="margin-top:15px; display:inline-block; text-decoration:none; padding:10px 20px; font-size:0.9rem;">
-                Ver Detalles
-            </a>
+        <div class="stay-icon" aria-hidden="true">VL</div>
+        <div class="stay-info">
+            <span>Proxima estancia</span>
+            <h2>${formatLongDate(start)}</h2>
+            <p>${nights} ${nights === 1 ? "noche" : "noches"} · ${room}</p>
+        </div>
+        <a class="stay-arrow" href="reservas.html" aria-label="Ver reserva">></a>
+        <div class="stay-stay-details">
+            <span class="stay-detail-item"><strong>Salida:</strong> ${formatLongDate(end)}</span>
+            <span class="stay-detail-item"><strong>Estado:</strong> ${estado}</span>
+            <span class="stay-detail-item"><strong>Total:</strong> ${total}</span>
+        </div>
+        <div class="stay-actions">
+            <a class="btn-primary" href="reservas.html">Ver historial</a>
+            <a class="btn-glass" href="nueva-reserva.html">Reservar ahora</a>
         </div>
     `;
 }
 
-function getStatusClass(estado) {
-    const s = String(estado || '').toLowerCase();
-    const statusMap = {
-        '1': 'status-active',
-        '2': 'status-completed',
-        '3': 'status-cancelled',
-        'activa': 'status-active',
-        'confirmada': 'status-active',
-        'completada': 'status-completed',
-        'cancelada': 'status-cancelled',
-        'pendiente': 'status-pending'
-    };
-    return statusMap[s] || 'status-active';
+async function cargarHabitaciones() {
+    const grid = document.getElementById("roomsGrid");
+    if (!grid) return;
+
+    try {
+        const habitaciones = await getHabitaciones();
+        habitacionesCache = (Array.isArray(habitaciones) ? habitaciones : []).filter(isActive);
+        const visibles = habitacionesCache.slice(0, 3);
+
+        if (!visibles.length) {
+            grid.innerHTML = '<article class="empty-state">No hay habitaciones disponibles por ahora.</article>';
+            return;
+        }
+
+        grid.innerHTML = visibles.map((room, index) => {
+            const title = room.NombreHabitacion || room.nombre || "Habitacion Via Luna";
+            const price = room.Costo || room.Precio || room.precio || 0;
+            const capacity = getRoomCapacity(room);
+            const beds = getRoomBeds(room);
+            const bedType = getRoomBedType(room);
+
+            return `
+                <article class="room-card">
+                    <div class="room-media">
+                        <img src="${imageForRoom(room)}" alt="${title}" loading="lazy" onerror="this.onerror=null;this.src='${fallbackRoomImage}'">
+                        ${index === 0 ? '<span class="room-badge">Mas popular</span>' : ""}
+                    </div>
+                    <div class="room-content">
+                        <h3>${title}</h3>
+                        <p>${room.Descripcion || room.descripcion || "Descripcion pendiente de actualizar."}</p>
+                        <div class="room-tags">
+                            ${capacity ? `<span>Capacidad: ${capacity} personas</span>` : ""}
+                            ${beds ? `<span>${beds} camas</span>` : ""}
+                            ${bedType ? `<span>${bedType}</span>` : ""}
+                        </div>
+                        <div class="room-footer">
+                            <div class="room-price"><strong>${formatMoney(price)}</strong><small>por noche</small></div>
+                            <button class="room-btn" type="button" data-detail-type="habitacion" data-detail-id="${getRoomId(room)}">Ver detalle</button>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }).join("");
+    } catch (error) {
+        console.error("Error cargando habitaciones:", error);
+        grid.innerHTML = '<article class="empty-state">No fue posible cargar habitaciones.</article>';
+    }
 }
 
-function getStatusText(estado) {
-    const s = String(estado || '').toLowerCase();
-    const statusMap = {
-        '1': 'Activa',
-        '2': 'Finalizada',
-        '3': 'Cancelada',
-        'activa': 'Activa',
-        'confirmada': 'Activa',
-        'completada': 'Finalizada',
-        'cancelada': 'Cancelada',
-        'pendiente': 'Pendiente'
-    };
-    return statusMap[s] || estado || 'N/A';
+async function cargarPaquetes() {
+    const list = document.getElementById("packagesList");
+    if (!list) return;
+
+    try {
+        const paquetes = await getPaquetes();
+        paquetesCache = (Array.isArray(paquetes) ? paquetes : []).filter(isActive);
+        const visibles = paquetesCache.slice(0, 3);
+
+        if (!visibles.length) {
+            list.innerHTML = '<div class="empty-state">No hay paquetes disponibles por ahora.</div>';
+            return;
+        }
+
+        list.innerHTML = visibles.map((pack) => {
+            const title = pack.NombrePaquete || pack.nombre || "Paquete Via Luna";
+            const desc = pack.Descripcion || pack.descripcion || "Experiencia especial para complementar tu estadia.";
+            const price = pack.Precio || pack.precio || 0;
+            return `
+                <article class="package-item">
+                    <img src="${imageForPackage(pack)}" alt="${title}" loading="lazy" onerror="this.onerror=null;this.src='${fallbackPackageImage}'">
+                    <div class="package-copy">
+                        <h3>${title}</h3>
+                        <p>${desc}</p>
+                        <strong>${formatMoney(price)}</strong>
+                    </div>
+                    <button class="package-btn" type="button" data-detail-type="paquete" data-detail-id="${getPackageId(pack)}">Ver detalle</button>
+                </article>
+            `;
+        }).join("");
+    } catch (error) {
+        console.error("Error cargando paquetes:", error);
+        list.innerHTML = '<div class="empty-state">No fue posible cargar paquetes.</div>';
+    }
 }
 
-// Ejecutar inicialización
+async function cargarServicios() {
+    const grid = document.getElementById("servicesGrid");
+    if (!grid) return;
+
+    try {
+        const servicios = await getServicios();
+        serviciosCache = (Array.isArray(servicios) ? servicios : []).filter(isActive);
+        const visibles = serviciosCache.slice(0, 3);
+        const icons = ["SPA", "Tour", "VIP"];
+
+        if (!visibles.length) {
+            grid.innerHTML = '<div class="empty-state">No hay servicios disponibles por ahora.</div>';
+            return;
+        }
+
+        grid.innerHTML = visibles.map((service, index) => {
+            const title = service.NombreServicio || service.nombre || "Servicio";
+            const desc = service.Descripcion || service.descripcion || "Disponible";
+            const price = service.Costo || service.Precio || service.precio || 0;
+            const duracion = service.Duracion ? `${service.Duracion} min` : "";
+            const personas = service.CantidadMaximaPersonas ? `Max ${service.CantidadMaximaPersonas} personas` : "";
+            return `
+                <article class="service-item">
+                    <span class="service-icon">${icons[index % icons.length]}</span>
+                    <div class="service-content">
+                        <h3>${title}</h3>
+                        <p>${desc}</p>
+                        <small>${[duracion, personas].filter(Boolean).join(" · ")}</small>
+                        <strong>${price ? formatMoney(price) : "Incluido"}</strong>
+                    </div>
+                    <button class="package-btn" type="button" data-detail-type="servicio" data-detail-id="${getServiceId(service)}">Ver detalle</button>
+                </article>
+            `;
+        }).join("");
+    } catch (error) {
+        console.error("Error cargando servicios:", error);
+        grid.innerHTML = '<div class="empty-state">No fue posible cargar servicios.</div>';
+    }
+}
+
+function detailItem(label, value) {
+    if (value === undefined || value === null || value === "") return "";
+    return `
+        <div class="detail-modal-item">
+            <dt>${label}</dt>
+            <dd>${value}</dd>
+        </div>
+    `;
+}
+
+function openDetailModal(title, items) {
+    const modal = document.getElementById("detailModal");
+    const modalTitle = document.getElementById("detailModalTitle");
+    const grid = document.getElementById("detailModalGrid");
+    if (!modal || !modalTitle || !grid) return;
+
+    modalTitle.textContent = title;
+    grid.innerHTML = items.filter(Boolean).join("");
+    modal.classList.add("show");
+    modal.setAttribute("aria-hidden", "false");
+}
+
+function closeDetailModal() {
+    const modal = document.getElementById("detailModal");
+    if (!modal) return;
+    modal.classList.remove("show");
+    modal.setAttribute("aria-hidden", "true");
+}
+
+function registrarEventosDetalle() {
+    document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-detail-type][data-detail-id]");
+        if (!button) return;
+
+        const { detailType, detailId } = button.dataset;
+        if (detailType === "habitacion") {
+            const room = habitacionesCache.find((item) => String(getRoomId(item)) === String(detailId));
+            if (room) mostrarDetalleHabitacion(room);
+        }
+        if (detailType === "paquete") {
+            const pack = paquetesCache.find((item) => String(getPackageId(item)) === String(detailId));
+            if (pack) mostrarDetallePaquete(pack);
+        }
+        if (detailType === "servicio") {
+            const service = serviciosCache.find((item) => String(getServiceId(item)) === String(detailId));
+            if (service) mostrarDetalleServicio(service);
+        }
+    });
+
+    document.querySelectorAll("[data-close-detail]").forEach((element) => {
+        element.addEventListener("click", closeDetailModal);
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeDetailModal();
+    });
+}
+
+function mostrarDetalleHabitacion(room) {
+    openDetailModal(room.NombreHabitacion || room.nombre || "Habitacion", [
+        detailItem("Nombre", room.NombreHabitacion || room.nombre),
+        detailItem("Descripcion", room.Descripcion || room.descripcion),
+        detailItem("Costo", formatMoney(room.Costo || room.Precio || room.precio || 0)),
+        detailItem("Capacidad", getRoomCapacity(room) ? `${getRoomCapacity(room)} personas` : ""),
+        detailItem("Cantidad de camas", getRoomBeds(room) ? `${getRoomBeds(room)} camas` : ""),
+        detailItem("Tipo de camas", getRoomBedType(room))
+    ]);
+}
+
+function mostrarDetallePaquete(pack) {
+    openDetailModal(pack.NombrePaquete || pack.nombre || "Paquete", [
+        detailItem("Nombre", pack.NombrePaquete || pack.nombre),
+        detailItem("Descripcion", pack.Descripcion || pack.descripcion),
+        detailItem("Precio", formatMoney(pack.Precio || pack.precio || 0))
+    ]);
+}
+
+function mostrarDetalleServicio(service) {
+    openDetailModal(service.NombreServicio || service.nombre || "Servicio", [
+        detailItem("Nombre", service.NombreServicio || service.nombre),
+        detailItem("Descripcion", service.Descripcion || service.descripcion),
+        detailItem("Duracion", service.Duracion ? `${service.Duracion} minutos` : ""),
+        detailItem("Cantidad maxima de personas", service.CantidadMaximaPersonas || service.capacidadMaximaPersonas || ""),
+        detailItem("Costo", formatMoney(service.Costo || service.Precio || service.precio || 0))
+    ]);
+}
+
+function getNights(start, end) {
+    const a = new Date(start);
+    const b = new Date(end);
+    const diff = Math.round((b - a) / 86400000);
+    return Number.isFinite(diff) && diff > 0 ? diff : 1;
+}
+
+function formatLongDate(value) {
+    if (!value) return "Fecha por confirmar";
+    return new Date(value).toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" });
+}
+
+function formatMoney(value) {
+    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(value || 0));
+}
+
 init();

@@ -38,10 +38,8 @@ const obtener = () => {
       IDHabitacion,
       NombreHabitacion,
       ImagenHabitacion,
-      ImagenUrl,
       Descripcion,
       Costo,
-      CapacidadMaximaPersonas,
       Estado,
       CASE Estado
         WHEN 1 THEN 'disponible'
@@ -62,10 +60,8 @@ const obtenerPorId = (id) => {
       IDHabitacion,
       NombreHabitacion,
       ImagenHabitacion,
-      ImagenUrl,
       Descripcion,
       Costo,
-      CapacidadMaximaPersonas,
       Estado,
       CASE Estado
         WHEN 1 THEN 'disponible'
@@ -84,14 +80,13 @@ const obtenerPorId = (id) => {
 const crear = (data) => {
   return db.query(
     `INSERT INTO habitacion
-    (NombreHabitacion, ImagenHabitacion, Descripcion, Costo, CapacidadMaximaPersonas, Estado)
-    VALUES (?, ?, ?, ?, ?, ?)`,
+    (NombreHabitacion, ImagenHabitacion, Descripcion, Costo, Estado)
+    VALUES (?, ?, ?, ?, ?)`,
     [
       data.NombreHabitacion,
       data.ImagenHabitacion || null,
       data.Descripcion,
       data.Costo,
-      normalizeCapacidad(data),
       normalizeEstado(data.Estado)
     ]
   )
@@ -101,14 +96,13 @@ const crear = (data) => {
 const actualizar = (id, data) => {
   return db.query(
     `UPDATE habitacion SET 
-    NombreHabitacion = ?, ImagenHabitacion = ?, Descripcion = ?, Costo = ?, CapacidadMaximaPersonas = ?, Estado = ?
+    NombreHabitacion = ?, ImagenHabitacion = ?, Descripcion = ?, Costo = ?, Estado = ?
     WHERE IDHabitacion = ?`,
     [
       data.NombreHabitacion,
       data.ImagenHabitacion || null,
       data.Descripcion,
       data.Costo,
-      normalizeCapacidad(data),
       normalizeEstado(data.Estado),
       id
     ]

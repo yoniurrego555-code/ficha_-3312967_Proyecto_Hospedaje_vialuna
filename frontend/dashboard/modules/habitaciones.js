@@ -1,7 +1,7 @@
-import { apiUrl, getConnectionErrorMessage, getAuthHeaders } from './shared/api-config.js';
+﻿import { apiUrl, getConnectionErrorMessage, getAuthHeaders } from './shared/api-config.js';
 import { getAppUrl } from '../core/authGuard.js';
 
-const BASE_URL = apiUrl('habitaciones');
+const BASE_URL = apiUrl('habitacion');
 
 const state = {
     habitaciones: [],
@@ -101,12 +101,12 @@ async function request(url, options = {}) {
 
     try {
         response = await fetch(url, {
+            ...options,
             headers: {
                 'Content-Type': 'application/json',
                 ...getAuthHeaders(),
                 ...(options.headers || {})
-            },
-            ...options
+            }
         });
     } catch (error) {
         if (error instanceof TypeError) {
@@ -118,7 +118,7 @@ async function request(url, options = {}) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok || data.ok === false) {
-        throw new Error(data.mensaje || data.error || 'No se pudo completar la operación');
+        throw new Error(data.mensaje || data.error || 'No se pudo completar la operaciÃ³n');
     }
 
     return data;
@@ -160,7 +160,7 @@ function renderResumen() {
 function obtenerHabitacionesFiltradas() {
     let filtradas = state.habitaciones;
 
-    // Búsqueda por texto
+    // BÃºsqueda por texto
     const termino = state.filtro.trim().toLowerCase();
     if (termino) {
         filtradas = filtradas.filter((habitacion) => {
@@ -219,9 +219,9 @@ function renderHabitacionesList() {
     if (!habitaciones.length) {
         elements.habitacionesContainer.innerHTML = `
             <div class="col-span-full py-16 px-6 text-center bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col items-center justify-center gap-3">
-                <span class="text-4xl">📭</span>
+                <span class="text-4xl">ðŸ“­</span>
                 <h4 class="text-brand-deep font-bold text-lg m-0">No se encontraron habitaciones</h4>
-                <p class="text-muted text-sm max-w-sm m-0">Intenta cambiar los filtros de búsqueda o agrega una nueva habitación desde el panel superior.</p>
+                <p class="text-muted text-sm max-w-sm m-0">Intenta cambiar los filtros de bÃºsqueda o agrega una nueva habitaciÃ³n desde el panel superior.</p>
             </div>
         `;
         return;
@@ -241,7 +241,7 @@ function renderHabitacionesList() {
         <article class="group bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col">
             <!-- Room Image Container -->
             <div class="h-52 w-full overflow-hidden relative bg-gray-50">
-                <img src="${roomImg}" alt="Habitación" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                <img src="${roomImg}" alt="HabitaciÃ³n" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                 
                 <!-- Modern Status Switch on Card -->
                 <div class="absolute top-4 right-4 bg-white/95 backdrop-blur-md rounded-full shadow-lg px-3 py-1.5 flex items-center gap-3 transition-all duration-300">
@@ -260,19 +260,19 @@ function renderHabitacionesList() {
             <div class="p-6 flex-1 flex flex-col gap-4">
                 <div class="flex flex-col gap-1.5">
                     <div class="flex items-center justify-between">
-                        <h4 class="text-brand-deep font-bold text-lg m-0 tracking-tight group-hover:text-brand transition-colors duration-200">${habitacion.nombre || habitacion.NombreHabitacion || 'Habitación'}</h4>
+                        <h4 class="text-brand-deep font-bold text-lg m-0 tracking-tight group-hover:text-brand transition-colors duration-200">${habitacion.nombre || habitacion.NombreHabitacion || 'HabitaciÃ³n'}</h4>
                         <span class="text-[10px] font-bold text-muted bg-gray-100 px-2 py-0.5 rounded-md">ID: #${habitacionId}</span>
                     </div>
                     <p class="text-muted text-xs leading-relaxed m-0 h-8 line-clamp-2">
-                        ${habitacion.descripcion || habitacion.Descripcion || 'Habitación rural boutique confortable con todos los servicios.'}
+                        ${habitacion.descripcion || habitacion.Descripcion || 'HabitaciÃ³n rural boutique confortable con todos los servicios.'}
                     </p>
                 </div>
 
                 <!-- Icons metadata -->
                 <div class="flex items-center gap-4 text-xs font-semibold text-muted bg-gray-50/50 p-2.5 rounded-xl border border-gray-100/50">
-                    <span class="flex items-center gap-1">👤 Max: ${capacidad} Pers</span>
-                    <span class="flex items-center gap-1">🛏️ ${capacidad > 2 ? '2 Camas' : '1 Cama'}</span>
-                    <span class="flex items-center gap-1">📐 32 m²</span>
+                    <span class="flex items-center gap-1">ðŸ‘¤ Max: ${capacidad} Pers</span>
+                    <span class="flex items-center gap-1">ðŸ›ï¸ ${capacidad > 2 ? '2 Camas' : '1 Cama'}</span>
+                    <span class="flex items-center gap-1">ðŸ“ 32 mÂ²</span>
                 </div>
 
                 <!-- Price and Buttons Layout Orderly and Logical -->
@@ -285,14 +285,14 @@ function renderHabitacionesList() {
                     <!-- Clean CRUD Actions -->
                     <div class="flex flex-col gap-2">
                         <button class="w-full h-10 rounded-xl bg-brand text-white text-xs font-bold shadow-md shadow-brand/10 hover:bg-brand-deep hover:-translate-y-0.5 active:translate-y-0 cursor-pointer border-none transition-all duration-300 flex items-center justify-center gap-1.5" type="button" data-action="detalle" data-id="${habitacionId}">
-                            🔍 Ver detalle
+                            ðŸ” Ver detalle
                         </button>
                         <div class="grid grid-cols-2 gap-2">
                             <button class="h-9 rounded-xl bg-gray-100 text-brand-deep text-xs font-bold hover:bg-gray-200 active:scale-98 cursor-pointer border-none transition-all duration-300 flex items-center justify-center gap-1" type="button" data-action="editar" data-id="${habitacionId}">
-                                ✏️ Editar
+                                âœï¸ Editar
                             </button>
                             <button class="h-9 rounded-xl bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 active:scale-98 cursor-pointer border-none transition-all duration-300 flex items-center justify-center gap-1" type="button" data-action="eliminar" data-id="${habitacionId}">
-                                🗑️ Eliminar
+                                ðŸ—‘ï¸ Eliminar
                             </button>
                         </div>
                     </div>
@@ -336,7 +336,7 @@ async function manejarCambioEstadoRapido(event) {
         renderResumen();
         renderHabitacionesList();
     } catch (error) {
-        mostrarMensaje(`Error al cambiar estado rápido: ${error.message}`, 'error');
+        mostrarMensaje(`Error al cambiar estado rÃ¡pido: ${error.message}`, 'error');
         renderHabitacionesList(); // reset render on error
     }
 }
@@ -374,7 +374,7 @@ function mostrarDetalleHabitacion(habitacion) {
     const combinedText = `${nameText} ${descText}`;
     
     let typeCode = 'individual';
-    let typeLabel = 'Habitación Sencilla / Individual';
+    let typeLabel = 'HabitaciÃ³n Sencilla / Individual';
     let bedCountText = '1 Cama individual';
     
     if (combinedText.includes('familiar')) {
@@ -383,18 +383,18 @@ function mostrarDetalleHabitacion(habitacion) {
         bedCountText = '2 Camas dobles + 1 Cama nido';
     } else if (combinedText.includes('pareja') || combinedText.includes('doble') || combinedText.includes('matrimo')) {
         typeCode = 'doble';
-        typeLabel = 'Habitación Doble / Parejas';
+        typeLabel = 'HabitaciÃ³n Doble / Parejas';
         bedCountText = '1 Cama Doble Queen Size';
     }
 
     // Populate standard text fields
-    elements.detalleNombre.textContent = habitacion.nombre || habitacion.NombreHabitacion || 'Habitación';
+    elements.detalleNombre.textContent = habitacion.nombre || habitacion.NombreHabitacion || 'HabitaciÃ³n';
     elements.detalleID.textContent = `ID: #${habitacionId}`;
     elements.detalleTipo.textContent = typeLabel;
     elements.detalleCapacidad.textContent = `${capacidad} ${capacidad === 1 ? 'Persona' : 'Personas'}`;
     elements.detalleCamas.textContent = bedCountText;
     elements.detalleCostoBadge.textContent = `COP $${Number(habitacion.precio || habitacion.Costo || 0).toLocaleString()} / Noche`;
-    elements.detalleDescripcion.textContent = habitacion.descripcion || habitacion.Descripcion || 'Cabaña boutique enclavada en el bosque nativo. Diseñada con acabados orgánicos de madera y piedra para brindar una desconexión total y descanso reparador en un ambiente sereno y elegante.';
+    elements.detalleDescripcion.textContent = habitacion.descripcion || habitacion.Descripcion || 'CabaÃ±a boutique enclavada en el bosque nativo. DiseÃ±ada con acabados orgÃ¡nicos de madera y piedra para brindar una desconexiÃ³n total y descanso reparador en un ambiente sereno y elegante.';
 
     // Image Swap Logic
     elements.detalleImagenPrincipal.src = roomImg;
@@ -449,11 +449,11 @@ function limpiarFormulario() {
     }
     
     if (elements.formTitle) {
-        elements.formTitle.textContent = 'Nueva Habitación';
+        elements.formTitle.textContent = 'Nueva HabitaciÃ³n';
     }
     
     if (elements.submitButton) {
-        elements.submitButton.textContent = 'Guardar habitación';
+        elements.submitButton.textContent = 'Guardar habitaciÃ³n';
     }
 }
 
@@ -469,8 +469,8 @@ function cargarFormulario(habitacion) {
     document.getElementById('capacidad').value = getHabitacionCapacidad(habitacion);
     document.getElementById('estado').value = estadoTexto;
     
-    elements.formTitle.textContent = `Editar Habitación #${habitacionId}`;
-    elements.submitButton.textContent = 'Actualizar habitación';
+    elements.formTitle.textContent = `Editar HabitaciÃ³n #${habitacionId}`;
+    elements.submitButton.textContent = 'Actualizar habitaciÃ³n';
     
     openModal();
 }
@@ -504,10 +504,10 @@ async function manejarSubmit(event) {
 
         if (state.editandoId) {
             await actualizarHabitacion(state.editandoId, payload);
-            mostrarMensaje('Habitación actualizada correctamente.');
+            mostrarMensaje('HabitaciÃ³n actualizada correctamente.');
         } else {
             await crearHabitacion(payload);
-            mostrarMensaje('Habitación creada correctamente.');
+            mostrarMensaje('HabitaciÃ³n creada correctamente.');
         }
 
         setTimeout(() => {
@@ -535,7 +535,7 @@ async function manejarClickEnTarjeta(event) {
     const habitacion = state.habitaciones.find((item) => String(item.id || item.IDHabitacion || item.ID) === String(id));
 
     if (!habitacion) {
-        mostrarMensaje('No se encontró la habitación seleccionada.', 'error');
+        mostrarMensaje('No se encontrÃ³ la habitaciÃ³n seleccionada.', 'error');
         return;
     }
 
@@ -552,11 +552,11 @@ async function manejarClickEnTarjeta(event) {
         }
 
         if (action === 'eliminar') {
-            const confirmar = window.confirm(`¿Deseas eliminar la habitación ${habitacion.nombre || habitacion.NombreHabitacion}?`);
+            const confirmar = window.confirm(`Â¿Deseas eliminar la habitaciÃ³n ${habitacion.nombre || habitacion.NombreHabitacion}?`);
             if (!confirmar) return;
 
             await eliminarHabitacion(id);
-            mostrarMensaje('Habitación eliminada correctamente.');
+            mostrarMensaje('HabitaciÃ³n eliminada correctamente.');
             await listarHabitaciones();
         }
     } catch (error) {
@@ -669,7 +669,7 @@ export async function renderHabitaciones(container) {
                 renderResumen();
                 renderHabitacionesList();
             } catch (error) {
-                mostrarMensaje(`Error al cambiar estado rápido: ${error.message}`, 'error');
+                mostrarMensaje(`Error al cambiar estado rÃ¡pido: ${error.message}`, 'error');
                 renderHabitacionesList();
             }
         }

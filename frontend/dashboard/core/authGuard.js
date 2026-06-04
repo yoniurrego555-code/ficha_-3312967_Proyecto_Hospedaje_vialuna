@@ -1,4 +1,4 @@
-import { clearSession, getSession, isAdminSession, isClientSession } from "./api.js";
+﻿import { clearSession, getSession, isAdminSession, isClientSession } from "./api.js";
 
 // Re-exportar funciones de api.js para facilitar importaciones
 export { getSession, isAdminSession, isClientSession } from "./api.js";
@@ -11,8 +11,8 @@ export function getAppUrl(path = "") {
   return new URL(path, getFrontendBaseUrl()).toString();
 }
 
-export const LOGIN_URL = getAppUrl("pages/login.html");
-export const ADMIN_DASHBOARD_URL = getAppUrl("pages/dashboard-admin.html");
+export const LOGIN_URL = getAppUrl("auth/login.html");
+export const ADMIN_DASHBOARD_URL = getAppUrl("admin/dashboard-admin.html");
 export const CLIENT_DASHBOARD_URL = getAppUrl("cliente/dashboard.html");
 export const ACCESS_DENIED_MESSAGE_KEY = "vialuna_access_denied_message";
 
@@ -89,28 +89,28 @@ export function redirectToDashboardByRole(session = getSession(), options = {}) 
 }
 
 export function protectPage({ requiredRole = null, deniedMessage = "" } = {}) {
-  console.log('🔐 protectPage llamado con requiredRole:', requiredRole);
+  console.log('ðŸ” protectPage llamado con requiredRole:', requiredRole);
 
   const session = getSession();
   const token = localStorage.getItem('vialuna_token');
 
-  console.log('📋 Sesión obtenida:', session);
-  console.log('🔑 Token obtenido:', token ? 'Presente' : 'Ausente');
+  console.log('ðŸ“‹ SesiÃ³n obtenida:', session);
+  console.log('ðŸ”‘ Token obtenido:', token ? 'Presente' : 'Ausente');
 
   if (!session) {
-    console.log('❌ No hay sesión guardada, redirigiendo a login');
+    console.log('âŒ No hay sesiÃ³n guardada, redirigiendo a login');
     safeRedirect(LOGIN_URL);
     return null;
   }
 
   if (!token) {
-    console.log('❌ No hay token guardado, redirigiendo a login');
+    console.log('âŒ No hay token guardado, redirigiendo a login');
     safeRedirect(LOGIN_URL);
     return null;
   }
 
   if (!matchesRole(session, requiredRole)) {
-    console.log('❌ Rol no coincide. Session rol:', session.rol, 'Required:', requiredRole);
+    console.log('âŒ Rol no coincide. Session rol:', session.rol, 'Required:', requiredRole);
     const message = deniedMessage
       || (requiredRole === "admin"
         ? "No tienes permisos para entrar al panel administrativo."
@@ -121,7 +121,7 @@ export function protectPage({ requiredRole = null, deniedMessage = "" } = {}) {
     return null;
   }
 
-  console.log('✅ Autenticación exitosa, revelando página');
+  console.log('âœ… AutenticaciÃ³n exitosa, revelando pÃ¡gina');
   window.__VIALUNA_SESSION__ = session;
   revealPage();
   return session;
@@ -141,3 +141,4 @@ export function logout() {
   clearSession();
   safeRedirect(LOGIN_URL);
 }
+

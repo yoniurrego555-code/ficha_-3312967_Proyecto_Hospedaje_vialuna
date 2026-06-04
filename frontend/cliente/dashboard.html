@@ -3,125 +3,127 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Cliente | ViaLuna</title>
-  <link rel="stylesheet" href="../css/admin-theme.css">
-  <link rel="stylesheet" href="css/style.css">
+  <title>Inicio | Via Luna</title>
+  <link rel="stylesheet" href="dashboard.css">
 </head>
-<body>
-  <div class="layout">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="brand">
-        <h1>🏨 VIA LUNA</h1>
-        <p class="sidebar-description">Portal del Cliente. Gestiona tus reservas y perfil de forma sencilla.</p>
-      </div>
+<body class="resort-dashboard">
+  <main class="resort-shell">
+    <section class="resort-hero" aria-labelledby="dashboardTitle">
+      <div class="hero-shade"></div>
 
-      <nav class="admin-nav" aria-label="Menú cliente">
-        <a class="admin-link active" href="dashboard.html" data-view="dashboard">• Dashboard</a>
-        <a class="admin-link" href="reservas.html" data-view="reservas">• Mis Reservas</a>
-        <a class="admin-link" href="nueva-reserva.html" data-view="nueva-reserva">• Nueva Reserva</a>
-        <a class="admin-link" href="perfil.html" data-view="perfil">• Mi Perfil</a>
+      <nav class="resort-navbar" aria-label="Navegacion cliente">
+        <a class="resort-brand" href="dashboard.html" aria-label="Via Luna">
+          <strong>Via Luna</strong>
+          <span>Hospedaje</span>
+        </a>
+
+        <div class="resort-links">
+          <a class="active" href="dashboard.html">Inicio</a>
+          <a href="reservas.html">Mis reservas</a>
+        
+          <a href="perfil.html">Mi perfil</a>
+        </div>
+
+        <div class="resort-user">
+          <span class="user-avatar" id="userInitial">V</span>
+          <span><strong id="userNameDisplay">Cliente</strong></span>
+          <button id="logoutBtn" type="button" aria-label="Cerrar sesión">Cerrar sesión</button>
+        </div>
       </nav>
 
-      <div class="sidebar-footer">
-        <div class="user-info" id="userInfo">
-          <span class="user-name" id="userNameDisplay">Cargando...</span>
-          <span class="user-role">Cliente</span>
-        </div>
-        <button class="logout-btn" id="logoutBtn">
-          🚪 Cerrar sesión
-        </button>
+      <div class="hero-copy">
+        <p class="hero-kicker">Via Luna · Hospedaje</p>
+        <h1 id="dashboardTitle">Bienvenido, <span id="welcomeName">Cliente</span></h1>
+        <p class="hero-description">
+          Disfruta una experiencia de hospedaje serena, elegante y conectada con la naturaleza.
+        </p>
+
+        <article class="next-stay-card" id="nextReservationCard" aria-live="polite">
+          <div class="stay-icon" aria-hidden="true">▣</div>
+          <div class="stay-info">
+            <span>Próxima estancia</span>
+            <h2>Cargando...</h2>
+            <p>Consultando tus reservas...</p>
+          </div>
+          <a class="stay-arrow" href="reservas.html" aria-label="Ver reserva">→</a>
+          <div class="stay-actions">
+            <a class="btn-primary" href="nueva-reserva.html">Reservar ahora</a>
+            <a class="btn-glass" href="reservas.html">Ver historial</a>
+          </div>
+        </article>
       </div>
-    </aside>
+    </section>
 
-    <!-- Main Content -->
-    <main class="content">
-      <header class="module-header">
-        <div class="header-left">
-          <h1>Bienvenido, <span id="welcomeName">Usuario</span></h1>
-          <p>Este es tu resumen de actividad en ViaLuna.</p>
-        </div>
-        <div class="header-right">
-          <span id="currentDate" class="current-date"></span>
-        </div>
-      </header>
-
-      <!-- Metrics Grid -->
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Total Reservas</div>
-            <div class="metric-icon blue">📋</div>
-          </div>
-          <div class="metric-value" id="totalReservas">0</div>
-          <div class="metric-change">Historial completo</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Reservas Activas</div>
-            <div class="metric-icon green">✅</div>
-          </div>
-          <div class="metric-value" id="reservasActivas">0</div>
-          <div class="metric-change positive">En curso</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Reservas Finalizadas</div>
-            <div class="metric-icon purple">🏁</div>
-          </div>
-          <div class="metric-value" id="reservasFinalizadas">0</div>
-          <div class="metric-change">Estadías pasadas</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-header">
-            <div class="metric-title">Reservas Pendientes</div>
-            <div class="metric-icon orange">⏳</div>
-          </div>
-          <div class="metric-value" id="reservasPendientes">0</div>
-          <div class="metric-change">Por confirmar</div>
+    <section class="resort-section" id="habitaciones" aria-labelledby="roomsTitle">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Estancias</p>
+          <h2 id="roomsTitle">Habitaciones destacadas</h2>
         </div>
       </div>
+      <div class="rooms-grid" id="roomsGrid">
+        <article class="loading-card">Cargando habitaciones...</article>
+      </div>
+    </section>
 
-      <div class="dashboard-grid">
-        <div class="chart-card">
-          <h3>Próxima Reserva</h3>
-          <div id="nextReservationCard" class="reservation-highlight">
-            <p class="empty-msg">No tienes reservas próximas programadas.</p>
+    <section class="resort-split">
+      <article class="resort-section panel-section" id="paquetes" aria-labelledby="packagesTitle">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Experiencias</p>
+            <h2 id="packagesTitle">Paquetes destacados</h2>
           </div>
         </div>
-        <div class="chart-card">
-          <h3>Estado de mis Reservas</h3>
-          <div class="status-summary">
-            <div id="statusList">
-              <!-- Dynamically loaded status summary -->
-            </div>
+        <div class="packages-list" id="packagesList">
+          <div class="loading-card">Cargando paquetes...</div>
+        </div>
+      </article>
+
+      <article class="resort-section panel-section" id="servicios" aria-labelledby="servicesTitle">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Comodidades</p>
+            <h2 id="servicesTitle">Servicios para ti</h2>
           </div>
         </div>
-      </div>
+        <div class="services-grid" id="servicesGrid">
+          <div class="loading-card">Cargando servicios...</div>
+        </div>
+      </article>
+    </section>
+  </main>
 
-      <div class="table-card recent-activity">
-        <div class="table-header">
-          <h3 class="table-title">Actividad Reciente</h3>
-        </div>
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Habitación</th>
-                <th>Entrada</th>
-                <th>Salida</th>
-                <th>Estado</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody id="recentReservationsTable">
-              <tr><td colspan="6" class="text-center">Cargando...</td></tr>
-            </tbody>
-          </table>
-        </div>
+  <footer class="resort-footer">
+    <div>
+      <strong>Via Luna</strong>
+      <span>Hospedaje</span>
+      <p>Naturaleza, confort para una experiencia inolvidable.</p>
+    </div>
+    <nav aria-label="Enlaces del footer">
+      <a href="#habitaciones">Habitaciones</a>
+      <a href="#paquetes">Paquetes</a>
+      <a href="#servicios">Servicios</a>
+    </nav>
+    <address>
+      <span>Contacto</span>
+      <p>+57 300 123 4567</p>
+      <p>info@vialuna.com</p>
+    
+    </address>
+  </footer>
+
+  <div class="detail-modal" id="detailModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+    <div class="detail-modal-backdrop" data-close-detail></div>
+    <article class="detail-modal-card">
+      <button class="detail-modal-close" type="button" data-close-detail aria-label="Cerrar">X</button>
+      <div class="detail-modal-header">
+        <h2 id="detailModalTitle">Detalle</h2>
       </div>
-    </main>
+      <dl class="detail-modal-grid" id="detailModalGrid"></dl>
+      <div class="detail-modal-actions">
+        <button class="room-btn" type="button" data-close-detail>Cerrar</button>
+      </div>
+    </article>
   </div>
 
   <script type="module" src="js/dashboardCliente.js"></script>

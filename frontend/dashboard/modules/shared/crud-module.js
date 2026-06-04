@@ -1,3 +1,4 @@
+﻿import { getAuthHeaders } from './api-config.js';
 // Generic CRUD Module for frontend modules
 
 export function createCrudModule(config) {
@@ -16,28 +17,26 @@ export function createCrudModule(config) {
     };
 
     async function request(url, options = {}) {
-        const token = localStorage.getItem('vialuna_token');
-        
         try {
             const response = await fetch(url, {
+                ...options,
                 headers: {
                     'Content-Type': 'application/json',
-                    ...(token && { 'Authorization': `Bearer ${token}` }),
+                    ...getAuthHeaders(),
                     ...(options.headers || {})
-                },
-                ...options
+                }
             });
 
             const data = await response.json().catch(() => ({}));
 
             if (!response.ok || data.ok === false) {
-                throw new Error(data.mensaje || data.error || `No se pudo completar la operación`);
+                throw new Error(data.mensaje || data.error || `No se pudo completar la operaciÃ³n`);
             }
 
             return data;
         } catch (error) {
             if (error instanceof TypeError) {
-                throw new Error(`Error de conexión con el servidor`);
+                throw new Error(`Error de conexiÃ³n con el servidor`);
             }
             throw error;
         }
@@ -49,7 +48,7 @@ export function createCrudModule(config) {
         
         try {
             const data = await request(baseUrl);
-            console.log(`📡 Data received for ${itemTitle}:`, data);
+            console.log(`ðŸ“¡ Data received for ${itemTitle}:`, data);
             state.items = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
             return state.items;
         } catch (error) {
@@ -165,7 +164,7 @@ export function createCrudModule(config) {
     // Initialize the module
     function init() {
         const self = this || {};
-        console.log(`📦 ${itemTitle} module initialized`);
+        console.log(`ðŸ“¦ ${itemTitle} module initialized`);
         list().then(() => {
             if (self.onRender) self.onRender(state.items);
             else if (config.onRender) config.onRender(state.items);
@@ -176,7 +175,7 @@ export function createCrudModule(config) {
                 crudConfig.renderResumen(state.items, config.elements);
             }
         }).catch(error => {
-            console.error(`❌ Error loading ${itemTitle}:`, error);
+            console.error(`âŒ Error loading ${itemTitle}:`, error);
         });
     }
 
@@ -205,3 +204,5 @@ export function createCrudModule(config) {
         ...crudConfig
     };
 }
+
+

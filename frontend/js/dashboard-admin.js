@@ -1,37 +1,37 @@
-import { logout, isAdminSession } from "../dashboard/core/authGuard.js";
+﻿import { logout, isAdminSession } from "../dashboard/core/authGuard.js";
 import { getSession } from "../dashboard/core/api.js";
 
 console.log('dashboard-admin.js cargado');
 
-// Verificar autenticación al cargar
+// Verificar autenticaciÃ³n al cargar
 function verificarAutenticacion() {
-  console.log('🔍 Verificando autenticación...');
+  console.log('ðŸ” Verificando autenticaciÃ³n...');
 
   const session = getSession();
   const token = localStorage.getItem('vialuna_token');
 
-  console.log('📋 Sesión obtenida:', session);
-  console.log('🔑 Token obtenido:', token ? 'Presente' : 'Ausente');
+  console.log('ðŸ“‹ SesiÃ³n obtenida:', session);
+  console.log('ðŸ”‘ Token obtenido:', token ? 'Presente' : 'Ausente');
 
   if (!session) {
-    console.log('❌ No hay sesión guardada, redirigiendo a login');
-    window.location.href = '../pages/login.html';
+    console.log('âŒ No hay sesiÃ³n guardada, redirigiendo a login');
+    window.location.href = '../auth/login.html';
     return false;
   }
 
   if (!token) {
-    console.log('❌ No hay token guardado, redirigiendo a login');
-    window.location.href = '../pages/login.html';
+    console.log('âŒ No hay token guardado, redirigiendo a login');
+    window.location.href = '../auth/login.html';
     return false;
   }
 
   if (!isAdminSession(session)) {
-    console.log('❌ Usuario no es admin, redirigiendo al dashboard de cliente');
+    console.log('âŒ Usuario no es admin, redirigiendo al dashboard de cliente');
     window.location.href = '../cliente/dashboard.html';
     return false;
   }
 
-  console.log('✅ Autenticación exitosa para admin');
+  console.log('âœ… AutenticaciÃ³n exitosa para admin');
   return true;
 }
 
@@ -50,45 +50,45 @@ const modules = {
 
 // HTML templates mapping (fetching from external files)
 const htmlTemplates = {
-  'dashboard': () => fetch('../public/dashboard.html').then(r => r.text()),
-  'clientes': () => fetch('../public/clientes.html').then(r => r.text()),
-  'habitaciones': () => fetch('../public/habitaciones.html').then(r => r.text()),
-  'servicios': () => fetch('../public/servicios.html').then(r => r.text()),
-  'paquetes': () => fetch('../public/paquetes.html').then(r => r.text()),
-  'pagos': () => fetch('../public/pagos.html').then(r => r.text()),
-  'reservas': () => fetch('../public/reservas.html').then(r => r.text()),
-  'roles-permisos': () => fetch('../public/roles-permisos.html').then(r => r.text()),
-  'usuarios': () => fetch('../public/usuarios.html').then(r => r.text())
+  'dashboard': () => fetch('../admin/dashboard.html').then(r => r.text()),
+  'clientes': () => fetch('../admin/clientes.html').then(r => r.text()),
+  'habitaciones': () => fetch('../admin/habitaciones.html').then(r => r.text()),
+  'servicios': () => fetch('../admin/servicios.html').then(r => r.text()),
+  'paquetes': () => fetch('../admin/paquetes.html').then(r => r.text()),
+  'pagos': () => fetch('../admin/pagos.html').then(r => r.text()),
+  'reservas': () => fetch('../admin/reservas.html').then(r => r.text()),
+  'roles-permisos': () => fetch('../admin/roles-permisos.html').then(r => r.text()),
+  'usuarios': () => fetch('../admin/usuarios.html').then(r => r.text())
 };
 
 export async function cargarVista(vista) {
-  console.log('🔄 cargarVista llamado con:', vista);
+  console.log('ðŸ”„ cargarVista llamado con:', vista);
   const container = document.getElementById("contenido");
-  console.log('📦 Contenedor encontrado:', container);
+  console.log('ðŸ“¦ Contenedor encontrado:', container);
 
   if (!container) {
-    console.error('❌ Contenedor "contenido" no encontrado');
+    console.error('âŒ Contenedor "contenido" no encontrado');
     return;
   }
 
   try {
     // 1. Fetch the HTML partial
-    console.log('🔄 Cargando HTML para vista:', vista);
+    console.log('ðŸ”„ Cargando HTML para vista:', vista);
     const template = htmlTemplates[vista];
     if (!template) {
       throw new Error(`Template no definido para vista: ${vista}`);
     }
 
     const html = typeof template === 'function' ? await template() : template;
-    console.log('📄 HTML recibido, longitud:', html.length);
+    console.log('ðŸ“„ HTML recibido, longitud:', html.length);
 
     if (!html || html.trim().length === 0) {
-      throw new Error('HTML recibido está vacío');
+      throw new Error('HTML recibido estÃ¡ vacÃ­o');
     }
 
     // 2. Inject HTML
     container.innerHTML = html;
-    console.log('✅ HTML inyectado en contenedor');
+    console.log('âœ… HTML inyectado en contenedor');
 
     // 3. Update active nav link
     document.querySelectorAll('.admin-link').forEach(link => {
@@ -100,22 +100,22 @@ export async function cargarVista(vista) {
 
     // 4. Initialize module if it exists
     if (modules[vista]) {
-      console.log('🔧 Inicializando módulo para vista:', vista);
+      console.log('ðŸ”§ Inicializando mÃ³dulo para vista:', vista);
       try {
         const renderFn = await modules[vista]();
-        console.log('🎯 Función render obtenida');
+        console.log('ðŸŽ¯ FunciÃ³n render obtenida');
         await renderFn(container);
-        console.log('✅ Módulo inicializado correctamente');
+        console.log('âœ… MÃ³dulo inicializado correctamente');
       } catch (moduleError) {
-        console.error('❌ Error ejecutando módulo:', moduleError);
+        console.error('âŒ Error ejecutando mÃ³dulo:', moduleError);
         // No mostrar error, solo dejar el HTML cargado
       }
     } else {
-      console.log('ℹ️ No hay módulo para vista:', vista);
+      console.log('â„¹ï¸ No hay mÃ³dulo para vista:', vista);
     }
 
   } catch (error) {
-    console.error(`❌ Error cargando la vista ${vista}:`, error);
+    console.error(`âŒ Error cargando la vista ${vista}:`, error);
     container.innerHTML = `
       <div class="error-container">
         <h2>Error 404</h2>
@@ -128,14 +128,14 @@ export async function cargarVista(vista) {
 
 // Inicializar SPA
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 Inicializando dashboard admin...');
+  console.log('ðŸš€ Inicializando dashboard admin...');
 
-  // Verificar autenticación primero
+  // Verificar autenticaciÃ³n primero
   if (!verificarAutenticacion()) {
-    return; // Detener si no está autenticado
+    return; // Detener si no estÃ¡ autenticado
   }
 
-  // Manejar clics de navegación
+  // Manejar clics de navegaciÃ³n
   document.addEventListener('click', (e) => {
     if (e.target.matches('[data-view]')) {
       e.preventDefault();
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebar = document.getElementById('sidebar');
   const sidebarOverlay = document.getElementById('sidebarOverlay');
   
-  console.log('🔍 Sidebar elements found:');
+  console.log('ðŸ” Sidebar elements found:');
   console.log('  - sidebarToggle:', sidebarToggle);
   console.log('  - sidebar:', sidebar);
   console.log('  - sidebarOverlay:', sidebarOverlay);
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Botón de logout
+  // BotÃ³n de logout
   const logoutBtn = document.getElementById('logoutBtn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', logout);
@@ -234,3 +234,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.cargarVista = cargarVista;
 });
+

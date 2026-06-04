@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const bcrypt = require("bcryptjs");
 
 let userColumnsPromise = null;
 
@@ -122,8 +123,8 @@ const obtenerPorEmail = async (email) => {
 };
 
 const obtenerPorCredenciales = async (credenciales) => {
-  const identificador = String(credenciales.Email || credenciales.Username || "").trim();
-  const clave = String(credenciales.Password || credenciales.Contrasena || "").trim();
+  const identificador = String(credenciales.Email || credenciales.Username || credenciales.email || credenciales.username || "").trim();
+  const clave = String(credenciales.Password || credenciales.Contrasena || credenciales.password || credenciales.contrasena || "").trim();
   const base = await buildSelect();
 
   if (!base.passwordColumn) {
@@ -140,21 +141,18 @@ const obtenerPorCredenciales = async (credenciales) => {
   }
 
   const whereParts = [
-    `WHERE (${usernameChecks.join(" OR ")})`,
-    `AND COALESCE(u.${escapeIdentifier(base.passwordColumn)}, '') = ?`
+    `WHERE (${usernameChecks.join(" OR ")})`
   ];
 
   if (base.estadoColumn) {
     whereParts.push(`AND COALESCE(u.${escapeIdentifier(base.estadoColumn)}, 1) = 1`);
   }
 
-  whereParts.push("AND COALESCE(r.Estado, 1) = 1");
+  whereParts.push("AND COALESCE(r.Estado, '1') IN ('1', 'activo', 'Activo', 'ACTIVO')");
   whereParts.push("LIMIT 1");
 
   const params = usernameChecks.map(() => identificador);
-  params.push(clave);
-
-  return db.query(
+  const [rows] = await db.query(
     `
       SELECT
         ${base.selectFields.join(",\n        ")}
@@ -163,10 +161,22 @@ const obtenerPorCredenciales = async (credenciales) => {
       ${whereParts.join("\n      ")}
     `,
     params
-  ).then(([rows]) => rows[0]);
-};
+  );
 
-// 🔍 VALIDAR EMAIL DUPLICADO ANTES DE INSERTAR
+  const usuario = rows[0];
+  if (!usuario) {
+    return null;
+  }
+
+  const storedPassword = String(usuario.Password || "");
+  const isHash = /^\$2[aby]\$/i.test(storedPassword);
+  const passwordOk = isHash
+    ? await bcrypt.compare(clave, storedPassword)
+    : storedPassword === clave;
+
+  return passwordOk ? usuario : null;
+};
+// VALIDAR EMAIL DUPLICADO ANTES DE INSERTAR
 const validarEmailUnico = async (email) => {
   const [clientesResult] = await db.query(
     "SELECT Email FROM clientes WHERE LOWER(Email) = LOWER(?) LIMIT 1",
@@ -182,10 +192,10 @@ const validarEmailUnico = async (email) => {
 };
 
 const crear = async (data) => {
-  // 🔐 VALIDAR EMAIL DUPLICADO
+  // ???? VALIDAR EMAIL DUPLICADO
   const emailUnico = await validarEmailUnico(data.Email);
   if (!emailUnico) {
-    const error = new Error("El correo ya está registrado");
+    const error = new Error("El correo ya est?? registrado");
     error.code = "ER_DUP_ENTRY";
     error.status = 409;
     throw error;
@@ -234,3 +244,5 @@ module.exports = {
   actualizarPassword,
   eliminar
 };
+
+

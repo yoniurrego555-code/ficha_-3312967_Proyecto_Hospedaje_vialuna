@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paquetes | Via Luna</title>
-    <link rel="stylesheet" href="../css/admin-theme.css">
+    <link rel="stylesheet" href="../css/admin.css">
 </head>
 <body>
     <main class="content">
@@ -12,7 +12,7 @@
         <section class="module-header-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
             <div>
                 <h1 style="font-size: 2rem; color: var(--brand-deep); margin: 0;">Paquetes</h1>
-                <p style="color: var(--muted); margin: 5px 0 0 0;">Gestiona los paquetes turísticos y promocionales.</p>
+                <p style="color: var(--muted); margin: 5px 0 0 0;">Gestiona los paquetes turÃ­sticos y promocionales.</p>
             </div>
             <button class="primary" id="btnNuevoPaquete" style="display: flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 12px; font-weight: 600;">
                 <span style="font-size: 1.2rem;">+</span> Nuevo paquete
@@ -22,21 +22,21 @@
         <!-- Metrics Grid -->
         <section class="metrics-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;">
             <div class="metric-card modern-card" style="padding: 20px; background: white; border-radius: 16px; display: flex; align-items: center; gap: 15px;">
-                <div style="width: 50px; height: 50px; background: rgba(0,0,0,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🎁</div>
+                <div style="width: 50px; height: 50px; background: rgba(0,0,0,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">ðŸŽ</div>
                 <div>
                     <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Total paquetes</p>
                     <h3 id="metricTotal" style="margin: 0; font-size: 1.5rem; color: var(--brand-deep);">0</h3>
                 </div>
             </div>
             <div class="metric-card modern-card" style="padding: 20px; background: #f0fdf4; border-radius: 16px; display: flex; align-items: center; gap: 15px; border-left: 4px solid var(--ok);">
-                <div style="width: 50px; height: 50px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">✓</div>
+                <div style="width: 50px; height: 50px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">âœ“</div>
                 <div>
                     <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Disponibles</p>
                     <h3 id="metricDisponibles" style="margin: 0; font-size: 1.5rem; color: var(--ok);">0</h3>
                 </div>
             </div>
             <div class="metric-card modern-card" style="padding: 20px; background: #fef2f2; border-radius: 16px; display: flex; align-items: center; gap: 15px; border-left: 4px solid #ef4444;">
-                <div style="width: 50px; height: 50px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">✕</div>
+                <div style="width: 50px; height: 50px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">âœ•</div>
                 <div>
                     <p style="margin: 0; font-size: 0.85rem; color: var(--muted);">Agotados</p>
                     <h3 id="metricAgotados" style="margin: 0; font-size: 1.5rem; color: #ef4444;">0</h3>
@@ -48,7 +48,7 @@
         <section class="filters-bar modern-card" style="background: white; padding: 20px; border-radius: 16px; margin-bottom: 30px; display: grid; grid-template-columns: 2fr 1fr auto; gap: 15px; align-items: end;">
             <div class="field">
                 <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block;">Buscar paquete...</label>
-                <input type="text" id="buscador" placeholder="Nombre o descripción..." style="padding: 10px 15px; border-radius: 10px; border: 1px solid var(--line); width: 100%;">
+                <input type="text" id="buscador" placeholder="Nombre o descripciÃ³n..." style="padding: 10px 15px; border-radius: 10px; border: 1px solid var(--line); width: 100%;">
             </div>
             <div class="field">
                 <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block;">Estado</label>
@@ -59,7 +59,7 @@
                 </select>
             </div>
             <button class="secondary" id="btnLimpiarFiltros" style="padding: 10px 20px; border-radius: 10px; font-weight: 600; white-space: nowrap;">
-                🔄 Limpiar
+                ðŸ”„ Limpiar
             </button>
         </section>
 
@@ -83,11 +83,11 @@
 
                     <div class="field">
                         <label for="nombre">Nombre del Paquete</label>
-                        <input type="text" id="nombre" name="nombre" placeholder="Ej. Escapada Romántica" required>
+                        <input type="text" id="nombre" name="nombre" placeholder="Ej. Escapada RomÃ¡ntica" required>
                     </div>
 
                     <div class="field">
-                        <label for="descripcion">Descripción</label>
+                        <label for="descripcion">DescripciÃ³n</label>
                         <textarea id="descripcion" name="descripcion" placeholder="Detalles de lo que incluye..." style="height: 100px;"></textarea>
                     </div>
 

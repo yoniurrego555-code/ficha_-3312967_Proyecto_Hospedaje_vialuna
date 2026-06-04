@@ -1,53 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="pageTitle">Dashboard Cliente | ViaLuna</title>
-  <link rel="stylesheet" href="../css/admin-theme.css">
+  <meta http-equiv="refresh" content="0; url=../cliente/dashboard.html">
+  <title>Dashboard Cliente | Via Luna</title>
 </head>
 <body>
-  <div class="page-shell">
-    <div class="dashboard-shell">
-      <!-- Sidebar Toggle Button -->
-      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
-        <span class="hamburger"></span>
-        <span class="hamburger"></span>
-        <span class="hamburger"></span>
-      </button>
-      
-      <aside class="sidebar">
-        <a class="brand sidebar__brand" href="#dashboard" data-view="dashboard">
-          <span class="brand__mark">VL</span>
-          <span class="brand__text">
-            <h1>ViaLuna</h1>
-            <p>Portal cliente</p>
-          </span>
-        </a>
-
-        <nav class="sidebar__nav" aria-label="Menu cliente">
-          <a class="active" href="#dashboard" data-view="dashboard">Dashboard</a>
-          <a href="#reservas" data-view="reservas">Mis reservas</a>
-          <a href="#nueva-reserva" data-view="nueva-reserva">Nueva reserva</a>
-        </nav>
-
-        <div class="sidebar__footer">
-          <span class="user-chip" id="userName">Cliente</span>
-          <button type="button" class="btn-ghost" id="logoutBtn">Cerrar sesión</button>
-        </div>
-      </aside>
-
-      <main class="page-content dashboard-content">
-        <div id="contenido">
-          <!-- Content will be loaded dynamically here -->
-        </div>
-      </main>
-      
-      <!-- Sidebar Overlay -->
-      <div class="sidebar-overlay" id="sidebarOverlay"></div>
-    </div>
-  </div>
-
-  <script type="module" src="../js/dashboard-cliente.js"></script>
+  <script>window.location.replace('../cliente/dashboard.html');</script>
+  <a href="../cliente/dashboard.html">Continuar a Via Luna</a>
 </body>
 </html>

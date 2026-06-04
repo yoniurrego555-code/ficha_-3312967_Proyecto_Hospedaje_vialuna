@@ -1,27 +1,45 @@
-export const API_URL = "http://localhost:3000/api";
+﻿export const API_URL = "http://localhost:3000/api";
 export const SESSION_KEY = "vialuna_usuario";
 export const TOKEN_KEY = "vialuna_token";
 export const ROLE_KEY = "vialuna_rol";
 
 function getToken() {
-  return localStorage.getItem(TOKEN_KEY) || "";
+  const storedToken =
+    localStorage.getItem(TOKEN_KEY) ||
+    sessionStorage.getItem(TOKEN_KEY) ||
+    localStorage.getItem("token") ||
+    sessionStorage.getItem("token") ||
+    "";
+
+  if (storedToken) {
+    return storedToken;
+  }
+
+  try {
+    const session =
+      JSON.parse(localStorage.getItem(SESSION_KEY) || "null") ||
+      JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
+    return session?.token || "";
+  } catch {
+    return "";
+  }
 }
 
 async function request(path, options = {}) {
   const token = getToken();
-  console.log(`🌐 API Request: ${options.method || 'GET'} ${API_URL}${path}`);
-  console.log('🔑 Token presente:', !!token);
+  console.log(`ðŸŒ API Request: ${options.method || 'GET'} ${API_URL}${path}`);
+  console.log('ðŸ”‘ Token presente:', !!token);
 
   const response = await fetch(`${API_URL}${path}`, {
+    ...options,
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {})
-    },
-    ...options
+    }
   });
 
-  console.log('📡 Response status:', response.status);
+  console.log('ðŸ“¡ Response status:', response.status);
 
   const text = await response.text();
   let data = null;
@@ -130,6 +148,10 @@ export function checkEmailExists(email) {
 
 export function getClientes() {
   return request("/clientes");
+}
+
+export function getCliente(id) {
+  return request(`/clientes/${id}`);
 }
 
 export function createCliente(payload) {
@@ -374,4 +396,6 @@ export function deletePermiso(id) {
     method: "DELETE"
   });
 }
+
+
 

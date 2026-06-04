@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Via Luna | Iniciar sesion</title>
+    <link rel="stylesheet" href="../css/login.css">
+</head>
+
+<body class="login-premium">
+    <main class="login-premium-shell">
+        <a class="login-back" href="../index.html" aria-label="Volver al inicio">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            <span>Volver</span>
+        </a>
+
+        <section class="login-premium-card" aria-labelledby="loginTitle">
+            <aside class="login-visual-panel">
+                <div class="login-overlay"></div>
+                <div class="login-visual-content">
+                    <div class="login-brand">
+                        <span>VIA LUNA</span>
+                        <small>Hospedaje</small>
+                    </div>
+                    <div class="login-hero-text">
+                        <h1>Bienvenido</h1>
+                        <p>Inicia sesion y continua tu experiencia.</p>
+                    </div>
+                </div>
+            </aside>
+
+            <section class="login-form-panel">
+                <div class="login-form-inner">
+                    <header class="login-heading">
+                        <h2 id="loginTitle">Iniciar sesion</h2>
+                        <p>Accede a tu cuenta personal</p>
+                    </header>
+
+                    <button class="google-auth-btn" type="button" disabled aria-disabled="true">
+                        <span aria-hidden="true">G</span>
+                        Continuar con Google
+                    </button>
+
+                    <div class="auth-divider"><span>Correo y contrasena</span></div>
+
+                    <form id="loginForm" class="premium-login-form" novalidate>
+                        <div class="premium-field">
+                            <label for="email">Correo electronico</label>
+                            <div class="premium-input-wrap">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M4 6h16v12H4z" />
+                                    <path d="m4 7 8 6 8-6" />
+                                </svg>
+                                <input id="email" name="email" type="email" placeholder="tu@ejemplo.com" autocomplete="email">
+                            </div>
+                            <span class="field-error" id="emailError"></span>
+                        </div>
+
+                        <div class="premium-field">
+                            <label for="password">Contrasena</label>
+                            <div class="premium-input-wrap">
+                                <svg viewBox="0 0 24 24" aria-hidden="true">
+                                    <rect x="5" y="10" width="14" height="10" rx="2" />
+                                    <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                                </svg>
+                                <input id="password" name="password" type="password" placeholder="********" autocomplete="current-password">
+                                <button class="password-toggle" id="togglePassword" type="button" aria-label="Mostrar contrasena">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+                                        <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <span class="field-error" id="passwordError"></span>
+                        </div>
+
+                        <div class="login-mini-text">
+                            <p>Accede para gestionar tus reservas y experiencias.</p>
+                        </div>
+
+                        <button class="premium-submit" id="submitButton" type="submit">
+                            <span class="submit-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M10 17l5-5-5-5" />
+                                    <path d="M15 12H3" />
+                                    <path d="M15 5h4v14h-4" />
+                                </svg>
+                            </span>
+                            <span class="submit-label">Iniciar sesion</span>
+                            <span class="submit-arrow" aria-hidden="true">></span>
+                        </button>
+                    </form>
+
+                    <div id="message" class="message premium-login-message"></div>
+
+                    <div class="premium-login-footer">
+                        <button type="button" class="auth-action-btn" id="openRegister">Crear cuenta</button>
+                        <button type="button" class="auth-action-btn" id="openRecovery">Recuperar contrasena</button>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <!-- MODAL CREAR CUENTA -->
+    <div class="auth-modal" id="registerModal" role="dialog" aria-modal="true" aria-labelledby="registerTitle">
+        <div class="auth-modal-card">
+            <button class="close-modal" id="closeRegister" type="button" aria-label="Cerrar">×</button>
+            <h2 id="registerTitle">Crear cuenta</h2>
+            <div id="registerMessage" class="modal-message" aria-live="polite"></div>
+            <form id="registerForm" class="auth-modal-form" novalidate>
+                <select name="TipoDocumento" required>
+                    <option value="">Tipo de documento *</option>
+                    <option value="CC">CC</option>
+                    <option value="CE">CE</option>
+                    <option value="TI">TI</option>
+                    <option value="PAS">Pasaporte</option>
+                </select>
+                <input name="Nombre" type="text" placeholder="Nombre *" required>
+                <input name="Apellido" type="text" placeholder="Apellido *" required>
+                <input name="NroDocumento" type="text" placeholder="Numero de documento *" required>
+                <input name="Telefono" type="tel" placeholder="Telefono">
+                <input name="Direccion" type="text" placeholder="Direccion">
+                <input name="Email" type="email" placeholder="Correo electronico *" required>
+                <input name="Contrasena" id="regPassword" type="password" placeholder="Contrasena (min. 6 caracteres) *" minlength="6" required>
+                <input name="ConfirmarContrasena" id="regConfirmPassword" type="password" placeholder="Confirmar contrasena *" required>
+                <button type="submit" class="modal-submit">Crear cuenta</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL RECUPERAR CONTRASEÑA -->
+    <div class="auth-modal" id="recoveryModal" role="dialog" aria-modal="true" aria-labelledby="recoveryTitle">
+        <div class="auth-modal-card">
+            <button class="close-modal" id="closeRecovery" type="button" aria-label="Cerrar">×</button>
+            <h2 id="recoveryTitle">Recuperar contrasena</h2>
+            <div id="recoveryMessage" class="modal-message" aria-live="polite"></div>
+            <form id="recoveryForm" class="auth-modal-form" novalidate>
+                <input name="email" id="recoveryEmail" type="email" placeholder="Correo electronico *" required>
+                <input name="newPassword" id="newPassword" type="password" placeholder="Nueva contrasena (min. 6 caracteres) *" minlength="6" required>
+                <input name="confirmNewPassword" id="confirmNewPassword" type="password" placeholder="Confirmar nueva contrasena *" required>
+                <button type="submit" class="modal-submit">Actualizar contrasena</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { loginUsuario, registrarUsuario, recuperarContrasena } from '../js/usuarios.js';
+
+        const redirectParam = new URLSearchParams(window.location.search).get('redirect');
+        const form = document.getElementById('loginForm');
+        const message = document.getElementById('message');
+        const submitButton = document.getElementById('submitButton');
+        const submitButtonHTML = submitButton.innerHTML;
+        const passwordInput = document.getElementById('password');
+        const togglePassword = document.getElementById('togglePassword');
+        const registerForm = document.getElementById('registerForm');
+        const recoveryForm = document.getElementById('recoveryForm');
+
+        // ---- Helpers ----
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = `message premium-login-message show ${type}`;
+        }
+
+        function showModalMessage(id, text, type) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = text;
+            el.className = `modal-message modal-message--${type} modal-message--visible`;
+        }
+
+        function clearModalMessage(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = '';
+            el.className = 'modal-message';
+        }
+
+        function setFieldError(id, msg) {
+            const el = document.getElementById(id);
+            if (el) { el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
+        }
+
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        function setLoading(isLoading) {
+            submitButton.disabled = isLoading;
+            submitButton.innerHTML = isLoading
+                ? '<span class="login-spinner"></span><span class="submit-label">Ingresando...</span>'
+                : submitButtonHTML;
+        }
+
+        // ---- Toggle password ----
+        togglePassword.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            togglePassword.classList.toggle('is-visible', isPassword);
+        });
+
+        // ---- Login ----
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const emailVal = form.email.value.trim();
+            const passwordVal = form.password.value;
+
+            setFieldError('emailError', '');
+            setFieldError('passwordError', '');
+
+            if (!emailVal || !passwordVal || !isValidEmail(emailVal)) {
+                showMessage('Correo o contraseña incorrectos.', 'error');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const response = await loginUsuario({ email: emailVal, password: passwordVal });
+                const usuario = response.usuario || response.user;
+
+                if (!response.token || !usuario) {
+                    throw new Error('Correo o contraseña incorrectos.');
+                }
+
+                localStorage.setItem('vialuna_token', response.token);
+                localStorage.setItem('vialuna_usuario', JSON.stringify(usuario));
+                localStorage.setItem('vialuna_rol', usuario.rol || '');
+
+                showMessage('Inicio de sesion exitoso', 'success');
+
+                const destino = usuario?.rol === 'admin'
+                    ? '../admin/dashboard-admin.html'
+                    : (redirectParam || '../cliente/dashboard.html');
+
+                setTimeout(() => window.location.replace(destino), 500);
+            } catch (error) {
+                showMessage('Correo o contraseña incorrectos.', 'error');
+                setLoading(false);
+            }
+        });
+
+        // ---- Registro ----
+        registerForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            clearModalMessage('registerMessage');
+
+            const nombre = registerForm.Nombre.value.trim();
+            const apellido = registerForm.Apellido.value.trim();
+            const documento = registerForm.NroDocumento.value.trim();
+            const tipoDocumento = registerForm.TipoDocumento.value.trim();
+            const email = registerForm.Email.value.trim();
+            const contrasena = registerForm.Contrasena.value;
+            const confirmar = registerForm.ConfirmarContrasena.value;
+
+            if (!tipoDocumento) {
+                showModalMessage('registerMessage', 'El tipo de documento es obligatorio.', 'error');
+                return;
+            }
+            if (!nombre || !apellido) {
+                showModalMessage('registerMessage', 'El nombre y apellido son obligatorios.', 'error');
+                return;
+            }
+            if (!documento) {
+                showModalMessage('registerMessage', 'El numero de documento es obligatorio.', 'error');
+                return;
+            }
+            if (!email || !isValidEmail(email)) {
+                showModalMessage('registerMessage', 'Ingresa un correo electronico valido.', 'error');
+                return;
+            }
+            if (!contrasena || contrasena.length < 6) {
+                showModalMessage('registerMessage', 'La contrasena debe tener minimo 6 caracteres.', 'error');
+                return;
+            }
+            if (contrasena !== confirmar) {
+                showModalMessage('registerMessage', 'Las contrasenas no coinciden.', 'error');
+                return;
+            }
+
+            try {
+                const payload = Object.fromEntries(new FormData(registerForm).entries());
+                delete payload.ConfirmarContrasena;
+                const response = await registrarUsuario(payload);
+                const usuario = response.user || response.usuario;
+
+                if (response.token && usuario) {
+                    localStorage.setItem('vialuna_token', response.token);
+                    localStorage.setItem('vialuna_usuario', JSON.stringify(usuario));
+                    localStorage.setItem('vialuna_rol', usuario.rol || 'cliente');
+                    window.location.replace(redirectParam || '../cliente/dashboard.html');
+                    return;
+                }
+
+                showModalMessage('registerMessage', response.message || response.mensaje || 'Cuenta creada correctamente. Ya puedes iniciar sesion.', 'success');
+                registerForm.reset();
+                setTimeout(() => {
+                    document.getElementById('registerModal').classList.remove('show');
+                }, 2000);
+            } catch (error) {
+                showModalMessage('registerMessage', error.message || 'No fue posible crear la cuenta. Intenta de nuevo.', 'error');
+            }
+        });
+
+        // ---- Recuperar contrasena ----
+        recoveryForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            clearModalMessage('recoveryMessage');
+
+            const email = recoveryForm.email.value.trim();
+            const newPassword = recoveryForm.newPassword.value;
+            const confirmNewPassword = recoveryForm.confirmNewPassword.value;
+
+            if (!email || !isValidEmail(email)) {
+                showModalMessage('recoveryMessage', 'Ingresa un correo electronico valido.', 'error');
+                return;
+            }
+            if (!newPassword || newPassword.length < 6) {
+                showModalMessage('recoveryMessage', 'La nueva contrasena debe tener minimo 6 caracteres.', 'error');
+                return;
+            }
+            if (newPassword !== confirmNewPassword) {
+                showModalMessage('recoveryMessage', 'Las contrasenas no coinciden.', 'error');
+                return;
+            }
+
+            try {
+                const response = await recuperarContrasena({ email, newPassword });
+                showModalMessage('recoveryMessage', response.message || response.mensaje || 'Contrasena actualizada correctamente.', 'success');
+                recoveryForm.reset();
+                setTimeout(() => {
+                    document.getElementById('recoveryModal').classList.remove('show');
+                }, 2000);
+            } catch (error) {
+                showModalMessage('recoveryMessage', 'No fue posible actualizar la contrasena. Verifica el correo ingresado.', 'error');
+            }
+        });
+
+        // ---- Abrir/cerrar modales ----
+        document.getElementById('openRegister').addEventListener('click', () => {
+            clearModalMessage('registerMessage');
+            document.getElementById('registerModal').classList.add('show');
+        });
+        document.getElementById('openRecovery').addEventListener('click', () => {
+            clearModalMessage('recoveryMessage');
+            document.getElementById('recoveryModal').classList.add('show');
+        });
+        document.getElementById('closeRegister').addEventListener('click', () => {
+            document.getElementById('registerModal').classList.remove('show');
+        });
+        document.getElementById('closeRecovery').addEventListener('click', () => {
+            document.getElementById('recoveryModal').classList.remove('show');
+        });
+
+        // Cerrar modal al hacer clic fuera
+        document.querySelectorAll('.auth-modal').forEach((modal) => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('show');
+            });
+        });
+    </script>
+</body>
+
+</html>

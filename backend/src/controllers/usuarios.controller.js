@@ -1,86 +1,135 @@
+const jwt = require("jsonwebtoken");
 const service = require("../services/usuarios.auth.service");
 
-// 🔹 LISTAR
+const JWT_SECRET = process.env.JWT_SECRET || "vialuna-super-secret";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "8h";
+
+function normalizeRole(usuario = {}) {
+  const raw = String(usuario.NombreRol || usuario.rol || usuario.Rol || "").trim().toLowerCase();
+
+  if (raw === "admin" || raw === "administrador" || Number(usuario.IDRol) === 1) {
+    return "admin";
+  }
+
+  if (raw === "cliente" || raw === "usuario" || Number(usuario.IDRol) === 2) {
+    return "cliente";
+  }
+
+  return raw || "cliente";
+}
+
+function normalizeUser(usuario) {
+  const rol = normalizeRole(usuario);
+  return {
+    IDUsuario: usuario.IDUsuario,
+    id: usuario.IDUsuario,
+    nombre: usuario.Nombre || usuario.Username || usuario.NombreUsuario || "Usuario",
+    apellido: usuario.Apellido || "",
+    email: usuario.Email,
+    telefono: usuario.Telefono || "",
+    IDRol: usuario.IDRol,
+    rol,
+    NombreRol: usuario.NombreRol
+  };
+}
+
 exports.listar = (req, res) => {
   service.listar()
     .then(data => res.json(data))
-    .catch(err => {
-      console.error("❌ ERROR:", err);
+    .catch(error => {
+      console.error(error);
       res.status(500).json({ error: "Error al listar" });
     });
 };
 
-// 🔹 OBTENER
 exports.obtener = (req, res) => {
   service.obtener(req.params.id)
     .then(data => res.json(data))
-    .catch(err => {
-      console.error(err);
+    .catch(error => {
+      console.error(error);
       res.status(500).json({ error: "Error al obtener" });
     });
 };
 
-// 🔹 CREAR
 exports.login = (req, res) => {
-  const { Email, Username, Password, Contrasena } = req.body;
+  console.log("LOGIN BODY:", req.body);
 
-  if ((!Email && !Username) || (!Password && !Contrasena)) {
+  const email = req.body.email || req.body.Email || req.body.Username || req.body.username;
+  const password = req.body.password || req.body.Password || req.body.Contrasena || req.body.contrasena;
+
+  if (!email || !password) {
     return res.status(400).json({ error: "Usuario o correo y clave son obligatorios" });
   }
 
-  service.login(req.body)
+  service.login({ Email: email, Username: email, Password: password, Contrasena: password })
     .then(usuario => {
       if (!usuario) {
         return res.status(401).json({ error: "Credenciales invalidas" });
       }
 
+      const usuarioNormalizado = normalizeUser(usuario);
+      const token = jwt.sign(
+        {
+          id: usuarioNormalizado.IDUsuario,
+          IDUsuario: usuarioNormalizado.IDUsuario,
+          email: usuarioNormalizado.Email,
+          rol: usuarioNormalizado.rol,
+          IDRol: usuarioNormalizado.IDRol
+        },
+        JWT_SECRET,
+        { expiresIn: JWT_EXPIRES_IN }
+      );
+
       res.json({
+        ok: true,
         mensaje: "Login exitoso",
-        usuario
+        token,
+        usuario: usuarioNormalizado,
+        user: usuarioNormalizado
       });
     })
-    .catch(err => {
-      console.error(err);
-      res.status(500).json({ error: "Error al iniciar sesion" });
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ error: "Error al iniciar sesion", detalle: error.message });
     });
 };
 
 exports.crear = (req, res) => {
+  console.log("CREAR USUARIO BODY:", req.body);
+
   service.crear(req.body)
     .then(result => res.json({
       mensaje: "Creado correctamente",
       resultado: result
     }))
-    .catch(err => {
-      console.error("❌ ERROR:", err);
-      
-      // 🔐 MANEJO DE ERRORES DE DUPLICADOS
-      if (err.code === 'ER_DUP_ENTRY') {
-        return res.status(409).json({
-          error: "El correo ya está registrado"
-        });
+    .catch(error => {
+      console.error(error);
+
+      if (error.code === "ER_DUP_ENTRY" || error.status === 409) {
+        return res.status(409).json({ error: "El correo ya esta registrado" });
       }
-      
-      res.status(500).json({ error: "Error al crear" });
+
+      res.status(500).json({ error: "Error al crear", detalle: error.message });
     });
 };
 
-// 🔹 ACTUALIZAR
 exports.actualizar = (req, res) => {
+  console.log("ACTUALIZAR USUARIO BODY:", req.body);
+
   service.actualizar(req.params.id, req.body)
     .then(() => res.json({ mensaje: "Actualizado" }))
-    .catch(err => {
-      console.error(err);
-      res.status(err.status || 500).json({ error: err.message || "Error al actualizar" });
+    .catch(error => {
+      console.error(error);
+      res.status(error.status || 500).json({ error: error.message || "Error al actualizar" });
     });
 };
 
-// 🔹 ELIMINAR
 exports.eliminar = (req, res) => {
   service.eliminar(req.params.id)
     .then(() => res.json({ mensaje: "Eliminado" }))
-    .catch(err => {
-      console.error(err);
-      res.status(500).json({ error: "Error al eliminar" });
+    .catch(error => {
+      console.error(error);
+      res.status(500).json({ error: "Error al eliminar", detalle: error.message });
     });
 };
+

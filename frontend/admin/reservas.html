@@ -1,12 +1,12 @@
-<!-- ==========================================================================
-   VISTA DE RESERVAS - MODERNIZACIÓN COMPLETA (VIA LUNA)
+﻿<!-- ==========================================================================
+   VISTA DE RESERVAS - MODERNIZACIÃ“N COMPLETA (VIA LUNA)
    ========================================================================== -->
 
 <!-- Header Section -->
 <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
   <div>
     <h1 class="text-2xl font-bold text-brand-deep tracking-tight m-0">Reservas</h1>
-    <p class="text-sm text-muted mt-1 m-0">Gestión integral de estancias, huéspedes y servicios del hotel.</p>
+    <p class="text-sm text-muted mt-1 m-0">GestiÃ³n integral de estancias, huÃ©spedes y servicios del hotel.</p>
   </div>
   <div>
     <button class="flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 cursor-pointer border-none" id="showReservationFormBtn">
@@ -19,7 +19,7 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
   <!-- Total Reservas -->
   <div class="p-5 bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-    <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner">📅</div>
+    <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-xl shadow-inner">ðŸ“…</div>
     <div>
       <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Total Reservas</p>
       <h3 id="totalReservations" class="m-0 text-xl font-bold text-brand-deep mt-0.5">0</h3>
@@ -28,7 +28,7 @@
   
   <!-- Activas / Confirmadas -->
   <div class="p-5 bg-emerald-50/40 rounded-2xl border border-emerald-100/50 border-l-4 border-l-emerald-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-emerald-600 font-bold">✓</div>
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-emerald-600 font-bold">âœ“</div>
     <div>
       <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Confirmadas</p>
       <h3 id="activeReservations" class="m-0 text-xl font-bold text-emerald-700 mt-0.5">0</h3>
@@ -37,7 +37,7 @@
 
   <!-- Check-ins Hoy -->
   <div class="p-5 bg-purple-50/40 rounded-2xl border border-purple-100/50 border-l-4 border-l-purple-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-purple-600 font-bold">✨</div>
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-purple-600 font-bold">âœ¨</div>
     <div>
       <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Check-ins Hoy</p>
       <h3 id="todayReservations" class="m-0 text-xl font-bold text-purple-700 mt-0.5">0</h3>
@@ -46,7 +46,7 @@
 
   <!-- Ingresos Totales -->
   <div class="p-5 bg-amber-50/40 rounded-2xl border border-amber-100/50 border-l-4 border-l-amber-500 shadow-sm flex items-center gap-4 hover:shadow-md transition-all duration-300">
-    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-amber-600 font-bold">💰</div>
+    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-lg shadow-sm text-amber-600 font-bold">ðŸ’°</div>
     <div>
       <p class="m-0 text-xs font-semibold text-muted uppercase tracking-wider">Ingresos Totales</p>
       <h3 id="monthlyRevenue" class="m-0 text-xl font-bold text-amber-700 mt-0.5">$0</h3>
@@ -60,8 +60,8 @@
   <div class="flex flex-col sm:flex-row justify-between items-stretch gap-4 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm mb-6">
     <div class="flex-1 max-w-md">
       <div class="relative">
-        <span class="absolute inset-y-0 left-3 flex items-center text-muted text-sm">🔍</span>
-        <input type="text" id="searchReservations" placeholder="Buscar por cliente, habitación o ID..." class="w-full h-11 pl-9 pr-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all duration-300 text-sm">
+        <span class="absolute inset-y-0 left-3 flex items-center text-muted text-sm">ðŸ”</span>
+        <input type="text" id="searchReservations" placeholder="Buscar por cliente, habitaciÃ³n o ID..." class="w-full h-11 pl-9 pr-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all duration-300 text-sm">
       </div>
     </div>
     <div class="flex gap-2">
@@ -93,7 +93,7 @@
           <tr>
             <td colspan="7" class="px-6 py-10 text-center text-muted font-semibold">
               <div class="flex items-center justify-center gap-2">
-                <span class="animate-spin text-lg">⏳</span> Cargando reservas del hotel...
+                <span class="animate-spin text-lg">â³</span> Cargando reservas del hotel...
               </div>
             </td>
           </tr>
@@ -109,15 +109,15 @@
     <!-- Form Content Left -->
     <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8">
       <div class="border-b border-gray-100 pb-5 mb-6">
-        <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">📅 Registrar Nueva Reserva</h2>
-        <p class="text-sm text-muted mt-1 m-0">Complete la información básica del huésped y personalice su estancia.</p>
+        <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">ðŸ“… Registrar Nueva Reserva</h2>
+        <p class="text-sm text-muted mt-1 m-0">Complete la informaciÃ³n bÃ¡sica del huÃ©sped y personalice su estancia.</p>
       </div>
 
       <form id="reservationForm" class="flex flex-col gap-6 m-0 p-0 bg-transparent border-none">
         <!-- Grid Basic Info -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Huésped:</label>
+            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">HuÃ©sped:</label>
             <select id="clienteSelect" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer" required>
               <option value="">Seleccionar cliente...</option>
             </select>
@@ -146,7 +146,7 @@
 
         <!-- Room Selection Card Grid -->
         <div class="border-t border-gray-100 pt-6 mt-4">
-          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider mb-4 flex items-center gap-2">🏨 Habitación Disponible</h3>
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider mb-4 flex items-center gap-2">ðŸ¨ HabitaciÃ³n Disponible</h3>
           <div id="roomSelection" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="text-center py-6 text-muted font-semibold col-span-2">Cargando habitaciones...</div>
           </div>
@@ -154,7 +154,7 @@
 
         <!-- Packages Selection Grid -->
         <div class="border-t border-gray-100 pt-6 mt-4">
-          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider mb-4 flex items-center gap-2">🎁 Paquetes Especiales</h3>
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider mb-4 flex items-center gap-2">ðŸŽ Paquetes Especiales</h3>
           <div id="packagesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div class="text-center py-6 text-muted font-semibold col-span-2">Cargando paquetes...</div>
           </div>
@@ -162,7 +162,7 @@
 
         <!-- Additional Services selection -->
         <div class="border-t border-gray-100 pt-6 mt-4">
-          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider mb-4 flex items-center gap-2">✨ Servicios Adicionales</h3>
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider mb-4 flex items-center gap-2">âœ¨ Servicios Adicionales</h3>
           <div id="servicesGrid" class="flex flex-col gap-3">
             <div class="text-center py-6 text-muted font-semibold">Cargando servicios...</div>
           </div>
@@ -171,11 +171,11 @@
         <!-- Payment and Initial State Details -->
         <div class="border-t border-gray-100 pt-6 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div class="flex flex-col gap-2">
-            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Método de Pago:</label>
+            <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">MÃ©todo de Pago:</label>
             <select id="metodoPago" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer" required>
-              <option value="">Seleccionar método...</option>
+              <option value="">Seleccionar mÃ©todo...</option>
               <option value="1">Efectivo</option>
-              <option value="2">Tarjeta Débito/Crédito</option>
+              <option value="2">Tarjeta DÃ©bito/CrÃ©dito</option>
               <option value="3">Transferencia Bancaria</option>
             </select>
           </div>
@@ -191,7 +191,7 @@
         <!-- Form Action Buttons -->
         <div class="border-t border-gray-100 pt-6 mt-4 flex justify-end gap-3">
           <button type="button" id="clearFormBtn" class="px-5 py-3 rounded-xl border border-gray-200 text-muted font-semibold bg-white hover:bg-gray-50 transition-all duration-300 cursor-pointer text-sm">Limpiar Formulario</button>
-          <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm">Confirmar y Crear Reserva 🚀</button>
+          <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm">Confirmar y Crear Reserva ðŸš€</button>
         </div>
       </form>
     </div>
@@ -205,14 +205,14 @@
       <div class="p-6 flex flex-col gap-6">
         <!-- Room details -->
         <div id="summaryRoom" class="flex flex-col gap-3 pb-5 border-b border-gray-100">
-          <p class="text-xs text-center text-muted italic my-4">Sin habitación seleccionada</p>
+          <p class="text-xs text-center text-muted italic my-4">Sin habitaciÃ³n seleccionada</p>
         </div>
 
         <!-- Packages included -->
         <div>
           <h4 class="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Paquetes Seleccionados</h4>
           <div id="summaryPackages" class="flex flex-col gap-2">
-            <p class="text-xs text-muted italic m-0">Ningún paquete seleccionado</p>
+            <p class="text-xs text-muted italic m-0">NingÃºn paquete seleccionado</p>
           </div>
         </div>
 
@@ -220,7 +220,7 @@
         <div class="pb-5 border-b border-gray-100">
           <h4 class="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Servicios Adicionales</h4>
           <div id="summaryServices" class="flex flex-col gap-2">
-            <p class="text-xs text-muted italic m-0">Ningún servicio seleccionado</p>
+            <p class="text-xs text-muted italic m-0">NingÃºn servicio seleccionado</p>
           </div>
         </div>
 
@@ -239,7 +239,7 @@
 
       <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-center">
         <button id="cancelNewReservationBtn" class="w-full py-2.5 rounded-xl border border-dashed border-brand/40 text-brand-deep font-bold hover:bg-brand/5 active:scale-98 transition-all duration-300 cursor-pointer bg-white text-xs">
-          ← Volver al listado de reservas
+          â† Volver al listado de reservas
         </button>
       </div>
     </aside>
@@ -266,11 +266,11 @@
     </div>
 
     <div class="flex flex-col gap-6">
-      <!-- Grid: Cliente & Habitación -->
+      <!-- Grid: Cliente & HabitaciÃ³n -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Cliente info -->
         <div class="p-5 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-3">
-          <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">Huésped Principal</h4>
+          <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">HuÃ©sped Principal</h4>
           <div>
             <strong id="detResClienteNombre" class="block text-base text-ink">Cargando...</strong>
             <span id="detResClienteDoc" class="block text-xs text-muted mt-1">Doc: --</span>
@@ -279,9 +279,9 @@
           </div>
         </div>
 
-        <!-- Habitación info -->
+        <!-- HabitaciÃ³n info -->
         <div class="p-5 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-3">
-          <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">Habitación Reservada</h4>
+          <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">HabitaciÃ³n Reservada</h4>
           <div>
             <strong id="detResHabNombre" class="block text-base text-brand-deep">Cargando...</strong>
             <span id="detResHabPrecio" class="block text-xs text-brand font-semibold mt-1">--</span>
@@ -296,7 +296,7 @@
           <span class="text-muted text-xs block">Fecha Entrada</span>
           <strong id="detResFechaInicio" class="text-brand-deep block mt-0.5">--</strong>
         </div>
-        <div class="text-brand text-lg">➔</div>
+        <div class="text-brand text-lg">âž”</div>
         <div class="text-right">
           <span class="text-muted text-xs block">Fecha Salida</span>
           <strong id="detResFechaFin" class="text-brand-deep block mt-0.5">--</strong>
@@ -314,7 +314,7 @@
       <!-- Pago, Total & Estado -->
       <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span class="text-xs text-muted font-bold uppercase tracking-wider block">Método de Pago</span>
+          <span class="text-xs text-muted font-bold uppercase tracking-wider block">MÃ©todo de Pago</span>
           <strong id="detResMetodoPago" class="text-brand-deep block mt-1">--</strong>
         </div>
         <div>
@@ -333,3 +333,4 @@
     </div>
   </article>
 </div>
+

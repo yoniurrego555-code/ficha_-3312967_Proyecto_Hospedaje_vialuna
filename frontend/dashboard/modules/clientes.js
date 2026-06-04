@@ -1,4 +1,4 @@
-import { 
+﻿import { 
   getClientes, 
   createCliente, 
   updateCliente, 
@@ -18,17 +18,17 @@ class ClientesModule {
   }
 
   async initialize() {
-    console.log('🔄 Inicializando ClientesModule...');
+    console.log('ðŸ”„ Inicializando ClientesModule...');
     try {
       await this.loadData();
-      console.log('✅ Datos cargados');
+      console.log('âœ… Datos cargados');
       this.render();
-      console.log('✅ Render completado');
+      console.log('âœ… Render completado');
       this.setupEventListeners();
-      console.log('✅ Event listeners configurados');
+      console.log('âœ… Event listeners configurados');
     } catch (error) {
-      console.error('❌ Error en initialize:', error);
-      this.showError("Error al cargar clientes", "Recarga la página");
+      console.error('âŒ Error en initialize:', error);
+      this.showError("Error al cargar clientes", "Recarga la pÃ¡gina");
     }
   }
 
@@ -45,18 +45,10 @@ class ClientesModule {
       this.calculateMetrics();
     } catch (error) {
       console.error('Error cargando clientes desde API:', error);
-      // Usar datos de ejemplo si falla la API
-      this.clientes = this.getClientesEjemplo();
+      this.clientes = [];
       this.calculateMetrics();
+      throw error;
     }
-  }
-
-  getClientesEjemplo() {
-    return [
-      { IDCliente: '1', Nombre: 'Juan', Apellido: 'Pérez', Email: 'juan@example.com', Telefono: '3124567890', Estado: '1', NroDocumento: '1234567890', TipoDocumento: 'CC' },
-      { IDCliente: '2', Nombre: 'María', Apellido: 'García', Email: 'maria@example.com', Telefono: '3107654321', Estado: '1', NroDocumento: '0987654321', TipoDocumento: 'CC' },
-      { IDCliente: '3', Nombre: 'Carlos', Apellido: 'López', Email: 'carlos@example.com', Telefono: '3155555555', Estado: '0', NroDocumento: '5555555555', TipoDocumento: 'CE' }
-    ];
   }
 
   calculateMetrics() {
@@ -77,7 +69,8 @@ class ClientesModule {
   async showList() {
     try {
       // Recargar el HTML de clientes desde el servidor
-      const response = await fetch('../public/clientes.html');
+      const response = await fetch('../admin/clientes.html');
+      if (!response.ok) throw new Error('No se pudo cargar la vista de clientes');
       const html = await response.text();
       this.container.innerHTML = html;
       
@@ -116,7 +109,7 @@ class ClientesModule {
   }
 
   renderTable(data = this.clientes) {
-    // Esperar un ciclo de renderizado para asegurar que el DOM esté actualizado
+    // Esperar un ciclo de renderizado para asegurar que el DOM estÃ© actualizado
     setTimeout(() => {
       const tbody = this.container.querySelector("#clientesTableBody");
       const table = this.container.querySelector("table");
@@ -126,7 +119,7 @@ class ClientesModule {
       if (tableWrapper) tableWrapper.className = "bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden";
 
       if (!tbody) {
-        console.error('❌ tbody #clientesTableBody no encontrado en container');
+        console.error('âŒ tbody #clientesTableBody no encontrado en container');
         return;
       }
       
@@ -136,7 +129,7 @@ class ClientesModule {
 
   _renderTableContent(data, tbody) {
     if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-muted font-semibold">No hay huéspedes registrados</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-muted font-semibold">No hay huÃ©spedes registrados</td></tr>';
       return;
     }
 
@@ -152,7 +145,7 @@ class ClientesModule {
           <td class="px-6 py-4 font-semibold text-gray-400">${docNum}</td>
           <td class="px-6 py-4 font-semibold text-brand-deep">${nombreCompleto}</td>
           <td class="px-6 py-4 text-xs text-muted">${cliente.Email || 'Sin email'}</td>
-          <td class="px-6 py-4 font-semibold text-gray-600">${cliente.Telefono || 'Sin teléfono'}</td>
+          <td class="px-6 py-4 font-semibold text-gray-600">${cliente.Telefono || 'Sin telÃ©fono'}</td>
           <td class="px-6 py-4">
             <div class="flex items-center gap-3">
               <label class="relative inline-block w-11 h-6 m-0 cursor-pointer shrink-0">
@@ -168,13 +161,13 @@ class ClientesModule {
           <td class="px-6 py-4">
             <div class="action-group-modern">
               <button class="btn-action-modern view" onclick="window.clientesModule.view('${docNum}')" title="Ver detalle">
-                🔍
+                ðŸ”
               </button>
               <button class="btn-action-modern edit" onclick="window.clientesModule.edit('${docNum}')" title="Editar">
-                ✏️
+                âœï¸
               </button>
               <button class="btn-action-modern delete" onclick="window.clientesModule.delete('${docNum}')" title="Eliminar">
-                🗑️
+                ðŸ—‘ï¸
               </button>
             </div>
           </td>
@@ -279,16 +272,16 @@ class ClientesModule {
     this.container.innerHTML = `
       <div class="max-w-2xl mx-auto p-6 sm:p-8 bg-white border border-gray-100 rounded-3xl shadow-sm">
         <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
-          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">🔍 Detalle del Huésped</h2>
+          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">ðŸ” Detalle del HuÃ©sped</h2>
           <button onclick="window.clientesModule.showList()" class="px-4 py-2 bg-gray-50 border border-gray-200 text-brand-deep text-xs font-bold rounded-xl hover:bg-gray-100 cursor-pointer transition-all duration-300">
-            ← Volver a la lista
+            â† Volver a la lista
           </button>
         </div>
         
         <div class="flex flex-col gap-6">
           <!-- Main Details -->
           <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col gap-4">
-            <h3 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">Información Personal</h3>
+            <h3 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">InformaciÃ³n Personal</h3>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div class="flex flex-col gap-1">
@@ -308,7 +301,7 @@ class ClientesModule {
                 <span class="font-bold text-brand-deep text-xs break-all">${cliente.Email || 'No especificado'}</span>
               </div>
               <div class="flex flex-col gap-1">
-                <span class="text-xs text-muted font-semibold uppercase tracking-wide">Teléfono:</span>
+                <span class="text-xs text-muted font-semibold uppercase tracking-wide">TelÃ©fono:</span>
                 <span class="font-bold text-brand-deep">${cliente.Telefono || 'No especificado'}</span>
               </div>
               <div class="flex flex-col gap-1 sm:col-span-2 mt-2 pt-2 border-t border-gray-200/50">
@@ -323,10 +316,10 @@ class ClientesModule {
           <!-- Actions -->
           <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
             <button onclick="window.clientesModule.edit('${id}')" class="px-5 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep cursor-pointer transition-all border-none text-xs">
-              ✏️ Editar Huésped
+              âœï¸ Editar HuÃ©sped
             </button>
             <button onclick="window.clientesModule.toggleStatus('${id}')" class="px-5 py-3 rounded-xl border border-gray-200 text-brand-deep font-semibold bg-white hover:bg-gray-50 cursor-pointer transition-all text-xs">
-              🔄 Cambiar Estado
+              ðŸ”„ Cambiar Estado
             </button>
           </div>
         </div>
@@ -350,9 +343,9 @@ class ClientesModule {
     this.container.innerHTML = `
       <div class="max-w-2xl mx-auto p-6 sm:p-8 bg-white border border-gray-100 rounded-3xl shadow-sm">
         <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
-          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">✏️ Editar Huésped</h2>
+          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">âœï¸ Editar HuÃ©sped</h2>
           <button onclick="window.clientesModule.showList()" class="px-4 py-2 bg-gray-50 border border-gray-200 text-brand-deep text-xs font-bold rounded-xl hover:bg-gray-100 cursor-pointer transition-all duration-300">
-            ← Volver a la lista
+            â† Volver a la lista
           </button>
         </div>
         
@@ -361,9 +354,9 @@ class ClientesModule {
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Tipo Documento:</label>
               <select id="editTipoDocumento" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
-                <option value="CC" ${cliente.TipoDocumento === 'CC' ? 'selected' : ''}>Cédula de Ciudadanía</option>
+                <option value="CC" ${cliente.TipoDocumento === 'CC' ? 'selected' : ''}>CÃ©dula de CiudadanÃ­a</option>
                 <option value="TI" ${cliente.TipoDocumento === 'TI' ? 'selected' : ''}>Tarjeta de Identidad</option>
-                <option value="CE" ${cliente.TipoDocumento === 'CE' ? 'selected' : ''}>Cédula de Extranjería</option>
+                <option value="CE" ${cliente.TipoDocumento === 'CE' ? 'selected' : ''}>CÃ©dula de ExtranjerÃ­a</option>
                 <option value="Pasaporte" ${cliente.TipoDocumento === 'Pasaporte' ? 'selected' : ''}>Pasaporte</option>
               </select>
             </div>
@@ -389,7 +382,7 @@ class ClientesModule {
             </div>
             
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Teléfono:</label>
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">TelÃ©fono:</label>
               <input type="tel" id="editTelefono" value="${cliente.Telefono || ''}" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20">
             </div>
 
@@ -404,7 +397,7 @@ class ClientesModule {
           
           <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
             <button type="button" onclick="window.clientesModule.showList()" class="px-5 py-3 rounded-xl border border-gray-200 text-muted font-semibold bg-white hover:bg-gray-50 cursor-pointer transition-all duration-300 text-sm">Cancelar</button>
-            <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm">💾 Guardar Cambios</button>
+            <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm">ðŸ’¾ Guardar Cambios</button>
           </div>
         </form>
       </div>
@@ -460,7 +453,7 @@ class ClientesModule {
   }
 
   async _doChangeStatus(id, nuevoEstado) {
-    const confirmMessage = `¿Está seguro de cambiar el estado del cliente a ${nuevoEstado == 1 ? 'Activo' : 'Inactivo'}?`;
+    const confirmMessage = `Â¿EstÃ¡ seguro de cambiar el estado del cliente a ${nuevoEstado == 1 ? 'Activo' : 'Inactivo'}?`;
     
     if (!confirm(confirmMessage)) {
       this.render(); // Re-render to revert the dropdown selection if cancelled
@@ -489,7 +482,7 @@ class ClientesModule {
 
     const nombreCompleto = `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || 'Sin nombre';
     
-    if (!confirm(`¿Está seguro de eliminar al cliente "${nombreCompleto}" (${id})? Esta acción no se puede deshacer.`)) {
+    if (!confirm(`Â¿EstÃ¡ seguro de eliminar al cliente "${nombreCompleto}" (${id})? Esta acciÃ³n no se puede deshacer.`)) {
       return;
     }
 
@@ -509,9 +502,9 @@ class ClientesModule {
     this.container.innerHTML = `
       <div class="max-w-2xl mx-auto p-6 sm:p-8 bg-white border border-gray-100 rounded-3xl shadow-sm">
         <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
-          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">➕ Registrar Nuevo Huésped</h2>
+          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2">âž• Registrar Nuevo HuÃ©sped</h2>
           <button onclick="window.clientesModule.showList()" class="px-4 py-2 bg-gray-50 border border-gray-200 text-brand-deep text-xs font-bold rounded-xl hover:bg-gray-100 cursor-pointer transition-all duration-300">
-            ← Volver a la lista
+            â† Volver a la lista
           </button>
         </div>
         
@@ -520,9 +513,9 @@ class ClientesModule {
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Tipo Documento:</label>
               <select id="newTipoDocumento" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
-                <option value="CC">Cédula de Ciudadanía</option>
+                <option value="CC">CÃ©dula de CiudadanÃ­a</option>
                 <option value="TI">Tarjeta de Identidad</option>
-                <option value="CE">Cédula de Extranjería</option>
+                <option value="CE">CÃ©dula de ExtranjerÃ­a</option>
                 <option value="Pasaporte">Pasaporte</option>
               </select>
             </div>
@@ -543,7 +536,7 @@ class ClientesModule {
               <input type="email" id="newEmail" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20">
             </div>
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Teléfono:</label>
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">TelÃ©fono:</label>
               <input type="tel" id="newTelefono" class="h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20">
             </div>
             <div class="flex flex-col gap-2 sm:col-span-2">
@@ -557,7 +550,7 @@ class ClientesModule {
           
           <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
             <button type="button" onclick="window.clientesModule.showList()" class="px-5 py-3 rounded-xl border border-gray-200 text-muted font-semibold bg-white hover:bg-gray-50 cursor-pointer transition-all duration-300 text-sm">Cancelar</button>
-            <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm">➕ Crear Cliente</button>
+            <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm">âž• Crear Cliente</button>
           </div>
         </form>
       </div>
@@ -603,7 +596,7 @@ class ClientesModule {
         <h2 class="text-xl font-bold text-brand-deep mb-2">${title}</h2>
         <p class="text-muted text-sm mb-6">${message}</p>
         <button onclick="location.reload()" class="px-5 py-3 bg-brand hover:bg-brand-deep text-white font-semibold rounded-xl transition cursor-pointer border-none text-sm shadow-md shadow-brand/10">
-          Recargar página
+          Recargar pÃ¡gina
         </button>
       </div>
     `;
@@ -611,9 +604,10 @@ class ClientesModule {
 }
 
 export function renderClientes(container) {
-  console.log('🎯 renderClientes llamado con container:', container);
+  console.log('ðŸŽ¯ renderClientes llamado con container:', container);
   window.clientesModule = new ClientesModule(container);
-  console.log('📦 ClientesModule creado');
+  console.log('ðŸ“¦ ClientesModule creado');
   window.clientesModule.initialize();
-  console.log('🚀 initialize() llamado');
+  console.log('ðŸš€ initialize() llamado');
 }
+
