@@ -1,23 +1,16 @@
 import { createCrudModule } from './shared/crud-module.js';
 import { apiUrl } from './shared/api-config.js';
-import { showAlert, renderPremiumPagination } from './ui-utils.js';
+import { showAlert, renderPremiumPagination, resolveServiceImage } from './ui-utils.js';
 import { getAppUrl } from '../core/authGuard.js';
 
-// Helper to resolve high-quality image for each service
-function resolveServiceImage(item) {
-    const itemNameRaw = item.nombre || item.NombreServicio || item.Nombre || '';
-    const itemDesc = item.descripcion || item.Descripcion || '';
-    const fullText = `${itemNameRaw} ${itemDesc}`.toLowerCase();
-    
-    if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relajacion') || fullText.includes('terapia')) {
-        return getAppUrl('assets/images/service/SPA.png');
-    } else if (fullText.includes('caballo') || fullText.includes('cabalgata') || fullText.includes('equino')) {
-        return getAppUrl('assets/images/service/cabalgata.png');
-    } else if (fullText.includes('caminata') || fullText.includes('guiado') || fullText.includes('recorrido') || fullText.includes('ecoturismo')) {
-        return getAppUrl('assets/images/service/caminata.png');
-    }
-    
-    return getAppUrl('assets/images/service/SPA.png');
+// Normalize image path: map bare filenames to /uploads/, ensure leading slash for uploads
+function normalizeImagePath(src) {
+    if (!src) return src;
+    if (typeof src !== 'string') return src;
+    if (src.startsWith('/') || src.startsWith('http') || src.startsWith('data:')) return src;
+    if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(src)) return `/uploads/${src}`;
+    if (src.toLowerCase().includes('uploads')) return src.startsWith('/') ? src : `/${src}`;
+    return src;
 }
 
 // Helper to resolve dynamic service label
@@ -128,7 +121,8 @@ const crud = createCrudModule({
         const itemPrice = item.precio || item.Costo || item.Precio || 0;
         const itemDesc = item.descripcion || item.Descripcion || 'Servicio rústico exclusivo para complementar tu estadía en el hotel.';
         const itemEstado = item.estado !== undefined ? item.estado : (item.Estado !== undefined ? item.Estado : 1);
-        const serviceImg = item.ImagenUrl || item.Imagen || resolveServiceImage(item);
+        const rawImg = (Array.isArray(item.imagenes) && item.imagenes[0]) || item.ImagenUrl || item.Imagen || resolveServiceImage(item);
+        const serviceImg = normalizeImagePath(rawImg);
         
         let statusBg = itemEstado == 1 ? 'bg-emerald-500/90 text-white' : 'bg-red-500/90 text-white';
 
@@ -213,7 +207,8 @@ function mostrarDetalleServicio(item) {
     const displayTitle = resolveServiceLabel(item);
     const itemPrice = item.precio || item.Costo || 0;
     const itemDesc = item.descripcion || item.Descripcion || 'Experiencia exclusiva diseñada para regalarle una inmersión completa en la tranquilidad, rodeado de la naturaleza idílica de Via Luna.';
-    const serviceImg = item.ImagenUrl || resolveServiceImage(item);
+    const rawImg = (Array.isArray(item.imagenes) && item.imagenes[0]) || item.ImagenUrl || resolveServiceImage(item);
+    const serviceImg = normalizeImagePath(rawImg);
     const duracionStr = item.DuracionMinutos ? `${item.DuracionMinutos} min` : (item.Duracion || item.duracion ? `${item.Duracion || item.duracion} min` : 'No definida');
     const capacidadStr = item.CapacidadMaxima ? `${item.CapacidadMaxima} pers.` : (item.CantidadMaximaPersonas || item.cantidadMaximaPersonas ? `${item.CantidadMaximaPersonas || item.cantidadMaximaPersonas} pers.` : 'No definida');
     const edadStr = (item.EdadMinima || item.EdadMaxima) ? `${item.EdadMinima || 0} - ${item.EdadMaxima || 99} años` : 'Para todas las edades';
@@ -224,7 +219,7 @@ function mostrarDetalleServicio(item) {
     crud.elements.detalleID.textContent = `ID: #${itemId}`;
     crud.elements.detalleCostoBadge.textContent = `COP $${Number(itemPrice).toLocaleString()}`;
     crud.elements.detalleDescripcion.textContent = itemDesc + extraDesc;
-    crud.elements.detalleImagenPrincipal.src = serviceImg;
+    crud.elements.detalleImagenPrincipal.src = normalizeImagePath(serviceImg);
     
     const statsContainer = crud.elements.servicioDetalleModal.querySelector('.grid.grid-cols-2.gap-3');
     if (statsContainer) {
@@ -400,6 +395,7 @@ export function renderServicios(container) {
                 servicioImagenPreview.appendChild(img);
             };
             img.onerror = () => {
+                img.onerror = null;
                 servicioImagenPreview.innerHTML = '<span class="text-xs text-muted">URL inválida</span>';
             };
             img.src = url;

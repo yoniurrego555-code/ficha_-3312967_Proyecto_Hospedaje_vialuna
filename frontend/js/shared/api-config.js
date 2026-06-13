@@ -1,11 +1,8 @@
 function getApiBase() {
-    const { protocol, hostname, port, origin } = window.location;
-
-    if (protocol.startsWith('http') && hostname && (port === '3000' || origin === 'http://localhost:3000' || origin === 'http://127.0.0.1:3000')) {
-        return `${origin}/api`;
-    }
-
-    return 'http://localhost:3000/api';
+    // Prefer backend at localhost:3000 (default dev server).
+    // If frontend is served from a different origin (eg. Live Server 5500), prefer explicit backend.
+    const defaultOrigin = 'http://localhost:3000';
+    return `${defaultOrigin}/api`;
 }
 
 function apiUrl(path = '') {
@@ -14,8 +11,19 @@ function apiUrl(path = '') {
     return normalizedPath ? `${base}/${normalizedPath}` : base;
 }
 
-function getConnectionErrorMessage(resourceLabel = 'la API') {
-    return `No fue posible conectar con ${resourceLabel}. Verifica que el backend este corriendo en localhost:3000.`;
+function backendOrigin() {
+    const api = getApiBase();
+    return api.replace(/\/api\/?$/, '');
 }
 
-export { getApiBase, apiUrl, getConnectionErrorMessage };
+function backendUrl(path = '') {
+    const origin = backendOrigin().replace(/\/+$/, '');
+    const normalized = String(path || '').replace(/^\/+/, '');
+    return normalized ? `${origin}/${normalized}` : origin;
+}
+
+function getConnectionErrorMessage(resourceLabel = 'la API') {
+    return `No fue posible conectar con ${resourceLabel}. Verifica que el backend esté corriendo en ${backendOrigin()}.`;
+}
+
+export { getApiBase, apiUrl, backendOrigin, backendUrl, getConnectionErrorMessage };

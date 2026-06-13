@@ -1,0 +1,68 @@
+<section class="premium-page">
+  <header class="premium-page-head">
+    <p class="section-kicker">Cuenta</p>
+    <h1>Mi perfil</h1>
+    <p>Tu información personal para una estancia tranquila en Via Luna.</p>
+  </header>
+
+  <section class="premium-profile-grid">
+    <article class="premium-panel profile-panel">
+      <div class="premium-panel-head">
+        <h2>Información personal</h2>
+        <button type="button" class="package-btn" id="editProfileBtn">Editar perfil</button>
+      </div>
+
+      <form id="perfilForm" class="premium-form readonly-profile">
+        <label class="premium-field">
+          <span>Nombre completo</span>
+          <input type="text" id="nombreCompleto" name="nombre_completo" readonly>
+        </label>
+        <label class="premium-field">
+          <span>Documento</span>
+          <input type="text" id="documento" readonly>
+        </label>
+        <label class="premium-field">
+          <span>Correo</span>
+          <input type="email" id="email" readonly>
+        </label>
+        <label class="premium-field">
+          <span>Teléfono</span>
+          <input type="text" id="telefono" name="telefono" readonly>
+        </label>
+        <label class="premium-field">
+          <span>Fecha de nacimiento</span>
+          <input type="date" id="fechaNacimiento" name="fecha_nacimiento" readonly>
+        </label>
+        <input type="hidden" id="tipo_documento" name="tipo_documento" value="CC">
+        <div class="premium-actions profile-save-actions">
+          <button type="button" class="btn-glass light" id="cancelEditBtn">Cancelar</button>
+          <button type="submit" class="package-btn">Guardar cambios</button>
+        </div>
+      </form>
+    </article>
+
+    <article class="premium-panel profile-panel">
+      <div class="premium-panel-head">
+        <h2>Cambiar contraseña</h2>
+      </div>
+
+      <form id="passwordForm" class="premium-form">
+        <label class="premium-field">
+          <span>Contraseña actual</span>
+          <input type="password" name="current_password" required>
+        </label>
+        <label class="premium-field">
+          <span>Nueva contraseña</span>
+          <input type="password" name="new_password" required minlength="6">
+        </label>
+        <label class="premium-field">
+          <span>Confirmar contraseña</span>
+          <input type="password" name="confirm_password" required minlength="6">
+        </label>
+        <div class="premium-actions">
+          <button type="submit" class="package-btn">Cambiar contraseña</button>
+        </div>
+      </form>
+    </article>
+  </section>
+</section>

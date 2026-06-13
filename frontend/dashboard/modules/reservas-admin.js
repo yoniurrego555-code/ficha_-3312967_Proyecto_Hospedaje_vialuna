@@ -141,6 +141,7 @@ export class ReservasAdminModule {
       await loadChartJs();
         this.renderCharts();
         this.setupEventListeners();
+        this.initFlatpickr();
 
     } catch (error) {
       console.error("Error inicializando reservas:", error);
@@ -165,6 +166,7 @@ export class ReservasAdminModule {
       editReservationContainer: this.container.querySelector("#editReservationContainer"),
       clienteSelect: this.container.querySelector("#clienteSelect"),
       documentoInput: this.container.querySelector("#documentoInput"),
+      nombreClienteReadOnly: this.container.querySelector("#nombreClienteReadOnly"),
       fechaInicio: this.container.querySelector("#fechaInicio"),
       fechaFin: this.container.querySelector("#fechaFin"),
       horaEntrada: this.container.querySelector("#horaEntrada"),
@@ -227,39 +229,49 @@ export class ReservasAdminModule {
   renderClientes(clientes) {
     const activeClients = clientes.filter(c => Number(c.Estado) === 1);
     
-    if (this.refs.clienteSelect) {
-      this.refs.clienteSelect.innerHTML = `
-        <option value="">Seleccionar cliente...</option>
-        ${activeClients.map(cliente => {
-          const nombreCompleto = cliente.NombreCompleto || 
-                              `${cliente.Nombres || ''} ${cliente.Apellidos || ''}`.trim() || 
-                              cliente.nombre_completo ||
-                              `${cliente.nombres || ''} ${cliente.apellidos || ''}`.trim() ||
-                              cliente.nombre || 
-                              cliente.Nombre ||
-                              `${cliente.PrimerNombre || ''} ${cliente.PrimerApellido || ''}`.trim() ||
-                              'Cliente sin nombre';
-          const clienteId = cliente.id_cliente || cliente.IDCliente || cliente.id || cliente.ID || cliente.NroDocumento || cliente.nro_documento;
-          return `
-            <option value="${clienteId}" data-document="${cliente.NroDocumento || cliente.nro_documento || ''}">
-              ${nombreCompleto}
-            </option>
-          `;
-        }).join('')}
-      `;
+    // Guardamos activeClients en la instancia para buscar después
+    this.activeClients = activeClients;
 
-      // Add change handler for document auto-fill
-      this.refs.clienteSelect.addEventListener('change', (e) => {
-        const selectedOption = e.target.options[e.target.selectedIndex];
-        const documentNumber = selectedOption.dataset.document;
-        if (documentNumber && this.refs.documentoInput) {
-          this.refs.documentoInput.value = documentNumber;
-        }
-      });
-
-      // Setup date restrictions
-      this.setupDateRestrictions();
+    // Populate datalist for documentoInput
+    const datalist = this.container.querySelector("#documentosList");
+    if (datalist) {
+      const docSet = new Set();
+      datalist.innerHTML = activeClients.map(c => {
+        const doc = String(c.NroDocumento || c.nro_documento || c.documento || '').trim();
+        if (!doc || docSet.has(doc)) return '';
+        docSet.add(doc);
+        return `<option value="${doc}"></option>`;
+      }).join('');
     }
+
+    // Sync from documentoInput (datalist selection) to readonly & hidden field
+    if (this.refs.documentoInput) {
+      this.refs.documentoInput.addEventListener('input', (e) => {
+        const doc = e.target.value.trim();
+        const foundClient = this.activeClients.find(c => String(c.NroDocumento || c.nro_documento || c.documento || '').trim() === doc);
+        
+        if (foundClient) {
+          const nombreCompleto = foundClient.NombreCompleto || 
+                               `${foundClient.Nombres || ''} ${foundClient.Apellidos || ''}`.trim() || 
+                               foundClient.nombre_completo ||
+                               `${foundClient.nombres || ''} ${foundClient.apellidos || ''}`.trim() ||
+                               foundClient.nombre || 
+                               foundClient.Nombre ||
+                               `${foundClient.PrimerNombre || ''} ${foundClient.PrimerApellido || ''}`.trim() ||
+                               'Cliente sin nombre';
+          const clienteId = foundClient.id_cliente || foundClient.IDCliente || foundClient.id || foundClient.ID || foundClient.NroDocumento || foundClient.nro_documento;
+          
+          if (this.refs.nombreClienteReadOnly) this.refs.nombreClienteReadOnly.value = nombreCompleto;
+          if (this.refs.clienteSelect) this.refs.clienteSelect.value = clienteId;
+        } else {
+          if (this.refs.nombreClienteReadOnly) this.refs.nombreClienteReadOnly.value = '';
+          if (this.refs.clienteSelect) this.refs.clienteSelect.value = '';
+        }
+        this.calculateTotal();
+      });
+    }
+    
+    this.setupDateRestrictions();
   }
 
   // Setup date restrictions
@@ -274,32 +286,44 @@ export class ReservasAdminModule {
       this.refs.fechaInicio.addEventListener('change', (e) => {
         const startDate = e.target.value;
         if (this.refs.fechaFin && startDate) {
-          // Set minimum date for fechaFin to be the same as fechaInicio
-          this.refs.fechaFin.setAttribute('min', startDate);
+          // Set minimum date for fechaFin to be the same as fechaInicio + 1 day
+          const minEndDate = new Date(startDate);
+          minEndDate.setDate(minEndDate.getDate() + 1);
+          const minEndStr = minEndDate.toISOString().split('T')[0];
+          this.refs.fechaFin.setAttribute('min', minEndStr);
           
           // If fechaFin is earlier than fechaInicio, clear it
-          if (this.refs.fechaFin.value && this.refs.fechaFin.value < startDate) {
+          if (this.refs.fechaFin.value && this.refs.fechaFin.value <= startDate) {
             this.refs.fechaFin.value = '';
           }
         }
+        this.calculateTotal();
       });
     }
     
     // Set minimum date for fechaFin
     if (this.refs.fechaFin) {
       this.refs.fechaFin.setAttribute('min', today);
+      this.refs.fechaFin.addEventListener('change', () => {
+        this.calculateTotal();
+      });
     }
   }
 
   // Helper to resolve room image
   resolveRoomImage(hab) {
-    let imgName = hab.ImagenUrl || hab.imagenUrl || hab.imagen || hab.ImagenHabitacion;
+    let imgName = (Array.isArray(hab.imagenes) && hab.imagenes[0]) || hab.ImagenUrl || hab.imagenUrl || hab.imagen || hab.ImagenHabitacion;
     if (imgName && typeof imgName === 'object' && imgName.type === 'Buffer') {
         imgName = String.fromCharCode.apply(null, imgName.data);
     }
     if (typeof imgName === 'string' && imgName.trim() !== '' && imgName !== 'null' && imgName !== '[object Object]') {
       if (imgName.startsWith('http')) return imgName;
-      const cleanName = imgName.replace(/^(\.\.\/)+assets\/images\/rooms\//, '').replace('assets/images/rooms/', '');
+      if (imgName.startsWith('/')) return imgName;
+      // If it's a filename, assume uploads
+      if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(imgName)) return `/uploads/${imgName}`;
+      // If it references uploads but missing leading slash
+      if (imgName.toLowerCase().includes('uploads')) return imgName.startsWith('/') ? imgName : `/${imgName}`;
+      const cleanName = imgName.replace(/^((\.{2}\/)+assets\/images\/rooms\/)/, '').replace('assets/images/rooms/', '');
       return getAppUrl('assets/images/rooms/' + cleanName);
     }
     
@@ -328,7 +352,7 @@ export class ReservasAdminModule {
              style="cursor: pointer; border-radius: 16px; overflow: hidden; background: white; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease;">
           <div class="room-image" style="height: 150px; position: relative;">
             <img src="${this.resolveRoomImage(hab)}" 
-                 onerror="this.src='${getAppUrl('assets/images/rooms/individual.png')}'"
+                 onerror="this.onerror=null; this.src='${getAppUrl('assets/images/rooms/individual.png')}'"
                  style="width: 100%; height: 100%; object-fit: cover;">
             ${isSelected ? '<div style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>' : ''}
           </div>
@@ -388,6 +412,19 @@ export class ReservasAdminModule {
           imgSrc = String.fromCharCode.apply(null, imgSrc.data);
       }
       if (imgSrc === 'null') imgSrc = null;
+      // Normalize filename-only or uploads path
+      if (typeof imgSrc === 'string' && imgSrc.trim()) {
+        imgSrc = imgSrc.trim();
+        if (imgSrc.startsWith('/http')) imgSrc = imgSrc.substring(1);
+
+        if (imgSrc.startsWith('http')) {
+          // Keep absolute URL
+        } else if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(imgSrc)) {
+          imgSrc = `/uploads/${imgSrc}`;
+        } else if (imgSrc.toLowerCase().includes('uploads') && !imgSrc.startsWith('/')) {
+          imgSrc = `/${imgSrc}`;
+        }
+      }
       const displayTitle = pkg.nombre || pkg.Nombre || pkg.NombrePaquete || 'Paquete';
       
       return `
@@ -402,7 +439,7 @@ export class ReservasAdminModule {
                  style="display: flex; flex-direction: column; cursor: pointer; border-radius: 16px; overflow: hidden; background: ${isSelected ? 'rgba(31, 106, 77, 0.05)' : 'white'}; border: 1px solid ${isSelected ? 'var(--brand)' : 'rgba(0,0,0,0.08)'}; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease; height: 100%;">
             
             <div class="package-image" style="height: 120px; position: relative; background: #f9fafb;">
-              ${imgSrc ? `<img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='${getAppUrl('assets/images/placeholder.png')}'">` : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; opacity: 0.4;">🎁</div>`}
+              ${imgSrc ? `<img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.style.display='none';">` : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; opacity: 0.4;">🎁</div>`}
               ${isSelected ? '<div class="checkmark" style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>' : ''}
             </div>
 
@@ -480,6 +517,19 @@ export class ReservasAdminModule {
           serviceImg = getAppUrl('assets/images/service/caminata.png');
         } else {
           serviceImg = getAppUrl('assets/images/service/SPA.png');
+        }
+      }
+      // Normalize filename-only or uploads path for services
+      if (typeof serviceImg === 'string' && serviceImg.trim()) {
+        serviceImg = serviceImg.trim();
+        if (serviceImg.startsWith('/http')) serviceImg = serviceImg.substring(1);
+
+        if (serviceImg.startsWith('http')) {
+          // Keep absolute URL
+        } else if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(serviceImg)) {
+          serviceImg = `/uploads/${serviceImg}`;
+        } else if (serviceImg.toLowerCase().includes('uploads') && !serviceImg.startsWith('/')) {
+          serviceImg = `/${serviceImg}`;
         }
       }
       // Improve title if generic
@@ -593,8 +643,11 @@ export class ReservasAdminModule {
     }
 
     this.refs.reservationsTableBody.innerHTML = paginatedData.map(reserva => {
-      const cliente = this.currentData.clientes.find(c => c.id_cliente == reserva.id_cliente);
-      const habitacion = this.currentData.habitaciones.find(h => h.id_habitacion == reserva.id_habitacion);
+      const clienteId = reserva.id_cliente || reserva.IDCliente || (reserva.cliente ? reserva.cliente.id : null);
+      const cliente = clienteId ? this.currentData.clientes.find(c => (c.id_cliente || c.IDCliente || c.NroDocumento || c.nro_documento) == clienteId) : (reserva.cliente || null);
+      
+      const habitacionId = reserva.id_habitacion || reserva.IDHabitacion || (reserva.habitacion ? reserva.habitacion.id : null);
+      const habitacion = habitacionId ? this.currentData.habitaciones.find(h => (h.id_habitacion || h.IDHabitacion) == habitacionId) : (reserva.habitacion || null);
       const status = this._extractStatusId(reserva);
       const resId = reserva.id_reserva || reserva.IDReserva || reserva.IdReserva || reserva.id || 'null';
       
@@ -602,17 +655,18 @@ export class ReservasAdminModule {
       <tr class="hover:bg-gray-50/50 transition-all duration-200">
         <td class="px-6 py-4 font-bold text-gray-400">#${resId}</td>
         <td class="px-6 py-4">
-            <div class="font-semibold text-brand-deep">${cliente ? (cliente.NombreCompleto || `${cliente.Nombres || ''} ${cliente.Apellidos || ''}`.trim() || 'Cliente sin nombre') : reserva.nr_documento || "Sin cliente"}</div>
+            <div class="text-sm font-semibold text-brand-deep">${cliente ? (cliente.NombreCompleto || `${cliente.Nombre || ''} ${cliente.Apellido || ''}`.trim() || 'Cliente sin nombre') : reserva.nr_documento || "Sin cliente"}</div>
             <div class="text-xs text-muted mt-0.5">${cliente ? (cliente.Email || '') : ''}</div>
         </td>
         <td class="px-6 py-4">
-            <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">${habitacion ? (habitacion.numero || habitacion.Numero || 'N/A') : "---"}</span>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">${habitacion ? (habitacion.NombreHabitacion || habitacion.nombre || habitacion.numero || habitacion.Numero || 'N/A') : "---"}</span>
         </td>
         <td class="px-6 py-4">
             <div class="text-xs font-semibold text-brand-deep">${reserva.fecha_inicio || "--"}</div>
-            <div class="text-[10px] text-muted mt-0.5">hasta ${reserva.fecha_fin || "--"}</div>
         </td>
-        <td class="px-6 py-4 font-bold text-brand">$${this.formatCurrency(reserva.total || 0)}</td>
+        <td class="px-6 py-4">
+            <div class="text-xs font-semibold text-brand-deep">${reserva.fecha_fin || "--"}</div>
+        </td>
         <td class="px-6 py-4">
             <div class="flex items-center gap-3">
               <label class="relative inline-block w-11 h-6 m-0 cursor-pointer shrink-0">
@@ -625,17 +679,18 @@ export class ReservasAdminModule {
               </span>
             </div>
         </td>
+        <td class="px-6 py-4 font-bold text-brand">$${this.formatCurrency(reserva.total || 0)}</td>
         <td class="px-6 py-4">
-          <div class="action-group-modern">
+          <div class="action-group-modern justify-center">
             <button class="btn-action-modern view" 
                     onclick="window.reservasModule.verDetalleReserva(${resId})" 
                     title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
             <button class="btn-action-modern edit" 
                     onclick="window.reservasModule.editReserva(${resId})" 
                     title="Editar"><i class="fa-solid fa-pen"></i></button>
-            <button class="btn-action-modern delete" 
-                    onclick="window.reservasModule.deleteReserva(${resId})" 
-                    title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn-action-modern delete" 
+                  onclick="window.reservasModule.deleteReserva(${resId})" 
+                  title="Anular"><i class="fa-solid fa-ban"></i></button>
           </div>
         </td>
       </tr>
@@ -702,22 +757,104 @@ export class ReservasAdminModule {
     const summaryPackages = this.container.querySelector('#summaryPackages');
     const summaryServices = this.container.querySelector('#summaryServices');
     
-    // Room price
+    // Noches calculation & validations
+    let noches = 0;
+    let fechasStr = '';
+    const startDateVal = this.refs.fechaInicio?.value;
+    const endDateVal = this.refs.fechaFin?.value;
+    let isValidDate = true;
+    
+    if (startDateVal && endDateVal) {
+      const today = new Date().toISOString().split('T')[0];
+      if (startDateVal < today) {
+        isValidDate = false;
+        fechasStr = `<p style="font-size: 0.85rem; color: #dc2626; font-weight: bold; margin: 4px 0;">⚠️ La fecha de entrada no puede ser pasada.</p>`;
+      } else if (startDateVal >= endDateVal) {
+        isValidDate = false;
+        fechasStr = `<p style="font-size: 0.85rem; color: #dc2626; font-weight: bold; margin: 4px 0;">⚠️ La salida debe ser posterior a la entrada.</p>`;
+      } else {
+        const d1 = new Date(startDateVal);
+        const d2 = new Date(endDateVal);
+        const diffTime = d2 - d1;
+        noches = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        fechasStr = `<p style="font-size: 0.8rem; color: var(--brand); margin: 4px 0;">Entrada: <strong>${startDateVal}</strong> | Salida: <strong>${endDateVal}</strong><br>Total noches: <strong>${noches}</strong></p>`;
+      }
+    }
+    
+    // Room price and overlapping validation
     if (this.currentData.selectedRoom) {
+      // check overlapping
+      if (isValidDate && startDateVal && endDateVal) {
+        const isOverlapping = (start1, end1, start2, end2) => start1 < end2 && start2 < end1;
+        const currentRoomId = String(this.currentData.selectedRoom.id_habitacion || this.currentData.selectedRoom.IDHabitacion);
+        const conflictingRoom = this.currentData.reservas.find(r => {
+            if (this._extractStatusId(r) === '2') return false;
+            const rRoomId = String(r.id_habitacion || r.IDHabitacion || (r.habitacion ? r.habitacion.id : null));
+            const fIn = r.fecha_inicio || r.FechaInicio || r.fecha_reserva;
+            const fOut = r.fecha_fin || r.FechaFin || r.fecha_salida;
+            if (rRoomId === currentRoomId && fIn && fOut) {
+               return isOverlapping(startDateVal, endDateVal, fIn, fOut);
+            }
+            return false;
+        });
+        if (conflictingRoom) {
+           fechasStr += `<p style="font-size: 0.85rem; color: #dc2626; font-weight: bold; margin: 4px 0;">⚠️ Esta habitación ya está reservada en estas fechas.</p>`;
+        }
+        
+        // check client overlap
+        const currentClientId = String(this.refs.clienteSelect?.value || '');
+        if (currentClientId) {
+          const conflictingClient = this.currentData.reservas.find(r => {
+              if (this._extractStatusId(r) === '2') return false;
+              const rClientId = String(r.id_cliente || r.IDCliente || (r.cliente ? r.cliente.id : null));
+              const fIn = r.fecha_inicio || r.FechaInicio || r.fecha_reserva;
+              const fOut = r.fecha_fin || r.FechaFin || r.fecha_salida;
+              if (rClientId === currentClientId && fIn && fOut) {
+                 return isOverlapping(startDateVal, endDateVal, fIn, fOut);
+              }
+              return false;
+          });
+          if (conflictingClient) {
+             fechasStr += `<p style="font-size: 0.85rem; color: #dc2626; font-weight: bold; margin: 4px 0;">⚠️ El huésped seleccionado ya tiene una reserva en estas fechas.</p>`;
+          }
+        }
+      }
+
+      // Update flatpickr disabled dates for the selected room
+      if (this.fpInicio && this.fpFin) {
+        const currentRoomId = String(this.currentData.selectedRoom.id_habitacion || this.currentData.selectedRoom.IDHabitacion);
+        const disabledRanges = this.currentData.reservas
+            .filter(r => {
+                const isCancelled = this._extractStatusId(r) === '2';
+                const rRoomId = String(r.id_habitacion || r.IDHabitacion || (r.habitacion ? r.habitacion.id : null));
+                return !isCancelled && rRoomId === currentRoomId;
+            })
+            .map(r => ({
+                from: r.fecha_inicio || r.FechaInicio || r.fecha_reserva,
+                to: r.fecha_fin || r.FechaFin || r.fecha_salida
+            }))
+            .filter(range => range.from && range.to);
+            
+        this.fpInicio.set('disable', disabledRanges);
+        this.fpFin.set('disable', disabledRanges);
+      }
+
       const room = this.currentData.selectedRoom;
       const roomPrice = Number(room.precio || room.Precio || room.Costo || room.costo || 0);
-      subtotal += roomPrice;
+      const totalRoom = noches > 0 ? roomPrice * noches : 0;
+      subtotal += totalRoom;
       
       if (summaryRoom) {
         summaryRoom.innerHTML = `
           <div class="summary-item-details">
             <h5 style="color: var(--brand-deep); font-size: 1.1rem; margin-bottom: 4px;">${room.numero || room.Numero || 'Habitación'} - ${room.tipo || room.Tipo || room.NombreHabitacion || 'Estándar'}</h5>
+            ${fechasStr}
             <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; line-height: 1.4;">
-              ${room.descripcion || room.Descripcion || 'Habitación confortable equipada con servicios esenciales para tu descanso.'}
+              Precio por noche: $${this.formatCurrency(roomPrice)}
             </p>
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span style="font-size: 0.85rem; background: var(--paper); padding: 2px 8px; border-radius: 12px; color: var(--brand);">👤 ${ (String(room.tipo || room.Tipo || room.NombreHabitacion || '').toLowerCase().includes('familiar')) ? 5 : (room.capacidad || room.Capacidad || 2) } Pers.</span>
-              <strong style="color: var(--brand); font-size: 1rem;">$${this.formatCurrency(roomPrice)}</strong>
+              <strong style="color: var(--brand); font-size: 1rem;">$${this.formatCurrency(totalRoom)}</strong>
             </div>
           </div>
         `;
@@ -801,6 +938,10 @@ export class ReservasAdminModule {
 
   // Clear form
   clearForm() {
+    if (this.refs.documentoInput) this.refs.documentoInput.value = '';
+    if (this.refs.nombreClienteReadOnly) this.refs.nombreClienteReadOnly.value = '';
+    if (this.refs.clienteSelect) this.refs.clienteSelect.value = '';
+
     if (this.refs.reservationForm) this.refs.reservationForm.reset();
     this.currentData.selectedRoom = null;
     this.currentData.selectedPackages = [];
@@ -808,7 +949,31 @@ export class ReservasAdminModule {
     this.container.querySelectorAll('.room-card').forEach(card => card.classList.remove('selected'));
     this.container.querySelectorAll('.package-checkbox input').forEach(cb => cb.checked = false);
     this.container.querySelectorAll('.service-checkbox input').forEach(cb => cb.checked = false);
+    
+    // reset flatpickr disabled ranges
+    if (this.fpInicio && this.fpFin) {
+       this.fpInicio.set('disable', []);
+       this.fpFin.set('disable', []);
+    }
+    
     this.calculateTotal();
+  }
+
+  // Init Flatpickr
+  initFlatpickr() {
+    if (!window.flatpickr) return;
+    const commonOpts = {
+        locale: 'es',
+        dateFormat: 'Y-m-d',
+        minDate: 'today',
+        onChange: () => this.calculateTotal()
+    };
+    if (this.refs.fechaInicio) {
+        this.fpInicio = flatpickr(this.refs.fechaInicio, commonOpts);
+    }
+    if (this.refs.fechaFin) {
+        this.fpFin = flatpickr(this.refs.fechaFin, commonOpts);
+    }
   }
 
   // Show reservation form
@@ -949,6 +1114,17 @@ export class ReservasAdminModule {
     if (this.refs.clearFormBtn) {
       this.refs.clearFormBtn.addEventListener('click', () => this.clearForm());
     }
+
+    // Real-time calculation triggers
+    if (this.refs.fechaInicio) {
+      this.refs.fechaInicio.addEventListener('change', () => this.calculateTotal());
+    }
+    if (this.refs.fechaFin) {
+      this.refs.fechaFin.addEventListener('change', () => this.calculateTotal());
+    }
+    if (this.refs.clienteSelect) {
+      this.refs.clienteSelect.addEventListener('change', () => this.calculateTotal());
+    }
     
    // Form submission
 if (this.refs.reservationForm) {
@@ -961,7 +1137,7 @@ if (this.refs.reservationForm) {
         throw new Error('Selecciona una habitación');
       }
 
-      if (!this.refs.clienteSelect.value) {
+      if (!this.options.isClientMode && !this.refs.clienteSelect.value) {
         throw new Error('Selecciona un cliente');
       }
 
@@ -977,8 +1153,78 @@ if (this.refs.reservationForm) {
         throw new Error('Selecciona un estado de reserva');
       }
 
+      const startDate = this.refs.fechaInicio.value;
+      const endDate = this.refs.fechaFin.value;
+      const today = new Date().toISOString().split('T')[0];
+      if (!startDate || !endDate) {
+          throw new Error('Selecciona fechas de entrada y salida válidas');
+      }
+      if (startDate < today) {
+          throw new Error('No se permiten fechas pasadas');
+      }
+      if (startDate >= endDate) {
+          throw new Error('La fecha de salida debe ser mayor a la fecha de entrada');
+      }
+
+      const isOverlapping = (start1, end1, start2, end2) => start1 < end2 && start2 < end1;
+
+      const conflictingRoom = this.currentData.reservas.find(r => {
+          if (this._extractStatusId(r) === '2') return false;
+          const rRoomId = String(r.id_habitacion || r.IDHabitacion || (r.habitacion ? r.habitacion.id : null));
+          const currentRoomId = String(this.currentData.selectedRoom.id_habitacion || this.currentData.selectedRoom.IDHabitacion);
+          const fIn = r.fecha_inicio || r.FechaInicio || r.fecha_reserva;
+          const fOut = r.fecha_fin || r.FechaFin || r.fecha_salida;
+          if (rRoomId === currentRoomId && fIn && fOut) {
+             return isOverlapping(startDate, endDate, fIn, fOut);
+          }
+          return false;
+      });
+
+      if (conflictingRoom) {
+          throw new Error('La habitación seleccionada ya tiene una reserva en esas fechas');
+      }
+
+      if (!this.options.isClientMode) {
+          const conflictingClient = this.currentData.reservas.find(r => {
+              if (this._extractStatusId(r) === '2') return false;
+              const rClientId = String(r.id_cliente || r.IDCliente || (r.cliente ? r.cliente.id : null));
+              const currentClientId = String(this.refs.clienteSelect.value);
+              const fIn = r.fecha_inicio || r.FechaInicio || r.fecha_reserva;
+              const fOut = r.fecha_fin || r.FechaFin || r.fecha_salida;
+              if (rClientId === currentClientId && fIn && fOut) {
+                 return isOverlapping(startDate, endDate, fIn, fOut);
+              }
+              return false;
+          });
+
+          if (conflictingClient) {
+              throw new Error('Este cliente ya tiene una reserva solapada en esas fechas');
+          }
+      }
+
+      const totalAmount = Number(this.refs.totalAmount.textContent.replace(/[^0-9.-]+/g, ''));
+      const conf = await Swal.fire({
+         title: 'Resumen de la Reserva',
+         html: `
+            <div style="text-align: left; font-size: 0.9rem;">
+                <p><strong>Habitación:</strong> ${this.currentData.selectedRoom.tipo || this.currentData.selectedRoom.NombreHabitacion}</p>
+                <p><strong>Fechas:</strong> ${startDate} a ${endDate}</p>
+                <p><strong>Paquetes:</strong> ${this.currentData.selectedPackages.length}</p>
+                <p><strong>Servicios:</strong> ${this.currentData.selectedServices.length}</p>
+                <hr>
+                <p style="font-size: 1.2rem; text-align: right; margin-top: 10px;"><strong>Total Estimado: $${this.formatCurrency(totalAmount)}</strong></p>
+            </div>
+         `,
+         icon: 'info',
+         showCancelButton: true,
+         confirmButtonText: 'Guardar Reserva',
+         cancelButtonText: 'Revisar'
+      });
+      
+      if (!conf.isConfirmed) return;
+
       const formData = {
-        id_cliente: parseInt(this.refs.clienteSelect.value),
+        id_cliente: this.options.isClientMode ? null : parseInt(this.refs.clienteSelect.value),
         id_habitacion: this.currentData.selectedRoom.id_habitacion || this.currentData.selectedRoom.IDHabitacion,
         fecha_inicio: this.refs.fechaInicio.value,
         fecha_fin: this.refs.fechaFin.value,
@@ -990,9 +1236,7 @@ if (this.refs.reservationForm) {
 
         estado: parseInt(this.refs.estadoReserva.value),
 
-        total: Number(
-          this.refs.totalAmount.textContent.replace(/[^0-9.]+/g, '')
-        ),
+        total: totalAmount,
 
         paquetes: this.currentData.selectedPackages
           .map(p => p.id_paquete || p.IDPaquete)
@@ -1015,11 +1259,15 @@ if (this.refs.reservationForm) {
 
       showAlert('Información', 'Reserva creada correctamente', 'info');
 
-      // <i class="fa-solid fa-rotate-right"></i> RECARGAR
-      await this.reloadData();
-      this.renderReservationsTable(this.currentData.reservas);
-      this.updateMetrics();
-      this.showReservationsList();
+      if (this.options.onSaveSuccess) {
+          this.options.onSaveSuccess(result);
+      } else {
+          // <i class="fa-solid fa-rotate-right"></i> RECARGAR
+          await this.reloadData();
+          this.renderReservationsTable(this.currentData.reservas);
+          this.updateMetrics();
+          this.showReservationsList();
+      }
 
     } catch (error) {
       console.error('<i class="fa-solid fa-xmark"></i> Error:', error);
@@ -1057,12 +1305,15 @@ if (this.refs.reservationForm) {
     const statusFilter = this.refs.filterStatus.value;
 
     const filtered = this.currentData.reservas.filter(reserva => {
-      const cliente = this.currentData.clientes.find(c => c.id_cliente == reserva.id_cliente);
-      const habitacion = this.currentData.habitaciones.find(h => h.id_habitacion == reserva.id_habitacion);
+      const clienteId = reserva.id_cliente || reserva.IDCliente || (reserva.cliente ? reserva.cliente.id : null);
+      const cliente = clienteId ? this.currentData.clientes.find(c => (c.id_cliente || c.IDCliente || c.NroDocumento || c.nro_documento) == clienteId) : (reserva.cliente || null);
       
-      const clienteName = cliente ? (cliente.NombreCompleto || `${cliente.Nombres || ''} ${cliente.Apellidos || ''}`.trim() || '').toLowerCase() : '';
+      const habitacionId = reserva.id_habitacion || reserva.IDHabitacion || (reserva.habitacion ? reserva.habitacion.id : null);
+      const habitacion = habitacionId ? this.currentData.habitaciones.find(h => (h.id_habitacion || h.IDHabitacion) == habitacionId) : (reserva.habitacion || null);
+      
+      const clienteName = cliente ? (cliente.NombreCompleto || `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || '').toLowerCase() : '';
       const clienteDoc = cliente ? (cliente.NroDocumento || cliente.nro_documento || '').toLowerCase() : '';
-      const habitacionNumber = habitacion ? (habitacion.numero || habitacion.Numero || '').toLowerCase() : '';
+      const habitacionNumber = habitacion ? (habitacion.NombreHabitacion || habitacion.nombre || habitacion.numero || habitacion.Numero || '').toLowerCase() : '';
       
       const matchesSearch = !searchTerm || 
         clienteName.includes(searchTerm) ||
@@ -1170,7 +1421,9 @@ if (this.refs.reservationForm) {
     }
 
     const cliente = this.currentData.clientes.find(c => (c.id_cliente || c.IDCliente) == reserva.id_cliente);
-    const habitacion = this.currentData.habitaciones.find(h => (h.id_habitacion || h.IDHabitacion) == reserva.id_habitacion);
+    const habitacionId = reserva.id_habitacion || (reserva.habitacion ? reserva.habitacion.id : null);
+    let habitacion = this.currentData.habitaciones.find(h => (h.id_habitacion || h.IDHabitacion) == habitacionId);
+    if (!habitacion && reserva.habitacion) habitacion = reserva.habitacion;
     const status = this._extractStatusId(reserva);
 
     // Populate modal elements
@@ -1183,8 +1436,10 @@ if (this.refs.reservationForm) {
     document.getElementById('detResClienteTel').textContent = `Tel: ${cliente ? (cliente.Telefono || '--') : '--'}`;
 
     // Room info
-    document.getElementById('detResHabNombre').textContent = habitacion ? `Habitación ${habitacion.numero || habitacion.Numero} - ${habitacion.tipo || habitacion.Tipo}` : 'Sin Habitación';
-    document.getElementById('detResHabPrecio').textContent = habitacion ? `$${this.formatCurrency(habitacion.precio || habitacion.Precio || 0)} / noche` : '--';
+    const nombreHabitacion = habitacion ? (habitacion.nombre || habitacion.NombreHabitacion || habitacion.tipo || habitacion.Tipo || `Habitación ${habitacion.numero || habitacion.Numero}`) : 'Sin Habitación';
+    const costoHabitacion = habitacion ? (habitacion.precio || habitacion.Precio || habitacion.costo || habitacion.Costo || 0) : 0;
+    document.getElementById('detResHabNombre').textContent = nombreHabitacion;
+    document.getElementById('detResHabPrecio').textContent = habitacion ? `$${this.formatCurrency(costoHabitacion)} / noche` : '--';
 
     // Dates info
     document.getElementById('detResFechaInicio').textContent = reserva.fecha_inicio || reserva.FechaInicio || '--';
@@ -1304,8 +1559,8 @@ if (this.refs.reservationForm) {
               <select id="editClienteSelect" class="filter-select" style="width:100%" required>
                 <option value="">Seleccionar cliente</option>
                 ${this.currentData.clientes.map(c => `
-                  <option value="${c.id_cliente || c.IDCliente}" ${ (c.id_cliente || c.IDCliente) == idCliente ? 'selected' : ''}>
-                    ${c.NombreCompleto || `${c.Nombres || ''} ${c.Apellidos || ''}`.trim()} (${c.NroDocumento || c.nroDocumento})
+                  <option value="${c.id_cliente || c.IDCliente || c.NroDocumento || c.nro_documento}" ${ (c.id_cliente || c.IDCliente || c.NroDocumento || c.nro_documento) == idCliente ? 'selected' : ''}>
+                    ${c.NombreCompleto || `${c.Nombres || c.Nombre || ''} ${c.Apellidos || c.Apellido || ''}`.trim() || 'Cliente'} (${c.NroDocumento || c.nroDocumento || c.documento || 'S/D'})
                   </option>
                 `).join('')}
               </select>
@@ -1317,7 +1572,7 @@ if (this.refs.reservationForm) {
                 <option value="">Seleccionar habitación</option>
                 ${this.currentData.habitaciones.map(hab => `
                   <option value="${hab.id_habitacion || hab.IDHabitacion}" ${ (hab.id_habitacion || hab.IDHabitacion) == idHabitacion ? 'selected' : ''}>
-                    ${hab.numero || hab.Numero} - ${hab.tipo || hab.Tipo}
+                    ${hab.numero || hab.Numero || hab.id_habitacion || hab.IDHabitacion || ''} - ${hab.tipo || hab.Tipo || hab.NombreHabitacion || hab.nombre || 'Habitación'}
                   </option>
                 `).join('')}
               </select>
@@ -1419,21 +1674,29 @@ if (this.refs.reservationForm) {
     const clienteName = cliente ? (cliente.NombreCompleto || `${cliente.Nombres || ''} ${cliente.Apellidos || ''}`.trim()) : 'Huésped';
     
     const confirmRes = await Swal.fire({
-      title: '¿Eliminar Reserva?',
-      text: `¿Está seguro de eliminar la reserva #${id} de ${clienteName}?`,
+      title: '¿Anular Reserva?',
+      html: `¿Está seguro de anular (cancelar) la reserva #${id} de ${clienteName}?<br><br>
+             <label style="font-weight:600; font-size:14px; text-align:left; display:block; margin-bottom:5px;">Motivo de anulación (opcional):</label>
+             <input type="text" id="cancelReason" class="swal2-input" placeholder="Ej: Solicitud del cliente">`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
+      confirmButtonText: 'Sí, anular',
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const reason = document.getElementById('cancelReason').value;
+        return reason;
+      }
     });
     if (!confirmRes.isConfirmed) {
       return;
     }
     
+    const motivo = confirmRes.value;
+    
     try {
-      console.log(`Eliminando reserva ${id}`);
-      await cancelarReserva(id);
-      showAlert('Información', 'Reserva eliminada exitosamente', 'info');
+      console.log(`Anulando reserva ${id}`);
+      await cancelarReserva(id, { motivo_cancelacion: motivo });
+      showAlert('Información', 'Reserva anulada exitosamente', 'info');
       
       await this.reloadData();
       this.filterReservations();

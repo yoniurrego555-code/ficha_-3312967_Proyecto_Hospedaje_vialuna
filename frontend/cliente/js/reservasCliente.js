@@ -1,4 +1,4 @@
-﻿import { logout, isClientSession, getSession } from "../../dashboard/core/authGuard.js";
+import { logout, isClientSession, getSession } from "../../dashboard/core/authGuard.js";
 import { getReservas, cancelarReserva } from "../../dashboard/core/api.js";
 
 let allReservas = [];
@@ -23,8 +23,14 @@ function getHabitacionName(reserva) {
 function imageFromBlob(value) {
     if (!value) return "";
     if (typeof value === "string") {
+        value = value.trim();
+        if (value.startsWith('/http')) value = value.substring(1);
         if (value === "[object Object]") return "";
+        if (value.startsWith('/') ) return value;
         if (value.startsWith("data:") || value.startsWith("http") || value.startsWith("../") || value.startsWith("./")) return value;
+        if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(value)) return `/uploads/${value}`;
+        if (value.toLowerCase().includes('uploads') && !value.startsWith('/')) return `/${value}`;
+        if (!value.includes('base64') && !value.includes('://')) return `/${value}`;
         if (value.length > 80) return `data:image/jpeg;base64,${value}`;
     }
     if (value.data && Array.isArray(value.data)) {
@@ -236,14 +242,32 @@ window.verDetalle = (id) => {
 };
 
 window.editarReserva = (id) => {
-    window.location.href = `nueva-reserva.html?id=${id}`;
+    window.location.hash = `reservar?id=${id}`;
 };
 
 window.cancelar = async (id) => {
-    if (!confirm(`Estas seguro de que deseas cancelar la reserva #${id}?`)) return;
+    const reserva = allReservas.find((item) => String(getReservaId(item)) === String(id));
+    if (reserva) {
+        const start = new Date(getStartDate(reserva));
+        const now = new Date();
+        const diffMs = start - now;
+        const diffHours = diffMs / (1000 * 60 * 60);
+        
+        if (diffHours >= 0 && diffHours < 24) {
+            if (!confirm(`¡ADVERTENCIA! Estás cancelando con menos de 24 horas de antelación. Se aplicarán cargos según nuestra política de cancelación.\n\n¿Estás seguro de que deseas cancelar la reserva #${id}?`)) return;
+        } else {
+            if (!confirm(`¿Estás seguro de que deseas cancelar la reserva #${id}?`)) return;
+        }
+    } else {
+        if (!confirm(`¿Estás seguro de que deseas cancelar la reserva #${id}?`)) return;
+    }
 
     try {
-        await cancelarReserva(id);
+        // Enviar motivo al backend para el soft delete
+        const motivo = prompt('Por favor, indica un motivo de cancelación (opcional):', 'Cancelación por el cliente');
+        if (motivo === null) return; // Canceló el prompt
+        
+        await cancelarReserva(id, { motivo_cancelacion: motivo });
         alert("Reserva cancelada correctamente");
         location.reload();
     } catch (error) {
@@ -296,4 +320,7 @@ function isCurrentReservation(reserva) {
     return start <= today && end >= today;
 }
 
-init();
+let eventsRegistered = false;
+export async function renderReservas() {
+    await init();
+}

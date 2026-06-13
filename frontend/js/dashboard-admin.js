@@ -1,4 +1,4 @@
-﻿import { logout, isAdminSession } from "../dashboard/core/authGuard.js";
+import { logout, isAdminSession } from "../dashboard/core/authGuard.js";
 import { getSession } from "../dashboard/core/api.js";
 
 console.log('dashboard-admin.js cargado');
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }
-  
+
   function closeSidebar() {
     sidebar.classList.remove('active');
     sidebarToggle.classList.remove('active');

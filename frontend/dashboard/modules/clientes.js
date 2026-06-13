@@ -74,8 +74,7 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
 
   async showList() {
     try {
-      // Recargar el HTML de clientes desde el servidor
-      const response = await fetch('../public/clientes.html');
+      const response = await fetch('../admin/clientes.html');
       const html = await response.text();
       this.container.innerHTML = html;
       
@@ -179,8 +178,8 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
               <button class="btn-action-modern edit" onclick="window.clientesModule.edit('${docNum}')" title="Editar">
                 <i class="fa-solid fa-pen"></i>
               </button>
-              <button class="btn-action-modern delete" onclick="window.clientesModule.delete('${docNum}')" title="Eliminar">
-                <i class="fa-solid fa-trash"></i>
+              <button class="btn-action-modern delete" ${status == '1' ? `onclick="window.clientesModule.delete('${docNum}')" title="Anular"` : `disabled style="opacity: 0.4; cursor: not-allowed; background-color: transparent; color: #9ca3af;" title="Cliente Inactivo"`}>
+                <i class="fa-solid fa-ban"></i>
               </button>
             </div>
           </td>
@@ -575,11 +574,11 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
     const nombreCompleto = `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || 'Sin nombre';
     
     const confirmRes = await Swal.fire({
-      title: '¿Eliminar Cliente?',
-      text: `¿Está seguro de eliminar al cliente "${nombreCompleto}" (${id})? Esta acción no se puede deshacer.`,
+      title: '¿Anular Cliente?',
+      text: `¿Está seguro de anular al cliente "${nombreCompleto}" (${id})? No se perderá su historial, pero quedará inactivo.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
+      confirmButtonText: 'Sí, anular',
       cancelButtonText: 'Cancelar'
     });
     if (!confirmRes.isConfirmed) {
@@ -587,14 +586,14 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
     }
 
     try {
-      console.log(`Eliminando cliente ${id}`);
-      await deleteCliente(id);
-      showAlert('Información', 'Cliente eliminado exitosamente', 'info');
+      console.log(`Anulando cliente ${id}`);
+      await deleteCliente(id); // The backend now does a soft delete (UPDATE Estado = 0)
+      showAlert('Información', 'Cliente anulado exitosamente', 'info');
       await this.loadData();
       this.render();
     } catch (error) {
-      console.error('Error eliminando cliente:', error);
-      Swal.fire('Error', 'Error al eliminar el cliente: ' + (error.message || 'Error desconocido'), 'error');
+      console.error('Error anulando cliente:', error);
+      Swal.fire('Error', 'Error al anular el cliente: ' + (error.message || 'Error desconocido'), 'error');
     }
   }
 

@@ -3,6 +3,29 @@
    ========================================================================== -->
 
 <!-- Header Section -->
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+
+<style>
+/* Personalización de Flatpickr según solicitud */
+.flatpickr-day.disabled {
+    text-decoration: line-through !important;
+    color: #dc2626 !important;
+    background: transparent !important;
+    opacity: 0.7;
+}
+.flatpickr-day:not(.disabled):not(.today):not(.selected):not(.flatpickr-disabled) {
+    background: #f3f4f6 !important;
+    color: #4b5563 !important;
+    border-color: #e5e7eb !important;
+}
+.flatpickr-day:not(.disabled):hover {
+    background: #e5e7eb !important;
+}
+</style>
+
 <header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 p-6 bg-white rounded-2xl border border-gray-100 shadow-sm">
   <div>
     <h1 class="text-2xl font-bold text-brand-deep tracking-tight m-0">Reservas</h1>
@@ -119,14 +142,14 @@
           <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 border-b border-gray-50 pb-2"><i class="fa-solid fa-user"></i> 1. Información del Huésped</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Huésped:</label>
-              <select id="clienteSelect" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer w-full box-border" required>
-                <option value="">Seleccionar cliente...</option>
-              </select>
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Documento del Huésped:</label>
+              <input list="documentosList" type="text" id="documentoInput" placeholder="Buscar por documento..." class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 w-full box-border" autocomplete="off">
+              <datalist id="documentosList"></datalist>
             </div>
             <div class="flex flex-col gap-2">
-              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Documento:</label>
-              <input type="text" id="documentoInput" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-sm font-semibold focus:outline-none cursor-not-allowed w-full box-border" readonly>
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Nombre del Huésped:</label>
+              <input type="text" id="nombreClienteReadOnly" readonly placeholder="Seleccione un documento válido" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-bold text-brand-deep outline-none w-full box-border cursor-default">
+              <input type="hidden" id="clienteSelect"> <!-- hidden to keep compatibility with JS logic -->
             </div>
           </div>
         </div>

@@ -196,15 +196,19 @@ function getRoomStayTotal(room = getSelectedRoom()) {
 }
 
 function resolveRoomImage(imageName) {
-  if (!imageName) {
-    return getAppUrl("assets/images/rooms/doble-confort.svg");
-  }
-
-  if (String(imageName).startsWith("http")) {
-    return imageName;
-  }
-
-  return getAppUrl(`assets/images/rooms/${String(imageName).replace(/^(\.\.\/)+assets\/images\/rooms\//, "")}`);
+  if (!imageName) return getAppUrl("assets/images/rooms/doble-confort.svg");
+  if (Array.isArray(imageName)) imageName = imageName[0];
+  if (!imageName) return getAppUrl("assets/images/rooms/doble-confort.svg");
+  
+  imageName = String(imageName).trim();
+  if (imageName.startsWith('/http')) imageName = imageName.substring(1);
+  
+  if (imageName.startsWith("http")) return imageName;
+  if (imageName.startsWith('/')) return imageName;
+  // If it's a bare filename, map to /uploads/<filename>
+  if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(imageName)) return `/uploads/${imageName}`;
+  if (imageName.toLowerCase().includes('uploads')) return imageName.startsWith('/') ? imageName : `/${imageName}`;
+  return getAppUrl(`assets/images/rooms/${imageName.replace(/^(\.\.\/)+assets\/images\/rooms\//, "")}`);
 }
 
 function resolveServiceImage(servicio) {
@@ -518,10 +522,9 @@ function renderPackages() {
       return `
         <article class="selection-card ${selected ? "is-selected" : ""}" style="display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: white;">
           <div style="height: 120px; overflow: hidden; width: 100%; background: #f9fafb;">
-            <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='${getAppUrl('assets/images/placeholder.png')}'">
+            <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.style.display='none';">
           </div>
           <div style="padding: 15px; flex-grow: 1; display: flex; flex-direction: column;">
-            <div class="selection-card__header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
               <h3 style="margin: 0; font-size: 1.1rem;">${paquete.NombrePaquete}</h3>
               <div class="selection-card__price-block" style="text-align: right;">
                 <strong style="color: var(--brand); display: block;">$${formatCurrency(paquete.Precio)}</strong>

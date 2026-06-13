@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Via Luna | Hospedaje</title>
     <link rel="stylesheet" href="./css/landing.css">
+    <link rel="stylesheet" href="./css/tooltip.css">
 </head>
 
 <body class="landing-page">
@@ -30,17 +31,19 @@
 
     <section class="hero-banner">
         <div class="hero-overlay"></div>
-        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80" alt="Paisaje natural de Via Luna">
+        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80"
+            alt="Paisaje natural de Via Luna">
 
         <div class="hero-content">
-            
-           <h1>
-    Vive una experiencia única<br>
-    en Via Luna
-</h1>
+
+            <h1>
+                Vive una experiencia única<br>
+                en Via Luna
+            </h1>
             <p>Habitaciones, naturaleza, descanso y experiencias pensadas para reservar sin friccion.</p>
             <div class="hero-actions">
-                <a href="auth/login.html?redirect=../cliente/nueva-reserva.html" class="hero-button">Reservar ahora</a>
+                <a href="auth/login.html?redirect=../cliente/dashboard.html#reservar" class="hero-button">Reservar
+                    ahora</a>
 
             </div>
         </div>
@@ -50,7 +53,7 @@
         <section id="habitaciones" class="catalog-section">
             <div class="catalog-head">
                 <div>
-                    
+
                     <h2>Habitaciones disponibles</h2>
                 </div>
             </div>
@@ -78,7 +81,8 @@
         </section>
     </main>
 
-    <div class="room-modal" id="detailModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="room-modal" id="detailModal" aria-hidden="true" role="dialog" aria-modal="true"
+        aria-labelledby="modalTitle">
         <div class="room-modal-backdrop" data-close-modal></div>
         <article class="room-modal-card">
             <button class="modal-close" type="button" data-close-modal aria-label="Cerrar">x</button>
@@ -88,13 +92,21 @@
                 <h2 id="modalTitle">Via Luna</h2>
                 <p id="modalDescription"></p>
                 <dl class="room-modal-facts">
-                    <div><dt>Precio</dt><dd id="modalPrice"></dd></div>
-                    <div><dt>Capacidad</dt><dd id="modalCapacity"></dd></div>
+                    <div>
+                        <dt>Precio</dt>
+                        <dd id="modalPrice"></dd>
+                    </div>
+                    <div>
+                        <dt>Capacidad</dt>
+                        <dd id="modalCapacity"></dd>
+                    </div>
                 </dl>
                 <div id="modalExtras" class="amenities"></div>
+                <div id="modalThumbs" class="modal-thumbs" style="display:flex;gap:8px;margin-top:12px"></div>
                 <div class="modal-actions">
                     <button class="hero-button hero-button-secondary" type="button" data-close-modal>Cerrar</button>
-                    <button class="hero-button" id="reserveFromModal" type="button">Iniciar sesion para reservar</button>
+                    <button class="hero-button" id="reserveFromModal" type="button">Iniciar sesion para
+                        reservar</button>
                 </div>
             </div>
         </article>
@@ -102,28 +114,106 @@
 
     <footer class="booking-footer">
         <div class="booking-shell footer-grid">
-            <div>
+            <div class="footer-brand-section">
                 <a class="booking-brand footer-brand" href="index.html">
                     <span class="booking-brand-mark">VL</span>
-                    <span>
+                    <span style="color: #ffffff;">
                         <strong>Via Luna</strong>
-                        <small>Hospedaje</small>
+                        <small style="color: rgba(255,255,255,0.8);">Hospedaje</small>
                     </span>
                 </a>
-                <p>Naturaleza, descanso y experiencias unicas.</p>
+                <p
+                    style="color: rgba(255,255,255,0.9); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem;">
+                    Naturaleza, descanso y experiencias unicas.</p>
             </div>
-            <nav>
-                <a href="#habitaciones">Habitaciones</a>
-                <a href="#paquetes">Paquetes</a>
-                <a href="#servicios">Servicios</a>
+
+            <nav class="footer-nav">
+                <h4
+                    style="font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.25rem; margin-bottom: 15px; color: #ffffff; font-weight: 600;">
+                    Explorar</h4>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <a href="#habitaciones"
+                        style="color: rgba(255,255,255,0.9); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem; text-decoration: none; transition: color 0.3s;">Habitaciones</a>
+                    <a href="#paquetes"
+                        style="color: rgba(255,255,255,0.9); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem; text-decoration: none; transition: color 0.3s;">Paquetes</a>
+                    <a href="#servicios"
+                        style="color: rgba(255,255,255,0.9); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem; text-decoration: none; transition: color 0.3s;">Servicios</a>
+                </div>
             </nav>
-            <p class="footer-copy">© 2026 Via Luna</p>
+
+            <div class="footer-creators" style="text-align: right;">
+                <h4
+                    style="font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.25rem; margin-bottom: 15px; color: #ffffff; font-weight: 600;">
+                    Desarrollado por:</h4>
+                <div
+                    style="display: flex; flex-direction: column; gap: 10px; color: rgba(255,255,255,0.95); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem;">
+                    <p
+                        style="margin: 0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-weight: 500;">
+                        <span
+                            style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: #20c997;"></span>
+                        Yoni Ferney Urrego Graciano
+                    </p>
+                    <p
+                        style="margin: 0; display: flex; align-items: center; justify-content: flex-end; gap: 8px; font-weight: 500;">
+                        <span
+                            style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: #20c997;"></span>
+                        Zury Daniela Gaviria Manco
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="booking-shell">
+            <div
+                style="border-top: 1px solid rgba(255,255,255,0.15); margin-top: 35px; padding-top: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <p class="footer-copy"
+                    style="margin: 0; color: rgba(255,255,255,0.8); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem;">
+                    © 2026 Via Luna Hospedaje. Todos los derechos reservados.</p>
+                <div style="display: flex; gap: 20px;">
+                    <a href="#"
+                        style="color: #ffffff; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem; font-weight: 500; text-decoration: none; transition: opacity 0.3s;">Términos
+                        y condiciones</a>
+                    <a href="#"
+                        style="color: #ffffff; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem; font-weight: 500; text-decoration: none; transition: opacity 0.3s;">Privacidad</a>
+                </div>
+            </div>
         </div>
     </footer>
 
     <script type="module">
-        import { apiUrl, getConnectionErrorMessage } from './js/shared/api-config.js';
-        import { getSession, isClientSession } from './dashboard/core/api.js';
+        import { apiUrl, getConnectionErrorMessage, backendOrigin } from './js/shared/api-config.js';
+        import { getSession, isClientSession } from './dashboard/core/api.js'; import { filterActive, sanitizeRoom, formatPrice, attachTooltip, resolveServiceImage } from './dashboard/modules/ui-utils.js';
+
+        const MOCK_GALLERIES = {
+            'familiar': [
+                'https://images.unsplash.com/photo-1582719478250-c89400bb15f5?auto=format&fit=crop&w=400&q=80',
+                'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=400&q=80',
+                'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=400&q=80'
+            ],
+            'doble': [
+                'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=400&q=80',
+                'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=400&q=80',
+                'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=400&q=80'
+            ],
+            'individual': [
+                'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=400&q=80',
+                'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=400&q=80',
+                'https://images.unsplash.com/photo-1566665797739-1674de7a421a?auto=format&fit=crop&w=400&q=80'
+            ],
+            'default': [
+                'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=400&q=80',
+                'https://images.unsplash.com/photo-1582719478250-c89400bb15f5?auto=format&fit=crop&w=400&q=80',
+                'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=400&q=80'
+            ]
+        };
+
+        function getRoomTypeCode(item) {
+            const rawType = (item.tipo_camas || item.TipoCamas || item.nombre || item.NombreHabitacion || '').toLowerCase();
+            if (rawType.includes('familiar') || Number(item.CapacidadMaximaPersonas || item.capacidad) >= 4) return 'familiar';
+            if (rawType.includes('doble') || rawType.includes('pareja')) return 'doble';
+            if (rawType.includes('sencilla') || rawType.includes('individual')) return 'individual';
+            return 'default';
+        }
 
         const roomsGrid = document.getElementById('roomsGrid');
         const packagesGrid = document.getElementById('packagesGrid');
@@ -154,21 +244,69 @@
             return [];
         }
 
+        // Fallback local asset resolver for room images when backend /uploads returns 404
+        function imageFallback(img) {
+            try {
+                const src = String(img.src || '').toLowerCase();
+                const name = src.split('/').pop() || '';
+                const typeCode = String(img.dataset.typecode || '').toLowerCase();
+                if (name.includes('familiar') || typeCode === 'familiar') {
+                    img.src = 'assets/images/rooms/familiar.png';
+                    return;
+                }
+                if (name.includes('pareja') || name.includes('parejas') || typeCode === 'doble') {
+                    img.src = 'assets/images/rooms/parejas.png';
+                    return;
+                }
+                if (name.includes('individual') || name.includes('sencilla') || typeCode === 'individual') {
+                    img.src = 'assets/images/rooms/individual.png';
+                    return;
+                }
+                // Generic placeholder
+                img.src = 'assets/images/placeholder.png';
+            } catch (e) {
+                img.src = 'assets/images/placeholder.png';
+            }
+        }
+
         async function fetchCatalog(path) {
             const response = await fetch(apiUrl(path));
             if (!response.ok) throw new Error(`Error al consultar ${path}`);
             return normalizePayload(await response.json());
         }
 
-        function formatMoney(value) {
-            return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Number(value || 0));
-        }
-
         function imageFromBlob(value) {
             if (!value) return '';
+            if (Array.isArray(value)) return imageFromBlob(value[0]);
             if (typeof value === 'string') {
+                value = value.trim();
+                if (value.startsWith('/http')) value = value.substring(1);
+
                 if (value === '[object Object]') return '';
                 if (value.startsWith('data:') || value.startsWith('http') || value.startsWith('../') || value.startsWith('./')) return value;
+                if (value.startsWith('/')) return value;
+                // If it's a simple filename like 'room_familiar.png', map to /uploads/<filename>
+                if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(value)) {
+                    // Prefer frontend static assets when running Live Server (127.0.0.1:5500)
+                    try {
+                        const origin = window.location.origin || '';
+                        if (/^room[_-]/i.test(value)) {
+                            return `${origin}/frontend/assets/images/rooms/${value}`;
+                        }
+                        if (/^service[_-]/i.test(value)) {
+                            return `${origin}/frontend/assets/images/service/${value}`;
+                        }
+                    } catch (e) {
+                        // ignore and fall back to backend
+                    }
+                    return `${backendOrigin()}/uploads/${value}`;
+                }
+                // If it contains 'uploads' but is missing leading slash, prefix it with backend origin
+                if (value.toLowerCase().includes('uploads') && !value.startsWith('/')) return `${backendOrigin()}/${value}`;
+                // If it already starts with '/uploads' make it absolute to backend origin
+                if (value.startsWith('/uploads')) return `${backendOrigin()}${value}`;
+                // Fallback: prefix with backend origin for other relative paths
+                if (!value.includes('base64') && !value.includes('://')) return `${backendOrigin()}/${value.replace(/^\/+/, '')}`;
                 if (value.length > 80) return `data:image/jpeg;base64,${value}`;
             }
             if (value.data && Array.isArray(value.data)) {
@@ -182,6 +320,26 @@
             return '';
         }
 
+        function imagesFromValue(value) {
+            if (!value) return [];
+            if (Array.isArray(value)) return value.map(v => imageFromBlob(v)).filter(Boolean);
+            if (typeof value === 'string') {
+                try {
+                    const parsed = JSON.parse(value);
+                    if (Array.isArray(parsed)) return parsed.map(v => imageFromBlob(v)).filter(Boolean);
+                } catch (e) {
+                    // not JSON
+                }
+                const single = imageFromBlob(value);
+                return single ? [single] : [];
+            }
+            if (value.data && Array.isArray(value.data)) {
+                const single = imageFromBlob(value);
+                return single ? [single] : [];
+            }
+            return [];
+        }
+
         function isActive(item) {
             const value = String(item?.Estado ?? item?.estado ?? '').toLowerCase();
             return ['', '1', 'true', 'activo', 'activa', 'disponible'].includes(value);
@@ -191,15 +349,25 @@
             const capacity = room.CapacidadMaximaPersonas || room.capacidadMaximaPersonas || room.Capacidad || room.capacidad || '';
             const beds = room.cantidad_camas || room.CantidadCamas || room.camas || room.Camas || '';
             const bedType = room.tipo_camas || room.TipoCamas || room.tipo_cama || room.TipoCama || '';
+
+            const dbImages = imagesFromValue(room.imagenes || room.Imagenes || room.ImagenUrl || room.ImagenHabitacion || room.imagen || room.imagenHabitacion);
+            const mainImage = dbImages[0] || fallbackRoomImage;
+
+            // Add subgallery thumbnails just like admin view
+            const typeCode = getRoomTypeCode(room);
+            const galleryImages = [mainImage, ...MOCK_GALLERIES[typeCode].slice(1)];
+
             return {
                 type: 'habitacion',
+                typeCode: typeCode,
                 id: room.IDHabitacion || room.id_habitacion || room.id || '',
                 title: room.NombreHabitacion || room.nombre || 'Habitacion Via Luna',
                 description: room.Descripcion || room.descripcion || 'Descripcion pendiente de actualizar.',
                 price: room.Costo || room.Precio || room.precio || 0,
                 capacity: capacity ? `${capacity} personas` : '',
                 status: isActive(room) ? 'Disponible' : 'No disponible',
-                image: imageFromBlob(room.ImagenUrl || room.ImagenHabitacion || room.imagen || room.imagenHabitacion) || fallbackRoomImage,
+                images: galleryImages,
+                image: mainImage,
                 extras: [
                     beds ? `${beds} camas` : '',
                     bedType
@@ -216,12 +384,14 @@
                 price: pack.Precio || pack.precio || 0,
                 capacity: pack.HabitacionIncluidaCapacidad ? `${pack.HabitacionIncluidaCapacidad} personas` : '',
                 status: isActive(pack) ? 'Disponible' : 'No disponible',
-                image: imageFromBlob(pack.ImagenUrl || pack.ImagenPaquete || pack.imagen || pack.imagenPaquete) || fallbackPackageImage,
+                images: imagesFromValue(pack.imagenes || pack.Imagenes || pack.ImagenUrl || pack.ImagenPaquete || pack.imagen || pack.imagenPaquete),
+                image: (imagesFromValue(pack.imagenes || pack.Imagenes || pack.ImagenUrl || pack.ImagenPaquete || pack.imagen || pack.imagenPaquete)[0]) || fallbackPackageImage,
                 extras: [pack.HabitacionIncluidaNombre, pack.ServicioIncluidoNombre].filter(Boolean)
             };
         }
 
         function serviceDetail(service, index = 0) {
+            const resolvedImg = resolveServiceImage(service);
             return {
                 type: 'servicio',
                 id: service.IDServicio || service.id || '',
@@ -230,7 +400,8 @@
                 price: service.Costo || service.Precio || service.precio || 0,
                 capacity: service.CantidadMaximaPersonas || service.capacidad || '',
                 status: isActive(service) ? 'Disponible' : 'No disponible',
-                image: imageFromBlob(service.ImagenUrl || service.ImagenServicio || service.imagen || service.imagenServicio) || fallbackServiceImage,
+                images: [resolvedImg],
+                image: resolvedImg,
                 extras: [service.Duracion ? `Duracion: ${service.Duracion}` : serviceIcons[index % serviceIcons.length]].filter(Boolean)
             };
         }
@@ -239,22 +410,22 @@
             return `
                 <article class="travel-card">
                     <div class="travel-media">
-                        <img src="${detail.image}" alt="${detail.title}" loading="lazy">
-                    </div>
+                            <img src="${detail.image}" alt="${detail.title}" data-typecode="${detail.typeCode || ''}" loading="lazy" onerror="this.onerror=null; imageFallback(this)">
+                        </div>
                     <div class="travel-body">
-                        <h3>${detail.title}</h3>
-                        <p>${detail.description}</p>
-                        <div class="amenities">
-                            ${detail.capacity ? `<span>Capacidad: ${detail.capacity}</span>` : ''}
-                            ${detail.extras.length ? detail.extras.map((item) => `<span>${item}</span>`).join('') : '<span>Detalles en BD</span>'}
-                        </div>
-                        <div class="card-bottom">
-                            <div class="price-box">
-                                <strong>${detail.price ? formatMoney(detail.price) : 'Incluido'}</strong>
-                                <small>${detail.type}</small>
-                            </div>
-                            <button class="availability-btn" type="button" data-detail="${detail.type}:${detail.id}">Ver detalle</button>
-                        </div>
+                         <h3>${detail.title}</h3>
+                         <p>${detail.description || 'Sin descripción'}</p>
+                         <div class="amenities">
+                             ${detail.capacity ? `<span data-tooltip="Capacidad">${detail.capacity}</span>` : ''}
+                             ${detail.extras.length ? detail.extras.map((item) => `<span data-tooltip="${item}">${item}</span>`).join('') : '<span>Detalles en BD</span>'}
+                         </div>
+                         <div class="card-bottom">
+                             <div class="price-box">
+                                 <strong>${detail.price ? formatPrice(detail.price) : 'Incluido'}</strong>
+                                 <small>${detail.type}</small>
+                             </div>
+                             <button class="availability-btn" type="button" data-detail="${detail.type}:${detail.id}">Ver detalle</button>
+                         </div>
                     </div>
                 </article>
             `;
@@ -269,16 +440,38 @@
 
         function openDetail(detail) {
             selectedDetail = detail;
-            document.getElementById('modalImage').src = detail.image;
-            document.getElementById('modalImage').alt = detail.title;
+            const modalImg = document.getElementById('modalImage');
+            modalImg.src = detail.image;
+            modalImg.alt = detail.title;
             document.getElementById('modalTitle').textContent = detail.title;
             document.getElementById('modalDescription').textContent = detail.description;
-            document.getElementById('modalPrice').textContent = detail.price ? formatMoney(detail.price) : 'Incluido';
+            document.getElementById('modalPrice').textContent = detail.price ? formatPrice(detail.price) : 'Incluido';
             document.getElementById('modalCapacity').textContent = detail.capacity;
             document.getElementById('modalStatus').textContent = detail.status;
             document.getElementById('modalExtras').innerHTML = detail.extras.length
                 ? detail.extras.map((item) => `<span>${item}</span>`).join('')
                 : '<span>Informacion tomada de base de datos</span>';
+
+            // Thumbnails
+            const thumbs = document.getElementById('modalThumbs');
+            thumbs.innerHTML = '';
+            const imgs = detail.images && detail.images.length ? detail.images : [detail.image];
+            imgs.forEach((src, idx) => {
+                const t = document.createElement('img');
+                t.src = src;
+                t.alt = `${detail.title} - ${idx + 1}`;
+                t.loading = 'lazy';
+                t.style.width = '84px';
+                t.style.height = '64px';
+                t.style.objectFit = 'cover';
+                t.style.borderRadius = '8px';
+                t.style.cursor = 'pointer';
+                t.addEventListener('click', () => {
+                    modalImg.src = src;
+                });
+                t.onerror = function () { this.onerror = null; imageFallback(this); };
+                thumbs.appendChild(t);
+            });
 
             const session = getSession();
             reserveFromModal.textContent = session && isClientSession(session) ? 'Reservar ahora' : 'Iniciar sesion para reservar';
@@ -297,7 +490,7 @@
             if (selectedDetail.type === 'habitacion') params.set('habitacion', selectedDetail.id);
             if (selectedDetail.type === 'paquete') params.set('paquete', selectedDetail.id);
             if (selectedDetail.type === 'servicio') params.set('servicio', selectedDetail.id);
-            const target = `../cliente/nueva-reserva.html${params.toString() ? `?${params}` : ''}`;
+            const target = `../cliente/dashboard.html#reservar${params.toString() ? `?${params}` : ''}`;
             const session = getSession();
             if (session && isClientSession(session)) {
                 window.location.href = target.replace('../cliente/', 'cliente/');
@@ -318,9 +511,9 @@
                     fetchCatalog('servicios')
                 ]);
 
-                const roomDetails = rooms.filter(isActive).slice(0, 6).map(roomDetail);
-                const packageDetails = packages.filter(isActive).slice(0, 6).map(packageDetail);
-                const serviceDetails = services.filter(isActive).slice(0, 6).map(serviceDetail);
+                const roomDetails = filterActive(rooms).slice(0, 6).map(sanitizeRoom).map(roomDetail);
+                const packageDetails = filterActive(packages).slice(0, 6).map(sanitizeRoom).map(packageDetail);
+                const serviceDetails = filterActive(services).slice(0, 6).map(sanitizeRoom).map(serviceDetail);
 
                 roomsGrid.innerHTML = roomDetails.length ? registerDetails(roomDetails) : '<div class="empty-card">No hay habitaciones disponibles por ahora.</div>';
                 packagesGrid.innerHTML = packageDetails.length ? registerDetails(packageDetails) : '<div class="empty-card">No hay paquetes disponibles por ahora.</div>';

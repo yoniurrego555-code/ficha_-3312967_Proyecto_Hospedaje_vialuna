@@ -41,7 +41,8 @@ const crud = createCrudModule({
             Descripcion: String(formData.get('descripcion') || '').trim(),
             Precio: Number(formData.get('precio')),
             Estado: parseInt(formData.get('estado')),
-            IDServicio: formData.get('idServicio') ? parseInt(formData.get('idServicio')) : null,
+            IDServicio: formData.getAll('idServicio').length > 0 ? formData.getAll('idServicio').join(',') : null,
+            IDHabitacion: formData.get('idHabitacion') ? parseInt(formData.get('idHabitacion')) : null,
             ImagenUrl: String(formData.get('imagenUrl') || '').trim() || null
         };
     },
@@ -52,8 +53,17 @@ const crud = createCrudModule({
         document.getElementById('precio').value = item.precio || item.Precio || '';
         document.getElementById('estado').value = item.estado !== undefined ? item.estado : (item.Estado !== undefined ? item.Estado : 1);
         
-        const servEl = document.getElementById('idServicio');
-        if (servEl) servEl.value = item.IDServicio || '';
+        const servContainer = document.getElementById('serviciosCheckboxes');
+        if (servContainer) {
+            const serviciosStr = item.IDServicio ? String(item.IDServicio) : '';
+            const serviciosArr = serviciosStr.split(',').filter(Boolean);
+            servContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = serviciosArr.includes(cb.value);
+            });
+        }
+        
+        const habEl = document.getElementById('idHabitacion');
+        if (habEl) habEl.value = item.IDHabitacion || '';
         
         const imgEl = document.getElementById('imagenUrl');
         if (imgEl) imgEl.value = item.ImagenUrl || item.ImagenPaquete || '';
@@ -152,6 +162,7 @@ function openModal() {
     if (modal) {
         modal.classList.remove('hidden');
         loadServiciosSelect();
+        loadHabitacionesSelect();
     }
 }
 
@@ -171,11 +182,14 @@ function mostrarDetallePaquete(item) {
     const itemDesc = item.descripcion || item.Descripcion || 'Paquete especial con servicios seleccionados.';
 
     let fullDesc = itemDesc;
-    const servNombre = item.ServicioIncluidoNombre || '';
+    const servNombre = item.ServiciosIncluidosNombres || item.ServicioIncluidoNombre || '';
     
     if (servNombre) {
         fullDesc += '\n\n—\nINCLUYE:';
-        fullDesc += `\n✨ Servicio: ${servNombre}`;
+        const serviciosLista = servNombre.split(',').map(s => s.trim());
+        serviciosLista.forEach(s => {
+            fullDesc += `\n✨ Servicio: ${s}`;
+        });
     }
 
     crud.elements.detalleNombre.textContent = itemNameRaw;
@@ -449,17 +463,41 @@ export function renderPaquetes(container) {
     }
 }
 
+async function loadHabitacionesSelect() {
+    try {
+        const { getHabitaciones } = await import('../core/api.js');
+        const resp = await getHabitaciones();
+        const habitaciones = Array.isArray(resp) ? resp : (Array.isArray(resp.data) ? resp.data : []);
+        const select = document.getElementById('idHabitacion');
+        if (select) {
+            const currentVal = select.value;
+            select.innerHTML = '<option value="" selected>Sin habitación</option>' + 
+                habitaciones.map(h => `<option value="${h.IDHabitacion || h.id || ''}">${h.NombreHabitacion || h.nombre || 'Habitación'}</option>`).join('');
+            if (currentVal) select.value = currentVal;
+        }
+    } catch (e) {
+        console.error('Error loading habitaciones para paquetes', e);
+    }
+}
+
 async function loadServiciosSelect() {
     try {
         const { getServicios } = await import('../core/api.js');
         const resp = await getServicios();
         const servicios = Array.isArray(resp) ? resp : (Array.isArray(resp.data) ? resp.data : []);
-        const select = document.getElementById('idServicio');
-        if (select) {
-            const currentVal = select.value;
-            select.innerHTML = '<option value="" disabled selected>Selecciona un servicio</option>' + 
-                servicios.map(s => `<option value="${s.IDServicio || s.id || ''}">${s.NombreServicio || s.nombre || 'Servicio sin nombre'}</option>`).join('');
-            if (currentVal) select.value = currentVal;
+        const container = document.getElementById('serviciosCheckboxes');
+        if (container) {
+            const checkboxes = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+            if (servicios.length === 0) {
+                container.innerHTML = '<span class="text-xs text-muted py-1">No hay servicios disponibles</span>';
+            } else {
+                container.innerHTML = servicios.map(s => `
+                    <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-100 p-1.5 rounded transition-colors">
+                        <input type="checkbox" name="idServicio" value="${s.IDServicio || s.id || ''}" class="w-4 h-4 text-brand rounded focus:ring-brand/50 border-gray-300" ${checkboxes.includes(String(s.IDServicio || s.id)) ? 'checked' : ''}>
+                        ${s.NombreServicio || s.nombre || 'Servicio sin nombre'}
+                    </label>
+                `).join('');
+            }
         }
     } catch (e) {
         console.error('Error loading servicios para paquetes', e);
@@ -469,4 +507,5 @@ async function loadServiciosSelect() {
 document.addEventListener('DOMContentLoaded', async () => {
     crud.init();
     loadServiciosSelect();
+    loadHabitacionesSelect();
 });

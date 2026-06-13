@@ -1,0 +1,88 @@
+<section class="resort-hero" aria-labelledby="dashboardTitle">
+  <div class="hero-shade"></div>
+
+  <div class="hero-copy">
+    <p class="hero-kicker">Via Luna · Hospedaje</p>
+    <h1 id="dashboardTitle">Bienvenido, <span id="welcomeName">Cliente</span></h1>
+    <p class="hero-description">
+      Disfruta una experiencia de hospedaje serena, elegante y conectada con la naturaleza.
+    </p>
+
+    <article class="next-stay-card" id="nextReservationCard" aria-live="polite">
+      <div class="stay-icon" aria-hidden="true">▣</div>
+      <div class="stay-info">
+        <span>Próxima estancia</span>
+        <h2>Cargando...</h2>
+        <p>Consultando tus reservas...</p>
+      </div>
+      <a class="stay-arrow" href="#reservas" aria-label="Ver reserva">→</a>
+      <div class="stay-actions">
+        <a class="btn-primary" href="#reservar" data-view="reservar">Reservar ahora</a>
+        <a class="btn-glass" href="#reservas" data-view="reservas">Ver historial</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="resort-section" id="habitaciones" aria-labelledby="roomsTitle">
+  <div class="section-head">
+    <div>
+      <p class="section-kicker">Estancias</p>
+      <h2 id="roomsTitle">Habitaciones destacadas</h2>
+    </div>
+    <a href="#habitaciones" class="section-link" data-view="habitaciones">Ver todas las habitaciones</a>
+  </div>
+  <div class="rooms-grid" id="roomsGrid">
+    <article class="loading-card">Cargando habitaciones...</article>
+  </div>
+</section>
+
+<section class="resort-split">
+  <article class="resort-section panel-section" id="paquetes" aria-labelledby="packagesTitle">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">Experiencias</p>
+        <h2 id="packagesTitle">Paquetes destacados</h2>
+      </div>
+      <a href="#paquetes" class="section-link" data-view="paquetes">Ver todos</a>
+    </div>
+    <div class="packages-list" id="packagesList">
+      <div class="loading-card">Cargando paquetes...</div>
+    </div>
+  </article>
+
+  <article class="resort-section panel-section" id="servicios" aria-labelledby="servicesTitle">
+    <div class="section-head">
+      <div>
+        <p class="section-kicker">Comodidades</p>
+        <h2 id="servicesTitle">Servicios para ti</h2>
+      </div>
+      <a href="#servicios" class="section-link" data-view="servicios">Ver todos</a>
+    </div>
+    <div class="services-grid" id="servicesGrid">
+      <div class="loading-card">Cargando servicios...</div>
+    </div>
+  </article>
+</section>
+
+<footer class="resort-footer" style="padding: 40px; text-align: center; border-top: 1px solid var(--line);">
+  <div>
+    <strong>Via Luna</strong>
+    <span>Hospedaje</span>
+    <p>Naturaleza, confort para una experiencia inolvidable.</p>
+  </div>
+</footer>
+
+<div class="detail-modal" id="detailModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
+  <div class="detail-modal-backdrop" data-close-detail></div>
+  <article class="detail-modal-card">
+    <button class="detail-modal-close" type="button" data-close-detail aria-label="Cerrar">X</button>
+    <div class="detail-modal-header">
+      <h2 id="detailModalTitle">Detalle</h2>
+    </div>
+    <dl class="detail-modal-grid" id="detailModalGrid"></dl>
+    <div class="detail-modal-actions">
+      <button class="room-btn" type="button" data-close-detail>Cerrar</button>
+    </div>
+  </article>
+</div>

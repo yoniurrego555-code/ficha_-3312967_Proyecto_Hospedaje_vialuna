@@ -55,7 +55,25 @@ const obtener = () => {
     FROM habitacion
     ORDER BY Costo DESC`
   )
-    .then(([rows]) => rows);
+    .then(async ([rows]) => {
+      if (!rows || rows.length === 0) return rows;
+      const ids = rows.map(r => r.IDHabitacion);
+      const [imgs] = await db.query(
+        `SELECT id, habitacion_id, url_imagen FROM imagenes_habitacion WHERE habitacion_id IN (${ids.map(() => '?').join(',')}) ORDER BY fecha_creacion ASC`,
+        ids
+      );
+
+      const map = {};
+      imgs.forEach(i => {
+        map[i.habitacion_id] = map[i.habitacion_id] || [];
+        map[i.habitacion_id].push(i.url_imagen);
+      });
+
+      return rows.map(r => ({
+        ...r,
+        imagenes: map[r.IDHabitacion] || (r.ImagenUrl ? [r.ImagenUrl] : [])
+      }));
+    });
 };
 
 const obtenerPorId = (id) => {
@@ -82,7 +100,19 @@ const obtenerPorId = (id) => {
     WHERE IDHabitacion = ?`,
     [id]
   )
-  .then(([rows]) => rows[0]);
+  .then(async ([rows]) => {
+    const row = rows[0];
+    if (!row) return null;
+    const [imgs] = await db.query(
+      `SELECT url_imagen FROM imagenes_habitacion WHERE habitacion_id = ? ORDER BY fecha_creacion ASC`,
+      [id]
+    );
+
+    return {
+      ...row,
+      imagenes: imgs.map(i => i.url_imagen).length ? imgs.map(i => i.url_imagen) : (row.ImagenUrl ? [row.ImagenUrl] : [])
+    };
+  });
 };
 
 const crear = (data) => {

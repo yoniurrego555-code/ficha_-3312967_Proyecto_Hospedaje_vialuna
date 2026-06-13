@@ -1,4 +1,4 @@
-﻿export const API_URL = "http://localhost:3000/api";
+export const API_URL = "http://localhost:3000/api";
 export const SESSION_KEY = "vialuna_usuario";
 export const TOKEN_KEY = "vialuna_token";
 export const ROLE_KEY = "vialuna_rol";
@@ -307,9 +307,10 @@ export function actualizarReserva(id, payload) {
   });
 }
 
-export function cancelarReserva(id) {
+export function cancelarReserva(id, payload = {}) {
   return request(`/reservas/${id}`, {
-    method: "DELETE"
+    method: "DELETE",
+    body: Object.keys(payload).length ? JSON.stringify(payload) : undefined
   });
 }
 

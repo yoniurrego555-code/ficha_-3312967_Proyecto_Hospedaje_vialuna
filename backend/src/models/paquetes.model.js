@@ -9,13 +9,14 @@ const obtener = () => {
         h.Costo AS HabitacionIncluidaCosto,
         h.CapacidadMaximaPersonas AS HabitacionIncluidaCapacidad,
         h.ImagenUrl AS HabitacionIncluidaImagen,
-      s.NombreServicio AS ServicioIncluidoNombre,
-      s.Descripcion AS ServicioIncluidoDescripcion
+      GROUP_CONCAT(s.NombreServicio SEPARATOR ', ') AS ServiciosIncluidosNombres,
+      GROUP_CONCAT(s.Descripcion SEPARATOR ' | ') AS ServiciosIncluidosDescripciones
     FROM paquetes p
     LEFT JOIN habitacion h
       ON h.IDHabitacion = p.IDHabitacion
     LEFT JOIN servicios s
-      ON s.IDServicio = p.IDServicio
+      ON FIND_IN_SET(s.IDServicio, p.IDServicio) > 0
+    GROUP BY p.IDPaquete
     ORDER BY p.NombrePaquete
   `)
     .then(([rows]) => rows);
@@ -44,8 +45,8 @@ const obtenerPorId = (id) => {
     if (!paquete) return null;
 
     return db.query(
-      "SELECT IDServicio, NombreServicio, Costo FROM servicios WHERE IDServicio = ?",
-      [paquete.IDServicio]
+      "SELECT IDServicio, NombreServicio, Costo FROM servicios WHERE FIND_IN_SET(IDServicio, ?) > 0",
+      [paquete.IDServicio || ""]
     )
     .then(([servicios]) => {
       return {

@@ -1,0 +1,114 @@
+<section class="premium-page">
+  <header class="premium-page-head">
+    <p class="section-kicker">Estancias</p>
+    <h1>Mis reservas</h1>
+    <p>Consulta tu reserva activa, tus próximas estancias y el historial de Via Luna.</p>
+  </header>
+
+  <section class="premium-toolbar" aria-label="Filtros de reservas">
+    <label class="premium-field">
+      <span>Buscar</span>
+      <input type="text" id="searchReservas" placeholder="Código o habitación...">
+    </label>
+    <label class="premium-field">
+      <span>Estado</span>
+      <select id="filterEstado">
+        <option value="">Todos los estados</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="confirmada">Confirmada</option>
+        <option value="en curso">En curso</option>
+        <option value="finalizada">Finalizada</option>
+        <option value="cancelada">Cancelada</option>
+      </select>
+    </label>
+  </section>
+
+  <section class="premium-reservations" id="reservasBoard" aria-live="polite">
+    <article class="premium-panel">
+      <div class="premium-panel-head">
+        <h2>Reserva activa</h2>
+      </div>
+      <div class="premium-card-list" id="activeReservations">
+        <div class="empty-state">Cargando tus reservas...</div>
+      </div>
+    </article>
+
+    <article class="premium-panel">
+      <div class="premium-panel-head">
+        <h2>Próximas reservas</h2>
+      </div>
+      <div class="premium-card-list" id="upcomingReservations">
+        <div class="empty-state">Cargando tus reservas...</div>
+      </div>
+    </article>
+
+    <article class="premium-panel premium-panel-wide">
+      <div class="premium-panel-head">
+        <h2>Historial</h2>
+      </div>
+      <div class="premium-card-list premium-history-list" id="historyReservations">
+        <div class="empty-state">Cargando tus reservas...</div>
+      </div>
+    </article>
+  </section>
+</section>
+
+<!-- MODAL VER DETALLE -->
+<div class="detail-modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle" aria-hidden="true">
+  <div class="detail-modal-backdrop" id="detailModalBackdrop"></div>
+  <div class="detail-modal-card">
+    <button class="detail-modal-close" id="closeDetailModal" type="button" aria-label="Cerrar">×</button>
+    <div class="detail-modal-header">
+      <h2 id="detailModalTitle">Detalle de reserva</h2>
+      <span id="detailModalBadge" class="status-badge"></span>
+    </div>
+    <dl class="detail-modal-grid">
+      <div class="detail-modal-item">
+        <dt>Código</dt>
+        <dd id="detailModalId">—</dd>
+      </div>
+      <div class="detail-modal-item">
+        <dt>Habitación</dt>
+        <dd id="detailModalHabitacion">—</dd>
+      </div>
+      <div class="detail-modal-item">
+        <dt>Fecha de entrada</dt>
+        <dd id="detailModalEntrada">—</dd>
+      </div>
+      <div class="detail-modal-item">
+        <dt>Fecha de salida</dt>
+        <dd id="detailModalSalida">—</dd>
+      </div>
+      <div class="detail-modal-item">
+        <dt>Estado</dt>
+        <dd id="detailModalEstado">—</dd>
+      </div>
+      <div class="detail-modal-item">
+        <dt>Total pagado</dt>
+        <dd id="detailModalTotal">—</dd>
+      </div>
+      <div class="detail-modal-item detail-modal-item--wide" id="detailModalExtrasWrap">
+        <dt>Extras</dt>
+        <dd id="detailModalExtras">—</dd>
+      </div>
+    </dl>
+    <div class="detail-modal-actions">
+      <button type="button" class="room-btn" id="closeDetailModalBtn">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR CANCELACIÓN -->
+<div class="detail-modal" id="cancelModal" role="dialog" aria-modal="true" aria-labelledby="cancelModalTitle" aria-hidden="true">
+  <div class="detail-modal-backdrop" id="cancelModalBackdrop"></div>
+  <div class="detail-modal-card detail-modal-card--sm">
+    <button class="detail-modal-close" id="closeCancelModal" type="button" aria-label="Cerrar">×</button>
+    <h2 id="cancelModalTitle">Cancelar reserva</h2>
+    <p id="cancelModalText">¿Estás seguro de que deseas cancelar esta reserva? Esta acción no se puede deshacer.</p>
+    <div id="cancelModalMessage" class="modal-message" aria-live="polite"></div>
+    <div class="detail-modal-actions">
+      <button type="button" class="btn-glass light" id="closeCancelModalBtn">No, mantener</button>
+      <button type="button" class="room-btn cancel-btn" id="confirmCancelBtn">Sí, cancelar</button>
+    </div>
+  </div>
+</div>

@@ -42,6 +42,17 @@ exports.listar = async (filters = {}) => {
 };
 exports.obtener = (id) => model.obtenerPorId(id);
 exports.obtenerPorUsuario = (userId) => model.obtenerPorUsuario(userId);
-exports.crear = (data) => model.crear(data);
+const emailService = require("./email.service");
+
+exports.crear = async (data) => {
+  const reserva = await model.crear(data);
+  
+  // Enviar correos de confirmación en segundo plano sin interrumpir la respuesta
+  emailService.enviarConfirmacionReserva(reserva).catch((error) => {
+    console.error("Error al enviar correos de reserva:", error.message || error);
+  });
+  
+  return reserva;
+};
 exports.actualizar = (id, data) => model.actualizar(id, data);
-exports.eliminar = (id) => model.eliminar(id);
+exports.eliminar = (id, motivo) => model.eliminar(id, motivo);

@@ -18,7 +18,14 @@ function normalizeDate(value) {
 }
 
 function getTodayDateString() {
-  return new Date().toISOString().slice(0, 10);
+  // Usar fecha LOCAL del servidor para evitar discrepancias de zona horaria.
+  // new Date().toISOString() devuelve UTC, lo que puede dar una fecha
+  // diferente a la local si son las 11pm-5am en horarios UTC-X.
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm   = String(now.getMonth() + 1).padStart(2, '0');
+  const dd   = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function normalizeIds(items) {
@@ -301,19 +308,36 @@ async function validarReserva(connection, data, options = {}) {
     throw buildError("La hora de salida no es valida");
   }
 
-  const fechaInicio = new Date(data.fecha_inicio);
-  const fechaFin = new Date(data.fecha_fin);
-  const fechaHoy = new Date(`${getTodayDateString()}T00:00:00`);
+  // ── Comparación de fechas segura en zona horaria ─────────────────────────
+  // new Date("YYYY-MM-DD") parsea como UTC midnight.
+  // new Date("YYYY-MM-DDT00:00:00") (sin Z) parsea como hora LOCAL.
+  // Mezclar ambos provoca falsos positivos de "fechas pasadas".
+  // Solución: comparar como cadenas YYYY-MM-DD (lexicográficamente equivalente).
+  const fechaInicioStr = String(data.fecha_inicio || '').slice(0, 10);
+  const fechaFinStr    = String(data.fecha_fin    || '').slice(0, 10);
+  const fechaHoyStr    = getTodayDateString(); // fecha local del servidor
+
+  // Crear Date objects a mediodía para cálculo de noches (evita problemas de DST)
+  const fechaInicio = new Date(`${fechaInicioStr}T12:00:00`);
+  const fechaFin    = new Date(`${fechaFinStr}T12:00:00`);
+
+  // ── Debug logs (eliminables en producción) ────────────────────────────────
+  console.log('[reservas.model] Fecha recibida (inicio):', fechaInicioStr);
+  console.log('[reservas.model] Fecha recibida (fin)   :', fechaFinStr);
+  console.log('[reservas.model] Hoy (local servidor)   :', fechaHoyStr);
+  console.log('[reservas.model] isUpdate               :', !!options.isUpdate);
+  // ─────────────────────────────────────────────────────────────────────────
 
   if (Number.isNaN(fechaInicio.getTime()) || Number.isNaN(fechaFin.getTime())) {
     throw buildError("Las fechas de la reserva no son validas");
   }
 
-  if (!options.isUpdate && fechaInicio < fechaHoy) {
+  // Comparación como string YYYY-MM-DD: '2026-06-05' < '2026-06-10' → true
+  if (!options.isUpdate && fechaInicioStr < fechaHoyStr) {
     throw buildError("No se pueden crear reservas en fechas pasadas");
   }
 
-  if (fechaFin <= fechaInicio) {
+  if (fechaFinStr <= fechaInicioStr) {
     throw buildError("La fecha final debe ser mayor a la fecha inicial");
   }
 
@@ -545,6 +569,7 @@ async function crear(data) {
     const payload = await validarReserva(connection, data);
     const hasHoraEntrada = reservationColumns.has("hora_entrada");
     const hasHoraSalida = reservationColumns.has("hora_salida");
+    const hasAceptaTerminos = reservationColumns.has("acepta_terminos");
     const insertColumns = [
       "id_cliente",
       "nr_documento",
@@ -556,7 +581,8 @@ async function crear(data) {
       "id_estado_reserva",
       "total",
       "id_metodo_pago",
-      "id_habitacion"
+      "id_habitacion",
+      ...(hasAceptaTerminos ? ["acepta_terminos"] : [])
     ];
     const insertValues = [
       payload.reserva.id_cliente,
@@ -569,7 +595,8 @@ async function crear(data) {
       payload.reserva.id_estado_reserva,
       payload.reserva.total,
       payload.reserva.id_metodo_pago,
-      payload.reserva.id_habitacion
+      payload.reserva.id_habitacion,
+      ...(hasAceptaTerminos ? [data.acepta_terminos || 0] : [])
     ];
     const [result] = await connection.query(
       `
@@ -613,6 +640,7 @@ async function actualizar(id, data) {
     });
     const hasHoraEntrada = reservationColumns.has("hora_entrada");
     const hasHoraSalida = reservationColumns.has("hora_salida");
+    const hasAceptaTerminos = reservationColumns.has("acepta_terminos");
     const updateParts = [
       "id_cliente = ?",
       "nr_documento = ?",
@@ -624,7 +652,8 @@ async function actualizar(id, data) {
       "id_estado_reserva = ?",
       "total = ?",
       "id_metodo_pago = ?",
-      "id_habitacion = ?"
+      "id_habitacion = ?",
+      ...(hasAceptaTerminos && data.acepta_terminos !== undefined ? ["acepta_terminos = ?"] : [])
     ];
     const updateValues = [
       payload.reserva.id_cliente,
@@ -638,6 +667,7 @@ async function actualizar(id, data) {
       payload.reserva.total,
       payload.reserva.id_metodo_pago,
       payload.reserva.id_habitacion,
+      ...(hasAceptaTerminos && data.acepta_terminos !== undefined ? [data.acepta_terminos || 0] : []),
       id
     ];
 
@@ -665,13 +695,17 @@ async function actualizar(id, data) {
   }
 }
 
-async function eliminar(id) {
+async function eliminar(id, motivo = null) {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
-    await connection.query("DELETE FROM detalledereservapaquetes WHERE id_reserva = ?", [id]);
-    await connection.query("DELETE FROM detallereservaservicio WHERE IDReserva = ?", [id]);
-    const [result] = await connection.query("DELETE FROM reservas WHERE id_reserva = ?", [id]);
+    
+    // Soft delete: actualizar el estado a 2 (Cancelada)
+    const updateQuery = "UPDATE reservas SET id_estado_reserva = 2 WHERE id_reserva = ?";
+    const updateParams = [id];
+    
+    const [result] = await connection.query(updateQuery, updateParams);
+    
     await connection.commit();
     return result;
   } catch (error) {

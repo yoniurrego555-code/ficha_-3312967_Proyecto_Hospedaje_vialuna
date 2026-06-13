@@ -1,4 +1,4 @@
-﻿import { logout, isClientSession, getSession } from "../../dashboard/core/authGuard.js";
+import { logout, isClientSession, getSession } from "../../dashboard/core/authGuard.js";
 import { authRecover, getCliente, updateCliente } from "../../dashboard/core/api.js";
 
 let clienteActual = null;
@@ -150,4 +150,6 @@ async function cambiarPassword(e) {
     }
 }
 
-init();
+export async function renderPerfilCliente() {
+    await init();
+}

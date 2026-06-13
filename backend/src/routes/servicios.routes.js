@@ -5,6 +5,7 @@ const { authenticateToken } = require("../middlewares/auth.Middleware");
 const upload = require("../middlewares/upload.middleware");
 
 router.get("/", controller.listar);
+router.get("/:id", controller.obtener);
 router.post("/", authenticateToken, upload.single("imagen"), controller.crear);
 router.put("/:id", authenticateToken, upload.single("imagen"), controller.actualizar);
 router.delete("/:id", authenticateToken, controller.eliminar);

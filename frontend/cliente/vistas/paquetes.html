@@ -1,0 +1,26 @@
+<section class="premium-page">
+  <header class="premium-page-head">
+    <p class="section-kicker">Catálogo</p>
+    <h1>Paquetes y Experiencias</h1>
+    <p>Aprovecha nuestras promociones especiales con todo incluido para una experiencia inolvidable.</p>
+  </header>
+
+  <div class="rooms-grid" id="fullPackagesGrid" style="margin-top: 30px;">
+    <article class="loading-card">Cargando paquetes...</article>
+  </div>
+</section>
+
+<div class="detail-modal" id="detailModalPaquete" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="detail-modal-backdrop" data-close-detail-paq></div>
+  <article class="detail-modal-card">
+    <button class="detail-modal-close" type="button" data-close-detail-paq aria-label="Cerrar">X</button>
+    <div class="detail-modal-header">
+      <h2 id="detailModalTitlePaq">Detalle</h2>
+    </div>
+    <dl class="detail-modal-grid" id="detailModalGridPaq"></dl>
+    <div class="detail-modal-actions">
+      <a class="package-btn" href="#reservar" id="btnReservarPaquete" style="margin-right: 10px;">Reservar</a>
+      <button class="btn-glass light" type="button" data-close-detail-paq>Cerrar</button>
+    </div>
+  </article>
+</div>

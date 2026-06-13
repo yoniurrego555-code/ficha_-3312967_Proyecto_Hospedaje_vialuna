@@ -129,10 +129,23 @@ async function request(url, options = {}) {
         throw error;
     }
 
-    const data = await response.json().catch(() => ({}));
+    // Try parse JSON body, but fallback to text for errors
+    let data = {};
+    try {
+        data = await response.json();
+    } catch (e) {
+        try {
+            const txt = await response.text();
+            data = { _text: txt };
+        } catch (_) {
+            data = {};
+        }
+    }
 
     if (!response.ok || data.ok === false) {
-        throw new Error(data.mensaje || data.error || 'No se pudo completar la operación');
+        console.error('API request failed', { url, status: response.status, body: data });
+        const detail = data.mensaje || data.error || data._text || JSON.stringify(data);
+        throw new Error(`(${response.status}) ${detail}`);
     }
 
     return data;
@@ -216,8 +229,18 @@ function obtenerHabitacionesFiltradas() {
 }
 
 function resolveRoomImage(hab) {
-    if (hab.ImagenUrl) return hab.ImagenUrl;
-    if (hab.ImagenHabitacion) return hab.ImagenHabitacion;
+    if (hab.ImagenUrl) {
+        const v = String(hab.ImagenUrl || '');
+        if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(v)) return `/uploads/${v}`;
+        if (v.toLowerCase().includes('uploads')) return v.startsWith('/') ? v : `/${v}`;
+        return v;
+    }
+    if (hab.ImagenHabitacion) {
+        const v = String(hab.ImagenHabitacion || '');
+        if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(v)) return `/uploads/${v}`;
+        if (v.toLowerCase().includes('uploads')) return v.startsWith('/') ? v : `/${v}`;
+        return v;
+    }
 
     const name = String(hab.nombre || hab.NombreHabitacion || '').toLowerCase();
     const type = String(hab.tipo || hab.Tipo || '').toLowerCase();
@@ -486,7 +509,9 @@ function mostrarDetalleHabitacion(habitacion) {
 
     // Populate standard text fields
     elements.detalleNombre.textContent = habitacion.nombre || habitacion.NombreHabitacion || 'Habitación';
-    elements.detalleID.textContent = `ID: #${habitacionId}`;
+    if (elements.detalleID) {
+        elements.detalleID.textContent = `ID: #${habitacionId}`;
+    }
     elements.detalleTipo.textContent = typeLabel;
     elements.detalleCapacidad.textContent = `${capacidad} ${capacidad === 1 ? 'Persona' : 'Personas'}`;
     if (elements.detalleCamas) elements.detalleCamas.textContent = bedCountText;
@@ -509,13 +534,19 @@ function mostrarDetalleHabitacion(habitacion) {
         </div>
     `).join('');
 
-    // Wire thumbnail click image swaps
-    const thumbnails = elements.detalleGaleriaGrid.querySelectorAll('.select-thumbnail');
-    thumbnails.forEach(thumb => {
-        thumb.addEventListener('click', () => {
-            elements.detalleImagenPrincipal.src = thumb.src;
-        });
-    });
+    // Wire thumbnail click image swaps via event delegation on the container to prevent lost bindings
+    elements.detalleGaleriaGrid.onclick = (e) => {
+        const thumb = e.target.closest('.select-thumbnail');
+        if (!thumb) return;
+        const newSrc = thumb.getAttribute('src');
+        if (newSrc) {
+            elements.detalleImagenPrincipal.setAttribute('src', newSrc);
+            // reset animation for smooth effect
+            elements.detalleImagenPrincipal.classList.remove('scale-105');
+            void elements.detalleImagenPrincipal.offsetWidth; 
+            elements.detalleImagenPrincipal.classList.add('scale-105');
+        }
+    };
 
     // Display Detail Modal
     elements.habitacionDetalleModal.classList.remove('hidden');
@@ -643,6 +674,26 @@ async function eliminarHabitacion(id) {
     });
 }
 
+// Anular (soft-delete) una habitación: marcar Estado = 0 (inactivo)
+async function anularHabitacion(id) {
+    // Prefer sending full payload to satisfy backend validation
+    const habitacion = state.habitaciones.find(h => String(h.id || h.IDHabitacion || h.ID) === String(id));
+    if (!habitacion) throw new Error('Habitación no encontrada en estado local');
+    const payload = buildBackendPayload({
+        NombreHabitacion: habitacion.NombreHabitacion || habitacion.nombre,
+        Descripcion: habitacion.Descripcion || habitacion.descripcion,
+        Costo: habitacion.Costo || habitacion.precio || 0,
+        CapacidadMaximaPersonas: habitacion.CapacidadMaximaPersonas || habitacion.capacidad || 1,
+        Estado: 0,
+        cantidad_camas: habitacion.cantidad_camas || habitacion.CantidadCamas || null,
+        tipo_camas: habitacion.tipo_camas || habitacion.TipoCamas || null,
+        ImagenHabitacion: habitacion.ImagenHabitacion || habitacion.ImagenUrl || null,
+        ImagenUrl: habitacion.ImagenUrl || habitacion.ImagenHabitacion || null
+    });
+
+    return actualizarHabitacion(id, payload);
+}
+
 async function manejarSubmit(event) {
     event.preventDefault();
     limpiarMensaje();
@@ -701,19 +752,23 @@ async function manejarClickEnTarjeta(event) {
 
         if (action === 'eliminar') {
             const confirmRes = await Swal.fire({
-              title: '¿Eliminar Habitación?',
-              text: `¿Deseas eliminar la habitación ${habitacion.nombre || habitacion.NombreHabitacion}?`,
-              icon: 'warning',
-              showCancelButton: true,
-              confirmButtonText: 'Sí, eliminar',
-              cancelButtonText: 'Cancelar'
+                title: '¿Eliminar Habitación?',
+                text: `¿Deseas eliminar permanentemente la habitación ${habitacion.nombre || habitacion.NombreHabitacion}?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
             });
             const confirmar = confirmRes.isConfirmed;
             if (!confirmar) return;
 
-            await eliminarHabitacion(id);
-            mostrarMensaje('Habitación eliminada correctamente.');
-            await listarHabitaciones();
+            try {
+                await eliminarHabitacion(id);
+                mostrarMensaje('Habitación eliminada correctamente.');
+                await listarHabitaciones();
+            } catch (err) {
+                mostrarMensaje(`No se pudo eliminar: ${err.message}`, 'error');
+            }
         }
     } catch (error) {
         mostrarMensaje(error.message, 'error');
@@ -804,7 +859,7 @@ function registrarEventos() {
 
         // fallback if image fails to load
         previewImg.addEventListener('error', () => {
-            previewImg.src = './assets/room-cabin.svg';
+            previewImg.src = '../assets/images/rooms/individual.png';
         });
     }
 

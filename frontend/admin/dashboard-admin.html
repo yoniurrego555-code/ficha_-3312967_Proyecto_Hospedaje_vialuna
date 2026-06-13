@@ -1,5 +1,6 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,8 +11,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <!-- SheetJS -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="../css/admin-theme.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="../css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -37,48 +38,51 @@
     }
   </script>
 </head>
+
 <body>
   <div class="layout">
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-      <div class="brand flex items-center justify-between" style="display: flex; align-items: center; justify-content: space-between;">
+      <div class="brand flex items-center justify-between"
+        style="display: flex; align-items: center; justify-content: space-between;">
         <h1>VIA LUNA</h1>
-        <button id="sidebarToggle" aria-label="Toggle sidebar" style="background: none; border: none; cursor: pointer; color: var(--brand-deep); font-size: 1.4rem; padding: 5px;">
+        <button id="sidebarToggle" aria-label="Toggle sidebar"
+          style="background: none; border: none; cursor: pointer; color: var(--brand-deep); font-size: 1.4rem; padding: 5px;">
           <i class="fa-solid fa-bars"></i>
         </button>
       </div>
 
       <nav class="admin-nav" aria-label="Panel administrativo">
-        <a class="admin-link active" href="#dashboard" data-view="dashboard">
+        <a class="admin-link active" href="#dashboard" data-view="dashboard" data-tooltip="Dashboard">
           <i class="fa-solid fa-chart-pie nav-icon"></i> <span class="nav-text">Dashboard</span>
         </a>
-        <a class="admin-link" href="#clientes" data-view="clientes">
+        <a class="admin-link" href="#clientes" data-view="clientes" data-tooltip="Clientes">
           <i class="fa-solid fa-users nav-icon"></i> <span class="nav-text">Clientes</span>
         </a>
-        <a class="admin-link" href="#reservas" data-view="reservas">
+        <a class="admin-link" href="#reservas" data-view="reservas" data-tooltip="Reservas">
           <i class="fa-solid fa-calendar-days nav-icon"></i> <span class="nav-text">Reservas</span>
         </a>
-        <a class="admin-link" href="#habitaciones" data-view="habitaciones">
+        <a class="admin-link" href="#habitaciones" data-view="habitaciones" data-tooltip="Habitaciones">
           <i class="fa-solid fa-bed nav-icon"></i> <span class="nav-text">Habitaciones</span>
         </a>
-        <a class="admin-link" href="#servicios" data-view="servicios">
+        <a class="admin-link" href="#servicios" data-view="servicios" data-tooltip="Servicios">
           <i class="fa-solid fa-concierge-bell nav-icon"></i> <span class="nav-text">Servicios</span>
         </a>
-        <a class="admin-link" href="#paquetes" data-view="paquetes">
+        <a class="admin-link" href="#paquetes" data-view="paquetes" data-tooltip="Paquetes">
           <i class="fa-solid fa-box-open nav-icon"></i> <span class="nav-text">Paquetes</span>
         </a>
-        <a class="admin-link" href="#usuarios" data-view="usuarios">
+        <a class="admin-link" href="#usuarios" data-view="usuarios" data-tooltip="Usuarios">
           <i class="fa-solid fa-user-tie nav-icon"></i> <span class="nav-text">Usuarios</span>
         </a>
-        <a class="admin-link" href="#roles-permisos" data-view="roles-permisos">
+        <a class="admin-link" href="#roles-permisos" data-view="roles-permisos" data-tooltip="Roles &amp; Permisos">
           <i class="fa-solid fa-shield-halved nav-icon"></i> <span class="nav-text">Roles & Permisos</span>
         </a>
       </nav>
 
       <div class="sidebar-footer">
         <button class="logout-btn" id="logoutBtn">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="nav-text">Cerrar sesi├│n</span>
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="nav-text">Cerrar sesión</span>
         </button>
       </div>
     </aside>
@@ -88,7 +92,9 @@
       <!-- Topbar con notificaciones -->
       <header class="flex justify-end items-center mb-6 pb-2 border-b border-gray-100">
         <div class="relative">
-          <button class="relative p-2 text-brand-deep hover:bg-gray-100 rounded-full transition-colors focus:outline-none" aria-label="Notificaciones">
+          <button
+            class="relative p-2 text-brand-deep hover:bg-gray-100 rounded-full transition-colors focus:outline-none"
+            aria-label="Notificaciones">
             <i class="fa-regular fa-bell text-xl"></i>
             <span class="absolute top-1 right-1 flex h-3 w-3">
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -100,27 +106,32 @@
 
       <div id="contenido">
         <!-- Content will be loaded dynamically here -->
-        <div class="dashboard-grid" style="display:grid; gap:20px; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); margin-top:20px;">
+        <div class="dashboard-grid"
+          style="display:grid; gap:20px; grid-template-columns: repeat(auto-fit,minmax(300px,1fr)); margin-top:20px;">
           <div class="section-panel" style="min-height:300px;">
-            <h3 style="margin:0 0 12px 0; font-size:1rem; font-weight:700; color: var(--brand-deep);">Reservas por d├¡a</h3>
+            <h3 style="margin:0 0 12px 0; font-size:1rem; font-weight:700; color: var(--brand-deep);">Reservas por día
+            </h3>
             <canvas id="chartReservationsByDay" class="chart-canvas"></canvas>
           </div>
           <div class="section-panel" style="min-height:300px;">
-            <h3 style="margin:0 0 12px 0; font-size:1rem; font-weight:700; color: var(--brand-deep);">Estado de reservas</h3>
+            <h3 style="margin:0 0 12px 0; font-size:1rem; font-weight:700; color: var(--brand-deep);">Estado de reservas
+            </h3>
             <canvas id="chartStatusDistribution" class="chart-canvas"></canvas>
           </div>
           <div class="section-panel" style="min-height:300px;">
-            <h3 style="margin:0 0 12px 0; font-size:1rem; font-weight:700; color: var(--brand-deep);">Ingresos diarios</h3>
+            <h3 style="margin:0 0 12px 0; font-size:1rem; font-weight:700; color: var(--brand-deep);">Ingresos diarios
+            </h3>
             <canvas id="chartRevenueTrend" class="chart-canvas"></canvas>
           </div>
         </div>
       </div>
     </main>
-    
+
     <!-- Sidebar Overlay -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
   </div>
 
   <script type="module" src="../js/dashboard-admin.js"></script>
 </body>
+
 </html>

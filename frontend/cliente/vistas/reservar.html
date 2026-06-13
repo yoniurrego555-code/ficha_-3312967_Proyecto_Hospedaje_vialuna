@@ -1,0 +1,146 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+.flatpickr-day.disabled { text-decoration: line-through !important; color: #dc2626 !important; background: transparent !important; opacity: 0.7; }
+.flatpickr-day:not(.disabled):not(.today):not(.selected):not(.flatpickr-disabled) { background: #f3f4f6 !important; color: #4b5563 !important; border-color: #e5e7eb !important; }
+.flatpickr-day:not(.disabled):hover { background: #e5e7eb !important; }
+</style>
+
+<section id="reservationFormSection" class="transition-all duration-300 w-full box-border" style="display: block;">
+    <div class="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 items-start w-full box-border min-w-0">
+    <!-- Form Content Left -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-8 w-full box-border min-w-0 relative">
+      <div class="border-b border-gray-100 pb-5 mb-6">
+        <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2"><i class="fa-regular fa-calendar"></i> Registrar Nueva Reserva</h2>
+        <p class="text-sm text-muted mt-1 m-0">Elige fechas, habitación y detalles de tu próxima estancia.</p>
+      </div>
+
+      <form id="reservationForm" class="flex flex-col gap-8 m-0 p-0 bg-transparent border-none w-full box-border">
+        
+
+
+        <!-- 2. Fechas y Horarios -->
+        <div class="flex flex-col gap-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 border-b border-gray-50 pb-2"><i class="fa-regular fa-clock"></i> 1. Fechas y Horarios</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Fecha Entrada:</label>
+              <input type="date" id="fechaInicio" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 w-full box-border" required>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Fecha Salida:</label>
+              <input type="date" id="fechaFin" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 w-full box-border" required>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Hora Entrada:</label>
+              <input type="time" id="horaEntrada" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 w-full box-border" value="14:00">
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Hora Salida:</label>
+              <input type="time" id="horaSalida" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 w-full box-border" value="11:00">
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Habitación Seleccionada -->
+        <div class="flex flex-col gap-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 border-b border-gray-50 pb-2"><i class="fa-solid fa-hotel"></i> 2. Habitación Seleccionada</h3>
+          <div id="roomSelection" class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full box-border">
+            <div class="text-center py-6 text-muted font-semibold col-span-2">Cargando habitaciones...</div>
+          </div>
+        </div>
+
+        <!-- 4. Servicios Adicionales -->
+        <div class="flex flex-col gap-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 border-b border-gray-50 pb-2"><i class="fa-solid fa-wand-magic-sparkles"></i> 3. Servicios Adicionales</h3>
+          <div id="servicesGrid" class="flex flex-col gap-3 w-full box-border">
+            <div class="text-center py-6 text-muted font-semibold">Cargando servicios...</div>
+          </div>
+        </div>
+
+        <!-- 5. Paquetes Especiales -->
+        <div class="flex flex-col gap-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 border-b border-gray-50 pb-2">🎁 4. Paquetes Especiales</h3>
+          <div id="packagesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full box-border">
+            <div class="text-center py-6 text-muted font-semibold col-span-2">Cargando paquetes...</div>
+          </div>
+        </div>
+
+        <!-- 6. Pago y Confirmación -->
+        <div class="flex flex-col gap-4">
+          <h3 class="text-sm font-bold text-brand-deep uppercase tracking-wider flex items-center gap-2 border-b border-gray-50 pb-2"><i class="fa-solid fa-credit-card"></i> 5. Confirmación</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Método de Pago:</label>
+              <select id="metodoPago" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer w-full box-border" required>
+                <option value="">Seleccionar método...</option>
+                <option value="1">Efectivo</option>
+                <option value="2">Tarjeta Débito/Crédito</option>
+                <option value="3">Transferencia Bancaria</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial:</label>
+              <select id="estadoReserva" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer w-full box-border" required>
+                <option value="2" selected>Pendiente (Por Confirmar)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Action Buttons -->
+        <div class="border-t border-gray-100 pt-6 mt-2 flex flex-col sm:flex-row justify-end gap-3 w-full box-border">
+          <button type="button" id="clearFormBtn" class="px-5 py-3 rounded-xl border border-gray-200 text-muted font-semibold bg-white hover:bg-gray-50 transition-all duration-300 cursor-pointer text-sm w-full sm:w-auto box-border">Limpiar Formulario</button>
+          <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm w-full sm:w-auto box-border">Confirmar Reserva 🚀</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Summary Sidebar Content Right (Sticky en Desktop) -->
+    <aside class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col w-full box-border xl:sticky xl:top-6" style="max-height: calc(100vh - 48px);">
+      <div class="bg-brand-deep text-white p-5 text-center shrink-0">
+        <h3 class="m-0 text-base font-bold tracking-wide">Resumen de Costos</h3>
+      </div>
+      
+      <div class="p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
+        <!-- Room details -->
+        <div id="summaryRoom" class="flex flex-col gap-3 pb-5 border-b border-gray-100">
+          <p class="text-xs text-center text-muted italic my-4">Sin habitación seleccionada</p>
+        </div>
+
+        <!-- Packages included -->
+        <div>
+          <h4 class="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Paquetes Seleccionados</h4>
+          <div id="summaryPackages" class="flex flex-col gap-2">
+            <p class="text-xs text-muted italic m-0">Ningún paquete seleccionado</p>
+          </div>
+        </div>
+
+        <!-- Services included -->
+        <div class="pb-5 border-b border-gray-100">
+          <h4 class="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Servicios Adicionales</h4>
+          <div id="summaryServices" class="flex flex-col gap-2">
+            <p class="text-xs text-muted italic m-0">Ningún servicio seleccionado</p>
+          </div>
+        </div>
+
+        <!-- Summary Totals -->
+        <div class="flex flex-col gap-2 mt-auto pt-4 shrink-0">
+          <div class="flex justify-between items-center text-xs text-muted font-semibold">
+            <span>Subtotal:</span>
+            <span id="subtotal">$0</span>
+          </div>
+          <div class="flex justify-between items-center mt-2">
+            <strong class="text-brand-deep text-sm font-bold">TOTAL ESTANCIA:</strong>
+            <strong id="totalAmount" class="text-2xl font-extrabold text-brand">$0</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-center shrink-0">
+        <a href="#reservas" id="cancelNewReservationBtn" class="w-full py-3 rounded-xl border border-dashed border-brand/40 text-brand-deep font-bold hover:bg-brand/5 active:scale-98 transition-all duration-300 cursor-pointer bg-white text-xs box-border text-center no-underline block">
+          ← Volver a mis reservas
+        </a>
+      </div>
+    </aside>
+  </div>
+</section>

@@ -1,0 +1,56 @@
+/* Tooltip styling */
+.tooltip {
+  position: fixed;
+  background: rgba(30, 30, 30, 0.9);
+  color: #fff;
+  padding: 0.6rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: 'Inter', system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+  z-index: 1000;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+}
+
+.tooltip.show {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+/* Arrow for tooltip */
+.tooltip::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(30, 30, 30, 0.9);
+  left: 12px;
+  top: 100%;
+}
+
+/* Sidebar-styled tooltip (match admin sidebar look) */
+.tooltip.sidebar-style {
+  background: var(--brand-deep, #245543);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(36,85,67,0.22);
+}
+.tooltip.sidebar-style::after {
+  border-top-color: var(--brand-deep, #245543);
+}
+
+[data-tooltip] {
+  position: relative;
+}
+
+/* Hide static CSS tooltip */
+[data-tooltip]::after {
+  display: none;
+}

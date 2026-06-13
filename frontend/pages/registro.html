@@ -164,22 +164,8 @@
                                 <span class="field-warning">El apellido es obligatorio</span>
                             </div>
 
-                            <div class="auth-field">
-                                <label for="tipo_documento">Tipo de Documento <span class="required-mark">*</span></label>
-                                <div class="auth-input-wrapper">
-                                    <span class="auth-icon-prefix">ID</span>
-                                    <select id="tipo_documento" name="tipo_documento" required style="padding-left: 45px; height: 45px; width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; appearance: none; background: white;">
-                                        <option value="CC">Cédula de Ciudadanía</option>
-                                        <option value="TI">Tarjeta de Identidad</option>
-                                        <option value="CE">Cédula de Extranjería</option>
-                                        <option value="Pasaporte">Pasaporte</option>
-                                    </select>
-                                </div>
-                                <span class="field-warning">El tipo de documento es obligatorio</span>
-                            </div>
-
-                            <div class="auth-field">
-                                <label for="documento">Documento <span class="required-mark">*</span></label>
+                            <div class="auth-field full-width">
+                                <label for="documento">Documento de Identidad <span class="required-mark">*</span></label>
                                 <div class="auth-input-wrapper">
                                     <span class="auth-icon-prefix">#</span>
                                     <input type="text" id="documento" name="documento" placeholder="Número de documento" required>
@@ -196,15 +182,7 @@
                                 <span class="field-warning">El teléfono es obligatorio</span>
                             </div>
 
-                            <div class="auth-field full-width">
-                                <label for="direccion">Dirección</label>
-                                <div class="auth-input-wrapper">
-                                    <span class="auth-icon-prefix">D</span>
-                                    <input type="text" id="direccion" name="direccion" placeholder="Calle, Carrera, Ciudad">
-                                </div>
-                            </div>
-
-                            <div class="auth-field full-width">
+                            <div class="auth-field">
                                 <label for="email">Correo electrónico <span class="required-mark">*</span></label>
                                 <div class="auth-input-wrapper">
                                     <span class="auth-icon-prefix">@</span>
@@ -271,9 +249,8 @@
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
             
-            // Basic validation
-            if (!form.checkValidity()) {
-                showMessage('Por favor, completa todos los campos requeridos correctamente.', 'error');
+            // Basic validation with native UI
+            if (!form.reportValidity()) {
                 return;
             }
 
@@ -286,10 +263,10 @@
                 const payload = {
                     nombre: form.nombre.value.trim(),
                     apellido: form.apellido.value.trim(),
-                    tipo_documento: form.tipo_documento.value,
+                    tipo_documento: 'CC',
                     documento: form.documento.value.trim(),
                     telefono: form.telefono.value.trim(),
-                    direccion: form.direccion.value.trim(),
+                    direccion: '',
                     email: form.email.value.trim(),
                     password: form.password.value,
                     IDRol: 2

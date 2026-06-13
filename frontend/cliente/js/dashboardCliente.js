@@ -1,4 +1,5 @@
 import { logout, isClientSession, isAdminSession, getSession } from "../../dashboard/core/authGuard.js";
+import { filterActive, sanitizeRoom, formatPrice, attachTooltip } from "../../dashboard/modules/ui-utils.js";
 import { getReservas, getHabitaciones, getPaquetes, getServicios } from "../../dashboard/core/api.js";
 
 const fallbackRoomImage = "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1100&q=85";
@@ -26,9 +27,16 @@ function normalizeText(text) {
 
 function imageFromBlob(value) {
     if (!value) return "";
+    if (Array.isArray(value)) return imageFromBlob(value[0]);
     if (typeof value === "string") {
+        value = value.trim();
+        if (value.startsWith('/http')) value = value.substring(1);
         if (value === "[object Object]") return "";
+        if (value.startsWith('/')) return value;
         if (value.startsWith("data:") || value.startsWith("http") || value.startsWith("../") || value.startsWith("./")) return value;
+        if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(value)) return `/uploads/${value}`;
+        if (value.toLowerCase().includes('uploads') && !value.startsWith('/')) return `/${value}`;
+        if (!value.includes('base64') && !value.includes('://')) return `/${value}`;
         if (value.length > 80) return `data:image/jpeg;base64,${value}`;
     }
     if (value.data && Array.isArray(value.data)) {
@@ -43,7 +51,7 @@ function imageFromBlob(value) {
 }
 
 function imageForRoom(room) {
-    const dbImage = imageFromBlob(room.ImagenUrl || room.ImagenHabitacion || room.imagen || room.imagenHabitacion);
+    const dbImage = imageFromBlob(room.imagenes || room.ImagenUrl || room.ImagenHabitacion || room.imagen || room.imagenHabitacion);
     if (dbImage) return dbImage;
     const text = normalizeText(`${room.NombreHabitacion || room.nombre || ""} ${room.Descripcion || room.descripcion || ""}`);
     if (text.includes("familiar")) return "../assets/images/rooms/familiar.png";
@@ -118,7 +126,7 @@ async function init() {
             });
         }
 
-        registrarEventosDetalle();
+
 
         const idCliente = getClientId(session);
         await Promise.all([
@@ -177,10 +185,10 @@ function renderizarProximaReserva(reserva) {
                 <h2>No tienes reservas activas.</h2>
                 <p>Reserva una nueva experiencia cuando quieras volver.</p>
             </div>
-            <a class="stay-arrow" href="nueva-reserva.html" aria-label="Reservar ahora">></a>
+            <a class="stay-arrow" href="#reservar" data-view="reservar" aria-label="Reservar ahora">></a>
             <div class="stay-actions">
-                <a class="btn-primary" href="nueva-reserva.html">Reservar ahora</a>
-                <a class="btn-glass" href="reservas.html">Ver historial</a>
+                <a class="btn-primary" href="#reservar" data-view="reservar">Reservar ahora</a>
+                <a class="btn-glass" href="#reservas" data-view="reservas">Ver historial</a>
             </div>
         `;
         return;
@@ -200,15 +208,15 @@ function renderizarProximaReserva(reserva) {
             <h2>${formatLongDate(start)}</h2>
             <p>${nights} ${nights === 1 ? "noche" : "noches"} · ${room}</p>
         </div>
-        <a class="stay-arrow" href="reservas.html" aria-label="Ver reserva">></a>
+        <a class="stay-arrow" href="#reservas" data-view="reservas" aria-label="Ver reserva">></a>
         <div class="stay-stay-details">
             <span class="stay-detail-item"><strong>Salida:</strong> ${formatLongDate(end)}</span>
             <span class="stay-detail-item"><strong>Estado:</strong> ${estado}</span>
             <span class="stay-detail-item"><strong>Total:</strong> ${total}</span>
         </div>
         <div class="stay-actions">
-            <a class="btn-primary" href="reservas.html">Ver historial</a>
-            <a class="btn-glass" href="nueva-reserva.html">Reservar ahora</a>
+            <a class="btn-primary" href="#reservas" data-view="reservas">Ver historial</a>
+            <a class="btn-glass" href="#reservar" data-view="reservar">Reservar ahora</a>
         </div>
     `;
 }
@@ -219,7 +227,7 @@ async function cargarHabitaciones() {
 
     try {
         const habitaciones = await getHabitaciones();
-        habitacionesCache = (Array.isArray(habitaciones) ? habitaciones : []).filter(isActive);
+        habitacionesCache = filterActive(habitaciones).map(sanitizeRoom);
         const visibles = habitacionesCache.slice(0, 3);
 
         if (!visibles.length) {
@@ -228,29 +236,31 @@ async function cargarHabitaciones() {
         }
 
         grid.innerHTML = visibles.map((room, index) => {
-            const title = room.NombreHabitacion || room.nombre || "Habitacion Via Luna";
-            const price = room.Costo || room.Precio || room.precio || 0;
-            const capacity = getRoomCapacity(room);
-            const beds = getRoomBeds(room);
-            const bedType = getRoomBedType(room);
+            // room is already sanitized
+            const title = room.NombreHabitacion || "Habitacion Via Luna";
+            const description = room.Descripcion || "Descripcion pendiente de actualizar.";
+            const price = room.Costo || 0;
+            const capacity = room.CapacidadMaximaPersonas || "";
+            const beds = room.cantidad_camas || "";
+            const bedType = room.tipo_camas || "";
 
             return `
                 <article class="room-card">
                     <div class="room-media">
-                        <img src="${imageForRoom(room)}" alt="${title}" loading="lazy" onerror="this.onerror=null;this.src='${fallbackRoomImage}'">
+                        <img src="${room.ImagenUrl || fallbackRoomImage}" alt="${title}" loading="lazy" />
                         ${index === 0 ? '<span class="room-badge">Mas popular</span>' : ""}
                     </div>
                     <div class="room-content">
                         <h3>${title}</h3>
-                        <p>${room.Descripcion || room.descripcion || "Descripcion pendiente de actualizar."}</p>
+                        <p>${description}</p>
                         <div class="room-tags">
-                            ${capacity ? `<span>Capacidad: ${capacity} personas</span>` : ""}
-                            ${beds ? `<span>${beds} camas</span>` : ""}
-                            ${bedType ? `<span>${bedType}</span>` : ""}
+                            ${capacity ? `<span data-tooltip="Capacidad">${capacity} personas</span>` : ""}
+                            ${beds ? `<span data-tooltip="Camas">${beds} camas</span>` : ""}
+                            ${bedType ? `<span data-tooltip="Tipo de camas">${bedType}</span>` : ""}
                         </div>
                         <div class="room-footer">
                             <div class="room-price"><strong>${formatMoney(price)}</strong><small>por noche</small></div>
-                            <button class="room-btn" type="button" data-detail-type="habitacion" data-detail-id="${getRoomId(room)}">Ver detalle</button>
+                            <button class="room-btn" type="button" data-detail-type="habitacion" data-detail-id="${room.IDHabitacion}">Ver detalle</button>
                         </div>
                     </div>
                 </article>
@@ -268,7 +278,7 @@ async function cargarPaquetes() {
 
     try {
         const paquetes = await getPaquetes();
-        paquetesCache = (Array.isArray(paquetes) ? paquetes : []).filter(isActive);
+        paquetesCache = filterActive(paquetes).map(sanitizeRoom);
         const visibles = paquetesCache.slice(0, 3);
 
         if (!visibles.length) {
@@ -277,18 +287,19 @@ async function cargarPaquetes() {
         }
 
         list.innerHTML = visibles.map((pack) => {
-            const title = pack.NombrePaquete || pack.nombre || "Paquete Via Luna";
-            const desc = pack.Descripcion || pack.descripcion || "Experiencia especial para complementar tu estadia.";
-            const price = pack.Precio || pack.precio || 0;
+            // pack is sanitized
+            const title = pack.NombrePaquete || "Paquete Via Luna";
+            const description = pack.Descripcion || "Descripcion pendiente de actualizar.";
+            const price = pack.Precio || 0;
             return `
                 <article class="package-item">
-                    <img src="${imageForPackage(pack)}" alt="${title}" loading="lazy" onerror="this.onerror=null;this.src='${fallbackPackageImage}'">
+                    <img src="${pack.ImagenUrl || fallbackPackageImage}" alt="${title}" loading="lazy" />
                     <div class="package-copy">
                         <h3>${title}</h3>
-                        <p>${desc}</p>
+                        <p>${description}</p>
                         <strong>${formatMoney(price)}</strong>
                     </div>
-                    <button class="package-btn" type="button" data-detail-type="paquete" data-detail-id="${getPackageId(pack)}">Ver detalle</button>
+                    <button class="package-btn" type="button" data-detail-type="paquete" data-detail-id="${pack.IDPaquete}">Ver detalle</button>
                 </article>
             `;
         }).join("");
@@ -304,7 +315,7 @@ async function cargarServicios() {
 
     try {
         const servicios = await getServicios();
-        serviciosCache = (Array.isArray(servicios) ? servicios : []).filter(isActive);
+        serviciosCache = filterActive(servicios).map(sanitizeRoom);
         const visibles = serviciosCache.slice(0, 3);
         const icons = ["SPA", "Tour", "VIP"];
 
@@ -314,21 +325,22 @@ async function cargarServicios() {
         }
 
         grid.innerHTML = visibles.map((service, index) => {
-            const title = service.NombreServicio || service.nombre || "Servicio";
-            const desc = service.Descripcion || service.descripcion || "Disponible";
-            const price = service.Costo || service.Precio || service.precio || 0;
-            const duracion = service.Duracion ? `${service.Duracion} min` : "";
-            const personas = service.CantidadMaximaPersonas ? `Max ${service.CantidadMaximaPersonas} personas` : "";
+            // service is sanitized
+            const title = service.NombreServicio || "Servicio";
+            const description = service.Descripcion || "Descripcion pendiente de actualizar.";
+            const price = service.Costo || 0;
+            const duration = service.Duracion ? `${service.Duracion} min` : "";
+            const persons = service.CantidadMaximaPersonas ? `Max ${service.CantidadMaximaPersonas} personas` : "";
             return `
                 <article class="service-item">
                     <span class="service-icon">${icons[index % icons.length]}</span>
                     <div class="service-content">
                         <h3>${title}</h3>
-                        <p>${desc}</p>
-                        <small>${[duracion, personas].filter(Boolean).join(" · ")}</small>
+                        <p>${description}</p>
+                        <small>${[duration, persons].filter(Boolean).join(" · ")}</small>
                         <strong>${price ? formatMoney(price) : "Incluido"}</strong>
                     </div>
-                    <button class="package-btn" type="button" data-detail-type="servicio" data-detail-id="${getServiceId(service)}">Ver detalle</button>
+                    <button class="package-btn" type="button" data-detail-type="servicio" data-detail-id="${service.IDServicio}">Ver detalle</button>
                 </article>
             `;
         }).join("");
@@ -441,4 +453,11 @@ function formatMoney(value) {
     return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(Number(value || 0));
 }
 
-init();
+let eventsRegistered = false;
+export async function renderInicio() {
+    if (!eventsRegistered) {
+        registrarEventosDetalle();
+        eventsRegistered = true;
+    }
+    await init();
+}

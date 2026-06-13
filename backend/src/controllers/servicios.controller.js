@@ -79,6 +79,9 @@ exports.eliminar = (req, res) => {
     .then(() => res.json({ mensaje: "Eliminado" }))
     .catch(err => {
       console.error(err);
+      if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+        return res.status(400).json({ error: "No se puede eliminar el servicio porque está referenciado en otras tablas (ej. reservas o paquetes)." });
+      }
       res.status(500).json({ error: "Error al eliminar" });
     });
 };

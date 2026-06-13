@@ -39,11 +39,6 @@
                         <p>Accede a tu cuenta personal</p>
                     </header>
 
-                    <button class="google-auth-btn" type="button" disabled aria-disabled="true">
-                        <span aria-hidden="true">G</span>
-                        Continuar con Google
-                    </button>
-
                     <div class="auth-divider"><span>Correo y contrasena</span></div>
 
                     <form id="loginForm" class="premium-login-form" novalidate>
@@ -112,18 +107,10 @@
             <h2 id="registerTitle">Crear cuenta</h2>
             <div id="registerMessage" class="modal-message" aria-live="polite"></div>
             <form id="registerForm" class="auth-modal-form" novalidate>
-                <select name="TipoDocumento" required>
-                    <option value="">Tipo de documento *</option>
-                    <option value="CC">CC</option>
-                    <option value="CE">CE</option>
-                    <option value="TI">TI</option>
-                    <option value="PAS">Pasaporte</option>
-                </select>
                 <input name="Nombre" type="text" placeholder="Nombre *" required>
                 <input name="Apellido" type="text" placeholder="Apellido *" required>
                 <input name="NroDocumento" type="text" placeholder="Numero de documento *" required>
-                <input name="Telefono" type="tel" placeholder="Telefono">
-                <input name="Direccion" type="text" placeholder="Direccion">
+                <input name="Telefono" type="tel" placeholder="Telefono *">
                 <input name="Email" type="email" placeholder="Correo electronico *" required>
                 <input name="Contrasena" id="regPassword" type="password" placeholder="Contrasena (min. 6 caracteres) *" minlength="6" required>
                 <input name="ConfirmarContrasena" id="regConfirmPassword" type="password" placeholder="Confirmar contrasena *" required>
@@ -253,15 +240,10 @@
             const nombre = registerForm.Nombre.value.trim();
             const apellido = registerForm.Apellido.value.trim();
             const documento = registerForm.NroDocumento.value.trim();
-            const tipoDocumento = registerForm.TipoDocumento.value.trim();
             const email = registerForm.Email.value.trim();
             const contrasena = registerForm.Contrasena.value;
             const confirmar = registerForm.ConfirmarContrasena.value;
 
-            if (!tipoDocumento) {
-                showModalMessage('registerMessage', 'El tipo de documento es obligatorio.', 'error');
-                return;
-            }
             if (!nombre || !apellido) {
                 showModalMessage('registerMessage', 'El nombre y apellido son obligatorios.', 'error');
                 return;
@@ -286,6 +268,9 @@
             try {
                 const payload = Object.fromEntries(new FormData(registerForm).entries());
                 delete payload.ConfirmarContrasena;
+                payload.TipoDocumento = 'CC';
+                payload.Direccion = '';
+                
                 const response = await registrarUsuario(payload);
                 const usuario = response.user || response.usuario;
 

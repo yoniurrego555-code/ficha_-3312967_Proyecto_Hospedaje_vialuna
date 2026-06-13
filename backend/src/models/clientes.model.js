@@ -141,7 +141,7 @@ const actualizar = (id, data) => {
 
 const eliminar = (id) => {
   return db.query(
-    "DELETE FROM clientes WHERE NroDocumento = ?",
+    "UPDATE clientes SET Estado = 0 WHERE NroDocumento = ?",
     [id]
   )
     .then(([result]) => result);

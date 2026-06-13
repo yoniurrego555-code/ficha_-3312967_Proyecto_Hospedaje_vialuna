@@ -71,6 +71,136 @@ export const ICONS = {
   question: 'fa-solid fa-circle-question'
 };
 
+// ---------------------------------------------------
+// Helper utilities used across the frontend
+// ---------------------------------------------------
+/** Return only items with Estado === 1 */
+export function filterActive(items) {
+  if (!Array.isArray(items)) return [];
+  return items.filter(i => {
+    const v = String(i?.Estado ?? i?.estado ?? i?.EstadoRegistro ?? '').toLowerCase();
+    return ['', '1', 'true', 'activo', 'activa', 'disponible'].includes(v);
+  });
+}
+/** Sanitize a room object: remove ID, replace undefined/null with friendly defaults */
+export function sanitizeRoom(room) {
+  const {
+    IDHabitacion,
+    NombreHabitacion = 'Sin nombre',
+    ImagenUrl = '',
+    Descripcion = 'Sin descripción',
+    Costo = 0,
+    CapacidadMaximaPersonas = 0,
+    cantidad_camas = 0,
+    tipo_camas = '',
+    ...rest
+  } = room || {};
+  return {
+    IDHabitacion, // keep for internal logic
+    NombreHabitacion,
+    ImagenUrl,
+    Descripcion,
+    Costo,
+    CapacidadMaximaPersonas,
+    cantidad_camas,
+    tipo_camas,
+    ...rest,
+  };
+}
+/** Format number as price string */
+export function formatPrice(num) {
+  const n = Number(num);
+  if (isNaN(n)) return 'COL$ –';
+  // Colombian peso format without decimal places
+  return `COL$ ${n.toLocaleString('es-CO')}`;
+}
+/** Attach tooltip text to an element (data-tooltip attribute) */
+export function attachTooltip() {
+  // Create a single tooltip element
+  const tooltipEl = document.createElement('div');
+  tooltipEl.className = 'tooltip';
+  // use fixed positioning for predictable placement
+  tooltipEl.style.position = 'fixed';
+  document.body.appendChild(tooltipEl);
+
+  // Handler to show tooltip (delegated)
+  function show(e, el) {
+    // Remove native title to avoid default browser tooltip
+    if (el.hasAttribute('title')) {
+      el.removeAttribute('title');
+    }
+    const txt = el.dataset.tooltip;
+    if (!txt) return;
+    tooltipEl.textContent = txt;
+    tooltipEl.classList.add('show');
+    // Position tooltip immediately based on current mouse event
+    move(e);
+  }
+  // Handler to hide tooltip
+  function hide() {
+    tooltipEl.classList.remove('show');
+  }
+
+  // Handler to move tooltip with cursor, with 10px offset, staying within viewport
+  function move(e) {
+    const offset = 10;
+    const tooltipRect = tooltipEl.getBoundingClientRect();
+    let left = e.clientX + offset;
+    let top = e.clientY + offset;
+    const maxLeft = window.innerWidth - tooltipRect.width - offset;
+    const maxTop = window.innerHeight - tooltipRect.height - offset;
+    if (left > maxLeft) left = e.clientX - tooltipRect.width - offset;
+    if (top > maxTop) top = e.clientY - tooltipRect.height - offset;
+    tooltipEl.style.left = `${left + window.scrollX}px`;
+    tooltipEl.style.top = `${top + window.scrollY}px`;
+  }
+
+  // Use event delegation for tooltip handling (covers dynamic elements)
+  function closestTooltipElement(target) {
+    if (!target) return null;
+    let el = null;
+    if (typeof target.closest === 'function') el = target.closest('[data-tooltip]');
+    else if (target.nodeType === Node.TEXT_NODE && target.parentElement) el = target.parentElement.closest('[data-tooltip]');
+    else el = target.parentElement ? target.parentElement.closest('[data-tooltip]') : null;
+
+    if (el) {
+      // Regla específica para sidebar: solo mostrar tooltip si el sidebar está colapsado
+      const sidebar = el.closest('.sidebar');
+      if (sidebar && !sidebar.classList.contains('collapsed')) {
+        return null;
+      }
+    }
+    return el;
+  }
+
+  document.addEventListener('mouseenter', (e) => {
+    const el = closestTooltipElement(e.target);
+    if (!el) return;
+    show(e, el);
+  }, true);
+
+  document.addEventListener('mouseleave', (e) => {
+    const el = closestTooltipElement(e.target);
+    if (!el) return;
+    hide();
+  }, true);
+
+  document.addEventListener('mousemove', (e) => {
+    const el = closestTooltipElement(e.target);
+    if (!el) return;
+    move(e);
+  }, true);
+}
+
+// Auto‑initialize floating tooltips after DOM is ready
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachTooltip);
+  } else {
+    attachTooltip();
+  }
+}
+
 export function renderPremiumPagination(containerId, state, totalItems, globalsModulePath) {
   let paginationDiv = document.getElementById(containerId);
   if (!paginationDiv) return;
@@ -151,4 +281,25 @@ if (typeof document !== 'undefined') {
     }
     showAlert('Campo Obligatorio', `Por favor completa: ${fieldName}`, 'warning');
   }, true);
+}
+
+// Helper to resolve high-quality image for each service
+export function resolveServiceImage(item) {
+    const itemNameRaw = item.nombre || item.NombreServicio || item.Nombre || '';
+    const itemDesc = item.descripcion || item.Descripcion || '';
+    const fullText = `${itemNameRaw} ${itemDesc}`.toLowerCase();
+    
+    // We can use absolute paths based on window.location.origin
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const base = origin.includes('5500') || origin.includes('localhost') ? `${origin}/frontend` : origin;
+    
+    if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relajacion') || fullText.includes('terapia')) {
+        return `${base}/assets/images/service/SPA.png`;
+    } else if (fullText.includes('caballo') || fullText.includes('cabalgata') || fullText.includes('equino')) {
+        return `${base}/assets/images/service/cabalgata.png`;
+    } else if (fullText.includes('caminata') || fullText.includes('guiado') || fullText.includes('recorrido') || fullText.includes('ecoturismo')) {
+        return `${base}/assets/images/service/caminata.png`;
+    }
+    
+    return `${base}/assets/images/service/SPA.png`;
 }
