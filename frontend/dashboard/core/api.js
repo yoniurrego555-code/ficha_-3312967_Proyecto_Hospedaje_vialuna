@@ -1,5 +1,4 @@
-const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-export const API_URL = isLocalhost ? "http://localhost:3000/api" : "https://tu-backend-en-render.onrender.com/api";
+export const API_URL = "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com/api";
 export const SESSION_KEY = "vialuna_usuario";
 export const TOKEN_KEY = "vialuna_token";
 export const ROLE_KEY = "vialuna_rol";

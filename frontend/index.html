@@ -287,7 +287,7 @@
                 if (value.startsWith('/')) return value;
                 // If it's a simple filename like 'room_familiar.png', map to /uploads/<filename>
                 if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(value)) {
-                    // Prefer frontend static assets when running Live Server (127.0.0.1:5500)
+                    // Prefer frontend static assets when running on the root domain
                     try {
                         const origin = window.location.origin || '';
                         if (/^room[_-]/i.test(value)) {

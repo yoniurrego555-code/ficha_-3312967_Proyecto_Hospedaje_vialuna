@@ -1,6 +1,5 @@
 function getApiBase() {
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const defaultOrigin = isLocalhost ? 'http://localhost:3000' : 'https://tu-backend-en-render.onrender.com';
+    const defaultOrigin = 'https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com';
     return `${defaultOrigin}/api`;
 }
 
