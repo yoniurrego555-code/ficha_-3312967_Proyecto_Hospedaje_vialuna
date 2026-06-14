@@ -4,11 +4,11 @@ const obtener = () => {
   return db.query(`
     SELECT
       p.*,
-        h.NombreHabitacion AS HabitacionIncluidaNombre,
-        h.Descripcion AS HabitacionIncluidaDescripcion,
-        h.Costo AS HabitacionIncluidaCosto,
-        h.CapacidadMaximaPersonas AS HabitacionIncluidaCapacidad,
-        h.ImagenUrl AS HabitacionIncluidaImagen,
+        MAX(h.NombreHabitacion) AS HabitacionIncluidaNombre,
+        MAX(h.Descripcion) AS HabitacionIncluidaDescripcion,
+        MAX(h.Costo) AS HabitacionIncluidaCosto,
+        MAX(h.CapacidadMaximaPersonas) AS HabitacionIncluidaCapacidad,
+        MAX(h.ImagenUrl) AS HabitacionIncluidaImagen,
       GROUP_CONCAT(s.NombreServicio SEPARATOR ', ') AS ServiciosIncluidosNombres,
       GROUP_CONCAT(s.Descripcion SEPARATOR ' | ') AS ServiciosIncluidosDescripciones
     FROM paquetes p
