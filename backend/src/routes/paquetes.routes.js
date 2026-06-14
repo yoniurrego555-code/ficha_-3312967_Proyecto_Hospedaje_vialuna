@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("../controllers/paquetes.controller");
-const { authenticateToken } = require("../middlewares/auth.Middleware");
+const { authenticateToken } = require("../middlewares/auth.middleware");
 const upload = require("../middlewares/upload.middleware");
 
 router.get("/", controller.listar);

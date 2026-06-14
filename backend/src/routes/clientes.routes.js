@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const controller = require("../controllers/clientes.controller");
 const upload = require("../middlewares/upload.middleware");
-const { authenticateToken } = require("../middlewares/auth.Middleware");
+const { authenticateToken } = require("../middlewares/auth.middleware");
 
 router.get("/", authenticateToken, controller.listar);
 router.get("/:id", authenticateToken, controller.obtener);

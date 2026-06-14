@@ -10,7 +10,7 @@ console.log("=======================");
 
 const app = require("./app"); // Importa la app de app.js
 const pool = require("./config/db"); // Importar pool de base de datos
-const PORT = process.env.PORT || 3000; // Puerto configurable
+const PORT = process.env.PORT; // Puerto dinámico para producción
 
 // Script temporal para validar que la Base de Datos responde
 async function checkDatabaseConnection() {

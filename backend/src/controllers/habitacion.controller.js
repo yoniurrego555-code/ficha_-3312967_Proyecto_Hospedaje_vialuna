@@ -21,7 +21,7 @@ exports.crear = (req, res) => {
     console.log("📥 Crear Habitación - Body:", req.body);
     if (req.file) {
         console.log("🖼️ Crear Habitación - File:", req.file);
-        const baseUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get("host")}`;
+        const baseUrl = req.protocol + "://" + req.get("host");
         req.body.ImagenUrl = `${baseUrl}/uploads/${req.file.filename}`;
     }
 
@@ -42,7 +42,7 @@ exports.actualizar = (req, res) => {
     console.log("📥 Actualizar Habitación - Body:", req.body);
     if (req.file) {
         console.log("🖼️ Actualizar Habitación - File:", req.file);
-        const baseUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get("host")}`;
+        const baseUrl = req.protocol + "://" + req.get("host");
         req.body.ImagenUrl = `${baseUrl}/uploads/${req.file.filename}`;
     }
 

@@ -17,15 +17,9 @@ app.use(cors({
         
         const allowedOrigins = [];
         
-        // Agregar FRONTEND_URL dinámicamente si existe
+        // Usar unicamente FRONTEND_URL dinámicamente para producción segura
         if (process.env.FRONTEND_URL) {
             allowedOrigins.push(process.env.FRONTEND_URL);
-        }
-        
-        // En desarrollo permitir localhost
-        if (process.env.NODE_ENV !== 'production') {
-            allowedOrigins.push("http://localhost:5500");
-            allowedOrigins.push("http://127.0.0.1:5500");
         }
 
         if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
