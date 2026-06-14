@@ -4,10 +4,40 @@ const path = require("path");
 
 const app = express();
 
-app.use(cors());
+// Configuración para proxy inverso (Render, Railway, Heroku)
+app.set("trust proxy", 1);
+
+// Configuración de CORS dinámica
+app.use(cors({
+    origin: function (origin, callback) {
+        // Permitir solicitudes sin origen (ej. Postman, curl) o si se especifica FRONTEND_URL como '*'
+        if (!origin || process.env.FRONTEND_URL === '*') {
+            return callback(null, true);
+        }
+        
+        const allowedOrigins = [];
+        
+        // Agregar FRONTEND_URL dinámicamente si existe
+        if (process.env.FRONTEND_URL) {
+            allowedOrigins.push(process.env.FRONTEND_URL);
+        }
+        
+        // En desarrollo permitir localhost
+        if (process.env.NODE_ENV !== 'production') {
+            allowedOrigins.push("http://localhost:5500");
+            allowedOrigins.push("http://127.0.0.1:5500");
+        }
+
+        if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+            callback(null, true);
+        } else {
+            callback(new Error('No permitido por CORS'));
+        }
+    },
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/frontend", express.static(path.resolve(__dirname, "../../frontend")));
 app.use("/uploads", express.static(path.resolve(__dirname, "../public/uploads")));
 
 app.use("/api/usuarios", require("./routes/usuarios.routes"));

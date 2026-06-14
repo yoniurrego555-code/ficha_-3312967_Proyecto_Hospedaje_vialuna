@@ -37,7 +37,6 @@ const obtener = () => {
     `SELECT
       IDHabitacion,
       NombreHabitacion,
-      ImagenHabitacion,
       ImagenUrl,
       Descripcion,
       Costo,
@@ -58,10 +57,16 @@ const obtener = () => {
     .then(async ([rows]) => {
       if (!rows || rows.length === 0) return rows;
       const ids = rows.map(r => r.IDHabitacion);
-      const [imgs] = await db.query(
-        `SELECT id, habitacion_id, url_imagen FROM imagenes_habitacion WHERE habitacion_id IN (${ids.map(() => '?').join(',')}) ORDER BY fecha_creacion ASC`,
-        ids
-      );
+      let imgs = [];
+      try {
+        const [result] = await db.query(
+          `SELECT id, habitacion_id, url_imagen FROM imagenes_habitacion WHERE habitacion_id IN (${ids.map(() => '?').join(',')}) ORDER BY fecha_creacion ASC`,
+          ids
+        );
+        imgs = result;
+      } catch (err) {
+        console.warn("⚠️ Tabla imagenes_habitacion no encontrada u ocurrió un error. Usando ImagenUrl.");
+      }
 
       const map = {};
       imgs.forEach(i => {
@@ -81,7 +86,6 @@ const obtenerPorId = (id) => {
     `SELECT
       IDHabitacion,
       NombreHabitacion,
-      ImagenHabitacion,
       ImagenUrl,
       Descripcion,
       Costo,
@@ -103,10 +107,16 @@ const obtenerPorId = (id) => {
   .then(async ([rows]) => {
     const row = rows[0];
     if (!row) return null;
-    const [imgs] = await db.query(
-      `SELECT url_imagen FROM imagenes_habitacion WHERE habitacion_id = ? ORDER BY fecha_creacion ASC`,
-      [id]
-    );
+    let imgs = [];
+    try {
+      const [result] = await db.query(
+        `SELECT url_imagen FROM imagenes_habitacion WHERE habitacion_id = ? ORDER BY fecha_creacion ASC`,
+        [id]
+      );
+      imgs = result;
+    } catch (err) {
+      console.warn("⚠️ Tabla imagenes_habitacion no encontrada u ocurrió un error. Usando ImagenUrl.");
+    }
 
     return {
       ...row,
@@ -118,11 +128,10 @@ const obtenerPorId = (id) => {
 const crear = (data) => {
   return db.query(
     `INSERT INTO habitacion
-    (NombreHabitacion, ImagenHabitacion, Descripcion, Costo, CapacidadMaximaPersonas, Estado, cantidad_camas, tipo_camas, ImagenUrl)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    (NombreHabitacion, Descripcion, Costo, CapacidadMaximaPersonas, Estado, cantidad_camas, tipo_camas, ImagenUrl)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.NombreHabitacion,
-      data.ImagenHabitacion || null,
       data.Descripcion,
       data.Costo,
       normalizeCapacidad(data),
@@ -138,12 +147,11 @@ const crear = (data) => {
 const actualizar = (id, data) => {
   return db.query(
     `UPDATE habitacion SET 
-    NombreHabitacion = ?, ImagenHabitacion = ?, Descripcion = ?, Costo = ?, CapacidadMaximaPersonas = ?, Estado = ?,
+    NombreHabitacion = ?, Descripcion = ?, Costo = ?, CapacidadMaximaPersonas = ?, Estado = ?,
     cantidad_camas = ?, tipo_camas = ?, ImagenUrl = ?
     WHERE IDHabitacion = ?`,
     [
       data.NombreHabitacion,
-      data.ImagenHabitacion || null,
       data.Descripcion,
       data.Costo,
       normalizeCapacidad(data),

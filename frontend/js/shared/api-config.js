@@ -1,7 +1,6 @@
 function getApiBase() {
-    // Prefer backend at localhost:3000 (default dev server).
-    // If frontend is served from a different origin (eg. Live Server 5500), prefer explicit backend.
-    const defaultOrigin = 'http://localhost:3000';
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const defaultOrigin = isLocalhost ? 'http://localhost:3000' : 'https://tu-backend-en-render.onrender.com';
     return `${defaultOrigin}/api`;
 }
 

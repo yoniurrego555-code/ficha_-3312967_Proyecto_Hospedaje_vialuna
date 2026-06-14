@@ -1,6 +1,7 @@
-﻿// API Configuration for frontend modules
+// API Configuration for frontend modules
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE_URL = isLocalhost ? 'http://localhost:3000/api' : 'https://tu-backend-en-render.onrender.com/api';
 const TOKEN_KEY = 'vialuna_token';
 const SESSION_KEY = 'vialuna_usuario';
 

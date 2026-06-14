@@ -31,7 +31,7 @@ function createRequest(baseHeaders = {}) {
             });
         } catch (error) {
             if (error instanceof TypeError) {
-                throw new Error('No fue posible conectar con la API. Verifica que el backend este corriendo en localhost:3000.');
+                throw new Error('No fue posible conectar con la API. Verifica que el backend esté corriendo correctamente.');
             }
             throw error;
         }

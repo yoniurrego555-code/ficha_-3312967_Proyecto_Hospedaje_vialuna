@@ -104,7 +104,6 @@ function obtenerPayloadDesdeFormulario() {
         CantidadCamas: Number(formData.get('cantidadCamas')) || 1,
         cantidad_camas: Number(formData.get('cantidadCamas')) || 1,
         tipo_camas: String(formData.get('tipoCamas') || '').trim() || null,
-        ImagenHabitacion: String(formData.get('imagenUrl') || '').trim() || null,
         ImagenUrl: String(formData.get('imagenUrl') || '').trim() || null,
         Estado: mapHabitacionEstado(formData.get('estado'))
     };
@@ -436,7 +435,6 @@ async function manejarCambioEstadoRapido(event) {
             Estado: mapHabitacionEstado(nuevoEstado),
             cantidad_camas: habitacion.cantidad_camas || habitacion.CantidadCamas || 1,
             tipo_camas: habitacion.tipo_camas || null,
-            ImagenHabitacion: habitacion.ImagenHabitacion || null,
             ImagenUrl: habitacion.ImagenUrl || null
         };
         
@@ -608,7 +606,7 @@ function cargarFormulario(habitacion) {
     if (tipoCamasEl) tipoCamasEl.value = habitacion.tipo_camas || '';
 
     const imgEl = document.getElementById('imagenUrl');
-    if (imgEl) imgEl.value = habitacion.ImagenUrl || habitacion.ImagenHabitacion || '';
+    if (imgEl) imgEl.value = habitacion.ImagenUrl || '';
 
     document.getElementById('estado').value = estadoTexto;
     
@@ -663,7 +661,6 @@ function buildBackendPayload(data = {}) {
         // optional multimedia / camas
         cantidad_camas: data.cantidad_camas ?? data.CantidadCamas ?? data.camas ?? null,
         tipo_camas: data.tipo_camas ?? data.TipoCamas ?? data.tipoCama ?? null,
-        ImagenHabitacion: data.ImagenHabitacion ?? data.ImagenUrl ?? data.imagenUrl ?? null,
         ImagenUrl: data.ImagenUrl ?? data.imagenUrl ?? null
     };
 }
@@ -687,8 +684,7 @@ async function anularHabitacion(id) {
         Estado: 0,
         cantidad_camas: habitacion.cantidad_camas || habitacion.CantidadCamas || null,
         tipo_camas: habitacion.tipo_camas || habitacion.TipoCamas || null,
-        ImagenHabitacion: habitacion.ImagenHabitacion || habitacion.ImagenUrl || null,
-        ImagenUrl: habitacion.ImagenUrl || habitacion.ImagenHabitacion || null
+        ImagenUrl: habitacion.ImagenUrl || null
     });
 
     return actualizarHabitacion(id, payload);
@@ -956,7 +952,6 @@ export async function renderHabitaciones(container) {
                     Estado: mapHabitacionEstado(nuevoEstado),
                     cantidad_camas: habitacion.cantidad_camas ?? habitacion.CantidadCamas ?? 1,
                     tipo_camas: habitacion.tipo_camas ?? habitacion.TipoCamas ?? null,
-                    ImagenHabitacion: habitacion.ImagenHabitacion ?? habitacion.ImagenUrl ?? null,
                     ImagenUrl: habitacion.ImagenUrl ?? null
                 };
                 await actualizarHabitacion(id, payload);

@@ -21,3 +21,9 @@ Thumbs.db
 # Build output
 dist/
 build/
+
+# Uploads y archivos temporales
+backend/public/uploads/*
+!backend/public/uploads/.gitkeep
+backend/test.js
+backend/inspect_db.js

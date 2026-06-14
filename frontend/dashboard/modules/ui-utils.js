@@ -291,7 +291,8 @@ export function resolveServiceImage(item) {
     
     // We can use absolute paths based on window.location.origin
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const base = origin.includes('5500') || origin.includes('localhost') ? `${origin}/frontend` : origin;
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const base = isLocalhost ? `${origin}/frontend` : origin;
     
     if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relajacion') || fullText.includes('terapia')) {
         return `${base}/assets/images/service/SPA.png`;
