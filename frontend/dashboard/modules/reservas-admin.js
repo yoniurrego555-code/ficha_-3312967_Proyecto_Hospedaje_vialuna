@@ -382,6 +382,7 @@ export class ReservasAdminModule {
         } else {
           // Select new room
           this.currentData.selectedRoom = this.currentData.habitaciones.find(h => parseInt(h.id_habitacion || h.IDHabitacion) === roomId);
+          this.bloquearFechasOcupadas(roomId);
         }
         
         // Re-render to update selection visual
@@ -668,14 +669,16 @@ export class ReservasAdminModule {
             <div class="text-xs font-semibold text-brand-deep">${reserva.fecha_fin || "--"}</div>
         </td>
         <td class="px-6 py-4">
-            <div class="flex items-center gap-3">
-              <label class="relative inline-block w-11 h-6 m-0 cursor-pointer shrink-0">
-                <input type="checkbox" class="sr-only peer" ${status == '1' ? 'checked' : ''} 
+            <div class="flex items-center gap-4">
+              <!-- Switch de Estado (ON = Activa, OFF = Cancelada/Pendiente) -->
+              <label class="relative inline-block w-11 h-6 m-0 cursor-pointer shrink-0" data-tooltip="Alternar entre Activa y Cancelada">
+                <input type="checkbox" class="sr-only peer" ${String(status) === '1' ? 'checked' : ''} 
                        onchange="window.reservasModule.changeStatusFromTable(${resId}, this.checked ? '1' : '2')">
                 <span class="absolute inset-0 rounded-full bg-slate-200 peer-checked:bg-emerald-500 transition-colors duration-300 before:content-[''] before:absolute before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:rounded-full before:transition-transform before:duration-300 peer-checked:before:translate-x-5"></span>
               </label>
-              <span class="px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition-all duration-300 ${status == '1' ? 'bg-emerald-100 text-emerald-800' : (status == '3' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800')}">
-                ${status == '1' ? 'Activa' : (status == '3' ? 'Finalizada' : 'Cancelada')}
+              <!-- Badge Semántico Visual -->
+              <span class="${this.getStatusClass(status)}">
+                ${this.getStatusText(status)}
               </span>
             </div>
         </td>
@@ -962,18 +965,64 @@ export class ReservasAdminModule {
   // Init Flatpickr
   initFlatpickr() {
     if (!window.flatpickr) return;
+    
+    // Configuración base de Flatpickr
     const commonOpts = {
         locale: 'es',
         dateFormat: 'Y-m-d',
         minDate: 'today',
         onChange: () => this.calculateTotal()
     };
-    if (this.refs.fechaInicio) {
-        this.fpInicio = flatpickr(this.refs.fechaInicio, commonOpts);
+    
+    if (this.refs.fechaInicio && this.refs.fechaFin) {
+        // Inicializar Fecha Inicio
+        this.fpInicio = flatpickr(this.refs.fechaInicio, {
+            ...commonOpts,
+            onChange: (selectedDates, dateStr) => {
+                if (selectedDates.length > 0) {
+                    // La fecha mínima de salida es al menos 1 día después de la entrada
+                    const nextDay = new Date(selectedDates[0].getTime() + 86400000);
+                    if (this.fpFin) {
+                        this.fpFin.set("minDate", nextDay);
+                        // Limpiar la fecha fin si es menor a la nueva fecha mínima
+                        const currentEndDate = this.fpFin.selectedDates[0];
+                        if (currentEndDate && currentEndDate < nextDay) {
+                            this.fpFin.clear();
+                        }
+                        // Abrir automáticamente el calendario de fin
+                        setTimeout(() => this.fpFin.open(), 100);
+                    }
+                }
+                this.calculateTotal();
+            }
+        });
+
+        // Inicializar Fecha Fin
+        this.fpFin = flatpickr(this.refs.fechaFin, {
+            ...commonOpts,
+            minDate: new Date(new Date().getTime() + 86400000) // Mañana por defecto
+        });
     }
-    if (this.refs.fechaFin) {
-        this.fpFin = flatpickr(this.refs.fechaFin, commonOpts);
-    }
+  }
+
+  // Nuevo método para bloquear fechas cuando se selecciona una habitación
+  bloquearFechasOcupadas(idHabitacion) {
+    if (!this.fpInicio || !this.fpFin || !this.currentData.reservas) return;
+    
+    // Filtrar reservas de esta habitación que estén activas (estado 1)
+    const fechasOcupadas = this.currentData.reservas
+      .filter(r => {
+        const idHab = r.id_habitacion || (r.habitacion ? r.habitacion.id : null);
+        const estado = r.id_estado_reserva || r.Estado || r.estado || 1;
+        return String(idHab) === String(idHabitacion) && String(estado) === '1';
+      })
+      .map(r => ({
+        from: r.fecha_inicio || r.FechaInicio,
+        to: r.fecha_fin || r.FechaFin
+      }));
+
+    this.fpInicio.set('disable', fechasOcupadas);
+    this.fpFin.set('disable', fechasOcupadas);
   }
 
   // Show reservation form
@@ -1337,31 +1386,35 @@ if (this.refs.reservationForm) {
 
   getStatusClass(estado) {
     const statusMap = {
-      '1': 'status-active',
-      '2': 'status-cancelled',
-      '3': 'status-completed',
-      'activo': 'status-active',
-      'completada': 'status-completed',
-      'cancelada': 'status-cancelled',
-      'finalizada': 'status-completed',
-      'active': 'status-active',
-      'completed': 'status-completed',
-      'cancelled': 'status-cancelled'
+      '1': 'reserva-badge badge-pendiente', // Activa/Pendiente
+      '2': 'reserva-badge badge-cancelada', // Cancelada
+      '3': 'reserva-badge badge-finalizada', // Finalizada
+      '4': 'reserva-badge badge-pagada',    // Asumiendo 4=Pagada o para uso futuro
+      'activo': 'reserva-badge badge-pendiente',
+      'completada': 'reserva-badge badge-finalizada',
+      'cancelada': 'reserva-badge badge-cancelada',
+      'finalizada': 'reserva-badge badge-finalizada',
+      'pagada': 'reserva-badge badge-pagada',
+      'pendiente': 'reserva-badge badge-pendiente',
+      'pendiente de pago': 'reserva-badge badge-pendiente'
     };
-    return statusMap[String(estado).toLowerCase()] || 'status-active';
+    return statusMap[String(estado).toLowerCase()] || 'reserva-badge badge-finalizada';
   }
 
   getStatusText(estado) {
     const statusMap = {
-      '1': 'Activa',
-      '2': 'Cancelada',
-      '3': 'Finalizada',
-      'activo': 'Activa',
-      'completada': 'Finalizada',
-      'finalizada': 'Finalizada',
-      'cancelada': 'Cancelada'
+      '1': 'PENDIENTE',
+      '2': 'CANCELADA',
+      '3': 'FINALIZADA',
+      '4': 'PAGADA',
+      'activo': 'PENDIENTE',
+      'completada': 'FINALIZADA',
+      'finalizada': 'FINALIZADA',
+      'cancelada': 'CANCELADA',
+      'pagada': 'PAGADA',
+      'pendiente': 'PENDIENTE'
     };
-    return statusMap[String(estado).toLowerCase()] || estado || 'Desconocido';
+    return statusMap[String(estado).toLowerCase()] || String(estado).toUpperCase() || 'DESCONOCIDO';
   }
 
   // Change status directly from table
@@ -1527,128 +1580,493 @@ if (this.refs.reservationForm) {
       Swal.fire('', 'Reserva no encontrada', 'info');
       return;
     }
-    
-    // Show edit form
     this.showEditReservationForm(reserva);
   }
-  
-  // Show edit reservation form
+
+  // Show edit reservation form (REDISEÑADO — 4 secciones)
   showEditReservationForm(reserva) {
     const idCliente = reserva.id_cliente || reserva.IDCliente || (reserva.cliente ? reserva.cliente.id : null);
     const idHabitacion = reserva.id_habitacion || reserva.IDHabitacion || (reserva.habitacion ? reserva.habitacion.id : null);
     const idMetodoPago = reserva.id_metodo_pago || reserva.IDMetodoPago || (reserva.metodoPago ? reserva.metodoPago.id : 1);
-    const idEstado = reserva.id_estado_reserva || (reserva.estado ? reserva.estado.id : (reserva.Estado || 1));
-    
+    const idEstado = String(reserva.id_estado_reserva || (reserva.estado ? (reserva.estado.id || reserva.estado) : (reserva.Estado || 1)));
+
+    // Resolver datos relacionados
+    const cliente = this.currentData.clientes.find(c => (c.id_cliente || c.IDCliente) == idCliente);
+    let habitacionActual = this.currentData.habitaciones.find(h => (h.id_habitacion || h.IDHabitacion) == idHabitacion);
+    if (!habitacionActual && reserva.habitacion) habitacionActual = reserva.habitacion;
+
+    const nombreCliente = cliente
+      ? (cliente.NombreCompleto || `${cliente.Nombres || cliente.Nombre || ''} ${cliente.Apellidos || cliente.Apellido || ''}`.trim())
+      : (reserva.cliente ? reserva.cliente.nombreCompleto : 'Sin cliente');
+    const nombreHab = habitacionActual
+      ? (habitacionActual.tipo || habitacionActual.Tipo || habitacionActual.NombreHabitacion || habitacionActual.nombre || 'Sin nombre')
+      : (reserva.habitacion ? reserva.habitacion.nombre : 'Sin habitación');
+
+    // Estado como texto
+    const estadoTextoMap = { '1': 'Pendiente', '2': 'Cancelada', '3': 'Finalizada' };
+    const estadoColorMap = {
+      '1': 'background:#fef3c7;color:#92400e;border:1px solid #fde68a',
+      '2': 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5',
+      '3': 'background:#d1fae5;color:#065f46;border:1px solid #a7f3d0'
+    };
+    const estadoTexto = estadoTextoMap[idEstado] || 'Desconocido';
+    const estadoColor = estadoColorMap[idEstado] || 'background:#f3f4f6;color:#374151';
+
+    const isCancelada = idEstado === '2';
+    const isActiva = idEstado === '1';
+    const isPendiente = !isCancelada && !isActiva;
+
+    // Paquetes y servicios actuales
+    const paquetesActuales = Array.isArray(reserva.paquetes) ? reserva.paquetes : [];
+    const serviciosActuales = Array.isArray(reserva.servicios) ? reserva.servicios : [];
+
+    const paquetesTexto = paquetesActuales.length
+      ? paquetesActuales.map(p => p.nombre || p.Nombre || 'Paquete').join(', ')
+      : 'Ninguno';
+    const serviciosTexto = serviciosActuales.length
+      ? serviciosActuales.map(s => s.nombre || s.Nombre || 'Servicio').join(', ')
+      : 'Ninguno';
+
+    // IDs preseleccionados
+    const paqIds = paquetesActuales.map(p => String(p.id_paquete || p.IDPaquete || p.id || ''));
+    const svcIds = serviciosActuales.map(s => String(s.id_servicio || s.IDServicio || s.id || ''));
+
+    // Precios actuales
+    const precioHabActual = habitacionActual ? Number(habitacionActual.precio || habitacionActual.Precio || habitacionActual.Costo || 0) : 0;
+    const totalAnterior = Number(reserva.total || reserva.Total || 0);
+
     this.refs.reservationsListSection.style.display = 'none';
     this.refs.reservationFormSection.style.display = 'none';
     this.refs.editReservationSection.style.display = 'block';
 
+    const bannerCancelada = isCancelada
+      ? `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+           <span style="font-size:1.4rem;">🔒</span>
+           <div>
+             <strong style="color:#991b1b;font-size:0.95rem;">Reserva Cancelada — Edición Bloqueada</strong>
+             <p style="color:#b91c1c;font-size:0.85rem;margin:2px 0 0;">Las reservas canceladas no pueden modificarse. Solo puedes consultar la información.</p>
+           </div>
+         </div>`
+      : '';
+
+    const bannerActiva = isActiva && !isCancelada
+      ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+           <span style="font-size:1.4rem;">⚡</span>
+           <div>
+             <strong style="color:#92400e;font-size:0.95rem;">Reserva Pendiente — Edición Limitada</strong>
+             <p style="color:#b45309;font-size:0.85rem;margin:2px 0 0;">Solo puedes agregar servicios extra o extender las fechas de salida.</p>
+           </div>
+         </div>`
+      : '';
+
+    // Generar opciones de paquetes y servicios (checkboxes)
+    const paquetesActiveOptions = this.currentData.paquetes.filter(p => Number(p.estado ?? p.Estado ?? 1) === 1);
+    const serviciosActiveOptions = this.currentData.servicios.filter(s => Number(s.estado ?? s.Estado ?? 1) === 1);
+
+    const paquetesCheckboxes = paquetesActiveOptions.map(p => {
+      const pid = String(p.id_paquete || p.IDPaquete || '');
+      const precio = Number(p.precio || p.Precio || 0);
+      const checked = paqIds.includes(pid);
+      const disabled = isCancelada ? 'disabled' : '';
+      return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${isCancelada?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};transition:all .2s;">
+        <input type="checkbox" name="editPaquetes" value="${pid}" data-price="${precio}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
+        <span style="flex:1;font-size:0.9rem;font-weight:600;color:#173029;">${p.nombre || p.Nombre || 'Paquete'}</span>
+        <span style="font-size:0.85rem;color:#258a60;font-weight:700;">$${this.formatCurrency(precio)}</span>
+      </label>`;
+    }).join('');
+
+    const serviciosCheckboxes = serviciosActiveOptions.map(s => {
+      const sid = String(s.id_servicio || s.IDServicio || '');
+      const precio = Number(s.precio || s.Precio || 0);
+      const checked = svcIds.includes(sid);
+      // Activa: solo se puede agregar servicios (no quitar), Cancelada: todo bloqueado
+      const disabled = isCancelada ? 'disabled' : '';
+      return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${isCancelada?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};transition:all .2s;">
+        <input type="checkbox" name="editServicios" value="${sid}" data-price="${precio}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
+        <span style="flex:1;font-size:0.9rem;font-weight:600;color:#173029;">${s.nombre || s.Nombre || 'Servicio'}</span>
+        <span style="font-size:0.85rem;color:#258a60;font-weight:700;">$${this.formatCurrency(precio)}</span>
+      </label>`;
+    }).join('');
+
+    // HTML del formulario
     this.refs.editReservationContainer.innerHTML = `
-      <div class="section-panel" style="max-width: 800px; margin: 0 auto;">
-        <div class="section-panel-header">
-          <h2 style="color:var(--brand-deep)"><i class="fa-solid fa-pen"></i> Editar Reserva #${reserva.id_reserva || reserva.IDReserva}</h2>
-          <button onclick="window.reservasModule.showReservationsList()" class="btn-secondary">
-            Volver a la lista
+      <div style="max-width:900px;margin:0 auto;padding-bottom:40px;">
+
+        <!-- Encabezado -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;">
+          <div>
+            <p style="font-size:0.75rem;font-weight:800;color:#258a60;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 4px;">Gestión de Reservas</p>
+            <h2 style="margin:0;color:#173029;font-size:1.5rem;font-weight:800;">✏️ Editar Reserva <span style="color:#258a60;">#${reserva.id_reserva || reserva.IDReserva}</span></h2>
+          </div>
+          <button onclick="window.reservasModule.showReservationsList()"
+            style="padding:10px 20px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;color:#173029;font-weight:700;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:6px;">
+            ← Volver a la lista
           </button>
         </div>
-        
-        <form id="editReservationForm" class="modern-form">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
-            <div class="form-group">
-              <label style="font-weight:600; margin-bottom:8px; display:block">Huésped:</label>
-              <select id="editClienteSelect" class="filter-select" style="width:100%" required>
-                <option value="">Seleccionar cliente</option>
-                ${this.currentData.clientes.map(c => `
-                  <option value="${c.id_cliente || c.IDCliente || c.NroDocumento || c.nro_documento}" ${ (c.id_cliente || c.IDCliente || c.NroDocumento || c.nro_documento) == idCliente ? 'selected' : ''}>
-                    ${c.NombreCompleto || `${c.Nombres || c.Nombre || ''} ${c.Apellidos || c.Apellido || ''}`.trim() || 'Cliente'} (${c.NroDocumento || c.nroDocumento || c.documento || 'S/D'})
-                  </option>
-                `).join('')}
-              </select>
+
+        ${bannerCancelada}
+        ${bannerActiva}
+
+        <!-- SECCIÓN 1: Información actual (solo lectura) -->
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:20px 24px;margin-bottom:20px;">
+          <h3 style="margin:0 0 16px;color:#173029;font-size:1rem;font-weight:800;display:flex;align-items:center;gap:8px;">
+            📋 Sección 1: Información Actual
+          </h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+            <div style="background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #e5e7eb;">
+              <p style="font-size:0.7rem;font-weight:800;color:#6b7280;text-transform:uppercase;margin:0 0 4px;">Código</p>
+              <p style="margin:0;font-weight:700;color:#173029;">#${reserva.id_reserva || reserva.IDReserva}</p>
             </div>
-            
-            <div class="form-group">
-              <label style="font-weight:600; margin-bottom:8px; display:block">Habitación:</label>
-              <select id="editHabitacionSelect" class="filter-select" style="width:100%" required>
-                <option value="">Seleccionar habitación</option>
-                ${this.currentData.habitaciones.map(hab => `
-                  <option value="${hab.id_habitacion || hab.IDHabitacion}" ${ (hab.id_habitacion || hab.IDHabitacion) == idHabitacion ? 'selected' : ''}>
-                    ${hab.numero || hab.Numero || hab.id_habitacion || hab.IDHabitacion || ''} - ${hab.tipo || hab.Tipo || hab.NombreHabitacion || hab.nombre || 'Habitación'}
-                  </option>
-                `).join('')}
-              </select>
+            <div style="background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #e5e7eb;">
+              <p style="font-size:0.7rem;font-weight:800;color:#6b7280;text-transform:uppercase;margin:0 0 4px;">Estado actual</p>
+              <span style="display:inline-block;padding:4px 10px;border-radius:999px;font-size:0.8rem;font-weight:800;${estadoColor}">${estadoTexto}</span>
             </div>
-            
-            <div class="form-group">
-              <label style="font-weight:600; margin-bottom:8px; display:block">Fecha Entrada:</label>
-              <input type="date" id="editFechaInicio" class="search-input" value="${reserva.fecha_inicio || reserva.FechaInicio || ''}" required>
+            <div style="background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #e5e7eb;">
+              <p style="font-size:0.7rem;font-weight:800;color:#6b7280;text-transform:uppercase;margin:0 0 4px;">Habitación</p>
+              <p style="margin:0;font-weight:700;color:#173029;">${nombreHab}</p>
             </div>
-            
-            <div class="form-group">
-              <label style="font-weight:600; margin-bottom:8px; display:block">Fecha Salida:</label>
-              <input type="date" id="editFechaFin" class="search-input" value="${reserva.fecha_fin || reserva.FechaFin || ''}" required>
+            <div style="background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #e5e7eb;">
+              <p style="font-size:0.7rem;font-weight:800;color:#6b7280;text-transform:uppercase;margin:0 0 4px;">Check-in</p>
+              <p style="margin:0;font-weight:700;color:#173029;">${reserva.fecha_inicio || reserva.FechaInicio || '—'}</p>
             </div>
-            
-            <div class="form-group">
-              <label style="font-weight:600; margin-bottom:8px; display:block">Método de Pago:</label>
-              <select id="editMetodoPago" class="filter-select" style="width:100%" required>
-                <option value="1" ${idMetodoPago == 1 ? 'selected' : ''}>Efectivo</option>
-                <option value="2" ${idMetodoPago == 2 ? 'selected' : ''}>Tarjeta</option>
-                <option value="3" ${idMetodoPago == 3 ? 'selected' : ''}>Transferencia</option>
-              </select>
+            <div style="background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #e5e7eb;">
+              <p style="font-size:0.7rem;font-weight:800;color:#6b7280;text-transform:uppercase;margin:0 0 4px;">Check-out</p>
+              <p style="margin:0;font-weight:700;color:#173029;">${reserva.fecha_fin || reserva.FechaFin || '—'}</p>
             </div>
-            
-            <div class="form-group">
-              <label style="font-weight:600; margin-bottom:8px; display:block">Estado:</label>
-              <select id="editEstadoReserva" class="filter-select" style="width:100%" required>
-                <option value="1" ${idEstado == 1 ? 'selected' : ''}>Activa</option>
-                <option value="3" ${idEstado == 3 ? 'selected' : ''}>Finalizada</option>
-                <option value="2" ${idEstado == 2 ? 'selected' : ''}>Cancelada</option>
-              </select>
+            <div style="background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #e5e7eb;">
+              <p style="font-size:0.7rem;font-weight:800;color:#6b7280;text-transform:uppercase;margin:0 0 4px;">Paquetes</p>
+              <p style="margin:0;font-weight:600;color:#173029;font-size:0.88rem;">${paquetesTexto}</p>
+            </div>
+            <div style="background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #e5e7eb;">
+              <p style="font-size:0.7rem;font-weight:800;color:#6b7280;text-transform:uppercase;margin:0 0 4px;">Servicios extra</p>
+              <p style="margin:0;font-weight:600;color:#173029;font-size:0.88rem;">${serviciosTexto}</p>
+            </div>
+            <div style="background:#fff;border-radius:10px;padding:12px 14px;border:1px solid #e5e7eb;">
+              <p style="font-size:0.7rem;font-weight:800;color:#6b7280;text-transform:uppercase;margin:0 0 4px;">Total registrado</p>
+              <p style="margin:0;font-weight:800;color:#258a60;font-size:1.1rem;">$${this.formatCurrency(totalAnterior)}</p>
+            </div>
+          </div>
+        </div>
+
+        <form id="editReservationForm">
+
+          <!-- SECCIÓN 2: Campos editables -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:20px 24px;margin-bottom:20px;">
+            <h3 style="margin:0 0 18px;color:#173029;font-size:1rem;font-weight:800;display:flex;align-items:center;gap:8px;">
+              ✏️ Sección 2: Modificar Reserva
+            </h3>
+
+            ${!isCancelada ? `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+              ${!isActiva ? `
+              <div>
+                <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Habitación</label>
+                <select id="editHabitacionSelect" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:#f9fafb;font-size:0.9rem;font-weight:600;color:#173029;" onchange="window.reservasModule._recalcularEdicion()">
+                  <option value="">Seleccionar habitación</option>
+                  ${this.currentData.habitaciones.map(hab => {
+                    const hid = hab.id_habitacion || hab.IDHabitacion;
+                    const precio = Number(hab.precio || hab.Precio || hab.Costo || 0);
+                    return `<option value="${hid}" data-price="${precio}" ${hid == idHabitacion ? 'selected' : ''}>
+                      ${hab.tipo || hab.Tipo || hab.NombreHabitacion || 'Habitación'} — $${this.formatCurrency(precio)}/noche
+                    </option>`;
+                  }).join('')}
+                </select>
+              </div>
+              ` : `<div style="background:#f3f4f6;border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:0.85rem;">
+                🔒 Habitación no modificable en estado Pendiente
+              </div>`}
+
+              <div>
+                <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Estado</label>
+                <select id="editEstadoReserva" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:#f9fafb;font-size:0.9rem;font-weight:600;color:#173029;">
+                  <option value="1" ${idEstado=='1'?'selected':''}>Pendiente</option>
+                  <option value="3" ${idEstado=='3'?'selected':''}>Finalizada</option>
+                  <option value="2" ${idEstado=='2'?'selected':''}>Cancelada</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Fecha Check-in</label>
+                <input type="date" id="editFechaInicio" value="${reserva.fecha_inicio || reserva.FechaInicio || ''}"
+                  ${isActiva ? 'disabled' : ''}
+                  style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:${isActiva?'#f3f4f6':'#f9fafb'};font-size:0.9rem;box-sizing:border-box;"
+                  onchange="window.reservasModule._recalcularEdicion()">
+              </div>
+
+              <div>
+                <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Fecha Check-out ${isActiva?'<span style="color:#258a60;">(solo extender)</span>':''}</label>
+                <input type="date" id="editFechaFin" value="${reserva.fecha_fin || reserva.FechaFin || ''}"
+                  style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:#f9fafb;font-size:0.9rem;box-sizing:border-box;"
+                  onchange="window.reservasModule._recalcularEdicion()">
+              </div>
+
+              <div>
+                <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Método de Pago</label>
+                <select id="editMetodoPago" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:#f9fafb;font-size:0.9rem;font-weight:600;color:#173029;">
+                  <option value="1" ${idMetodoPago==1?'selected':''}>Efectivo</option>
+                  <option value="2" ${idMetodoPago==2?'selected':''}>Tarjeta Débito/Crédito</option>
+                  <option value="3" ${idMetodoPago==3?'selected':''}>Transferencia Bancaria</option>
+                </select>
+              </div>
+
+              <div style="grid-column:span 2;">
+                <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Observaciones</label>
+                <textarea id="editObservaciones" rows="2"
+                  style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:#f9fafb;font-size:0.9rem;resize:vertical;box-sizing:border-box;"
+                  placeholder="Notas o solicitudes especiales...">${reserva.observaciones || ''}</textarea>
+              </div>
             </div>
 
-            <div class="form-group" style="grid-column: span 2;">
-              <label style="font-weight:600; margin-bottom:8px; display:block">Total ($):</label>
-              <input type="number" id="editTotalAmount" class="search-input" value="${reserva.total || reserva.Total || 0}" step="0.01" required>
+            <!-- Paquetes -->
+            <div style="margin-bottom:18px;">
+              <h4 style="margin:0 0 10px;color:#173029;font-size:0.85rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;">🎁 Paquetes Especiales</h4>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;" id="editPaquetesGrid">
+                ${paquetesCheckboxes || '<p style="color:#6b7280;font-size:0.85rem;">No hay paquetes disponibles.</p>'}
+              </div>
+            </div>
+
+            <!-- Servicios -->
+            <div>
+              <h4 style="margin:0 0 10px;color:#173029;font-size:0.85rem;font-weight:800;text-transform:uppercase;letter-spacing:0.05em;">🔧 Servicios Extra</h4>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;" id="editServiciosGrid">
+                ${serviciosCheckboxes || '<p style="color:#6b7280;font-size:0.85rem;">No hay servicios disponibles.</p>'}
+              </div>
+            </div>
+            ` : `<p style="color:#6b7280;font-style:italic;text-align:center;padding:20px;">Esta reserva está cancelada. No es posible realizar modificaciones.</p>`}
+          </div>
+
+          <!-- SECCIÓN 3: Resumen dinámico de precios -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:20px 24px;margin-bottom:20px;" id="editPriceSummary">
+            <h3 style="margin:0 0 16px;color:#173029;font-size:1rem;font-weight:800;display:flex;align-items:center;gap:8px;">
+              💰 Sección 3: Resumen de Precios
+            </h3>
+            <div id="editPriceBreakdown">
+              <p style="color:#6b7280;font-style:italic;font-size:0.9rem;">Selecciona fechas y habitación para ver el cálculo...</p>
             </div>
           </div>
-          
-          <div style="display: flex; gap: 12px; justify-content: flex-end;">
-            <button type="button" onclick="window.reservasModule.showReservationsList()" class="btn-secondary">Cancelar</button>
-            <button type="submit" class="btn-primary">Guardar Cambios</button>
+
+          <!-- SECCIÓN 4: Acciones -->
+          ${!isCancelada ? `
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:20px 24px;display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-end;">
+            <h3 style="width:100%;margin:0 0 14px;color:#173029;font-size:1rem;font-weight:800;">⚡ Sección 4: Acciones</h3>
+            <button type="button" onclick="window.reservasModule.showReservationsList()"
+              style="padding:12px 24px;border-radius:10px;border:1px solid #d1d5db;background:#fff;color:#373737;font-weight:700;cursor:pointer;font-size:0.9rem;">
+              Cancelar edición
+            </button>
+            <div id="editPagarDiferencia" style="display:none;">
+              <button type="button" id="btnPagarDif"
+                style="padding:12px 24px;border-radius:10px;border:none;background:#f59e0b;color:#fff;font-weight:800;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:6px;">
+                💳 Guardar y registrar pago pendiente
+              </button>
+            </div>
+            <button type="submit"
+              style="padding:12px 28px;border-radius:10px;border:none;background:linear-gradient(135deg,#014034,#258a60);color:#fff;font-weight:800;cursor:pointer;font-size:0.9rem;box-shadow:0 4px 14px rgba(1,64,52,.3);">
+              💾 Guardar cambios
+            </button>
           </div>
+          ` : `
+          <div style="display:flex;justify-content:flex-end;">
+            <button type="button" onclick="window.reservasModule.showReservationsList()"
+              style="padding:12px 24px;border-radius:10px;border:1px solid #d1d5db;background:#fff;color:#373737;font-weight:700;cursor:pointer;">
+              Volver a la lista
+            </button>
+          </div>`}
+
         </form>
       </div>
     `;
-    
-    // Setup form submission
-    this.container.querySelector('#editReservationForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      await this.saveReserva(reserva.id_reserva || reserva.IDReserva);
+
+    // Guardar estado original de la reserva para comparación
+    this._editReservaOriginal = reserva;
+    this._editTotalAnterior = totalAnterior;
+
+    // Adjuntar event listeners a los checkboxes para recalcular
+    this.refs.editReservationContainer.querySelectorAll('input[name="editPaquetes"], input[name="editServicios"]').forEach(cb => {
+      cb.addEventListener('change', () => this._recalcularEdicion());
     });
-    
-    // Ensure module is globally available for onclick handlers
+
+    // Calcular inmediatamente con los valores actuales
+    this._recalcularEdicion();
+
+    // Submit del formulario
+    const editForm = this.refs.editReservationContainer.querySelector('#editReservationForm');
+    if (editForm) {
+      editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.saveReserva(reserva.id_reserva || reserva.IDReserva);
+      });
+    }
+
+    // Botón "Guardar y pagar diferencia"
+    const btnPagarDif = this.refs.editReservationContainer.querySelector('#btnPagarDif');
+    if (btnPagarDif) {
+      btnPagarDif.addEventListener('click', async () => {
+        const totalNuevo = this._lastEditTotal || 0;
+        const diferencia = totalNuevo - this._editTotalAnterior;
+        if (diferencia > 0) {
+          await Swal.fire({
+            icon: 'info',
+            title: 'Pago pendiente registrado',
+            html: `Diferencia a cobrar: <strong>$${this.formatCurrency(diferencia)}</strong><br>Se guardará la reserva con el nuevo total.`,
+            confirmButtonText: 'Continuar'
+          });
+        }
+        await this.saveReserva(reserva.id_reserva || reserva.IDReserva);
+      });
+    }
+
     window.reservasModule = this;
   }
+
+  // Recalcular precios en edición en tiempo real
+  _recalcularEdicion() {
+    const container = this.refs.editReservationContainer;
+    if (!container) return;
+
+    const habitacionSel = container.querySelector('#editHabitacionSelect');
+    const fechaInicio = container.querySelector('#editFechaInicio');
+    const fechaFin = container.querySelector('#editFechaFin');
+    const breakdownEl = container.querySelector('#editPriceBreakdown');
+    const pagarDifEl = container.querySelector('#editPagarDiferencia');
+
+    const startVal = fechaInicio?.value;
+    const endVal = fechaFin?.value;
+
+    let noches = 0;
+    if (startVal && endVal && endVal > startVal) {
+      const d1 = new Date(startVal), d2 = new Date(endVal);
+      noches = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24));
+    }
+
+    // Precio habitación
+    let precioHab = 0;
+    if (habitacionSel) {
+      const selOpt = habitacionSel.options[habitacionSel.selectedIndex];
+      precioHab = selOpt ? Number(selOpt.getAttribute('data-price') || 0) : 0;
+    } else {
+      // En modo activa, la habitación no cambia
+      const original = this._editReservaOriginal;
+      const hab = this.currentData.habitaciones.find(h =>
+        (h.id_habitacion || h.IDHabitacion) == (original?.id_habitacion || original?.IDHabitacion)
+      );
+      precioHab = hab ? Number(hab.precio || hab.Precio || hab.Costo || 0) : 0;
+    }
+
+    const totalHab = precioHab * noches;
+
+    // Paquetes seleccionados
+    let totalPaq = 0;
+    const paqChecks = container.querySelectorAll('input[name="editPaquetes"]:checked');
+    paqChecks.forEach(cb => { totalPaq += Number(cb.getAttribute('data-price') || 0); });
+
+    // Servicios seleccionados
+    let totalSvc = 0;
+    const svcChecks = container.querySelectorAll('input[name="editServicios"]:checked');
+    svcChecks.forEach(cb => { totalSvc += Number(cb.getAttribute('data-price') || 0); });
+
+    const totalNuevo = totalHab + totalPaq + totalSvc;
+    const totalAnterior = this._editTotalAnterior || 0;
+    const diferencia = totalNuevo - totalAnterior;
+    this._lastEditTotal = totalNuevo;
+
+    let diferenciaHtml = '';
+    if (totalAnterior > 0) {
+      if (diferencia > 0) {
+        diferenciaHtml = `
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px dashed #e5e7eb;margin-top:6px;">
+            <span style="font-size:0.85rem;color:#6b7280;">Total anterior:</span>
+            <span style="font-weight:700;color:#6b7280;">$${this.formatCurrency(totalAnterior)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;">
+            <span style="font-size:0.85rem;color:#b45309;font-weight:700;">⚠️ Diferencia a pagar:</span>
+            <span style="font-weight:800;color:#b45309;">+$${this.formatCurrency(diferencia)}</span>
+          </div>`;
+        if (pagarDifEl) pagarDifEl.style.display = 'block';
+        const btnDif = container.querySelector('#btnPagarDif');
+        if (btnDif) btnDif.textContent = `💳 Guardar y registrar pago: +$${this.formatCurrency(diferencia)}`;
+      } else if (diferencia < 0) {
+        diferenciaHtml = `
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px dashed #e5e7eb;margin-top:6px;">
+            <span style="font-size:0.85rem;color:#6b7280;">Total anterior:</span>
+            <span style="font-weight:700;color:#6b7280;">$${this.formatCurrency(totalAnterior)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;">
+            <span style="font-size:0.85rem;color:#065f46;font-weight:700;">✅ Saldo a favor del cliente:</span>
+            <span style="font-weight:800;color:#065f46;">$${this.formatCurrency(Math.abs(diferencia))}</span>
+          </div>`;
+        if (pagarDifEl) pagarDifEl.style.display = 'none';
+      } else {
+        if (pagarDifEl) pagarDifEl.style.display = 'none';
+      }
+    }
+
+    if (breakdownEl) {
+      breakdownEl.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+            <span style="font-size:0.85rem;color:#6b7280;">🛏 Habitación (${noches} noche${noches!==1?'s':''} × $${this.formatCurrency(precioHab)}):</span>
+            <span style="font-weight:700;color:#173029;">$${this.formatCurrency(totalHab)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+            <span style="font-size:0.85rem;color:#6b7280;">🎁 Paquetes (${paqChecks.length}):</span>
+            <span style="font-weight:700;color:#173029;">$${this.formatCurrency(totalPaq)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+            <span style="font-size:0.85rem;color:#6b7280;">🔧 Servicios extra (${svcChecks.length}):</span>
+            <span style="font-weight:700;color:#173029;">$${this.formatCurrency(totalSvc)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;">
+            <strong style="color:#173029;font-size:1rem;">TOTAL NUEVO:</strong>
+            <strong style="color:#258a60;font-size:1.25rem;">$${this.formatCurrency(totalNuevo)}</strong>
+          </div>
+          ${diferenciaHtml}
+        </div>
+      `;
+    }
+  }
   
-  // Save edited reservation
+  // Save edited reservation (ACTUALIZADO)
   async saveReserva(id) {
     const editContainer = this.refs.editReservationContainer;
+
+    // Recoger habitación (puede estar deshabilitada si es Activa)
+    const habSel = editContainer.querySelector('#editHabitacionSelect');
+    const original = this._editReservaOriginal;
+    const idHabitacion = habSel
+      ? parseInt(habSel.value)
+      : parseInt(original?.id_habitacion || original?.IDHabitacion);
+
+    // Paquetes y servicios seleccionados
+    const paquetesSeleccionados = [...editContainer.querySelectorAll('input[name="editPaquetes"]:checked')]
+      .map(cb => parseInt(cb.value)).filter(Boolean);
+    const serviciosSeleccionados = [...editContainer.querySelectorAll('input[name="editServicios"]:checked')]
+      .map(cb => parseInt(cb.value)).filter(Boolean);
+
+    const observaciones = editContainer.querySelector('#editObservaciones')?.value || '';
+
     const formData = {
-      id_cliente: parseInt(editContainer.querySelector('#editClienteSelect').value),
-      id_habitacion: parseInt(editContainer.querySelector('#editHabitacionSelect').value),
-      fecha_inicio: editContainer.querySelector('#editFechaInicio').value,
-      fecha_fin: editContainer.querySelector('#editFechaFin').value,
-      id_metodo_pago: parseInt(editContainer.querySelector('#editMetodoPago').value),
-      id_estado_reserva: parseInt(editContainer.querySelector('#editEstadoReserva').value),
-      total: parseFloat(editContainer.querySelector('#editTotalAmount').value)
+      id_habitacion: idHabitacion,
+      fecha_inicio: editContainer.querySelector('#editFechaInicio')?.value || original?.fecha_inicio,
+      fecha_fin: editContainer.querySelector('#editFechaFin')?.value || original?.fecha_fin,
+      hora_entrada: original?.hora_entrada || '14:00',
+      hora_salida: original?.hora_salida || '12:00',
+      id_metodo_pago: parseInt(editContainer.querySelector('#editMetodoPago')?.value || 1),
+      id_estado_reserva: parseInt(editContainer.querySelector('#editEstadoReserva')?.value || 1),
+      total: this._lastEditTotal || Number(original?.total || 0),
+      paquetes: paquetesSeleccionados,
+      servicios: serviciosSeleccionados,
+      observaciones
     };
+
+    // Preservar id_cliente del original
+    const idCliente = original?.id_cliente || original?.IDCliente || (original?.cliente ? original.cliente.id : null);
+    if (idCliente) formData.id_cliente = parseInt(idCliente);
     
     try {
       console.log('Actualizando reserva:', formData);
       await actualizarReserva(id, formData);
-      showAlert('Información', 'Reserva actualizada exitosamente', 'info');
+      showAlert('Éxito', 'Reserva actualizada exitosamente', 'success');
       
-      // Reload data and go back to list
       await this.reloadData();
       this.showReservationsList();
     } catch (error) {
@@ -1656,6 +2074,9 @@ if (this.refs.reservationForm) {
       Swal.fire('Error', 'Error al actualizar la reserva: ' + (error.message || 'Error desconocido'), 'error');
     }
   }
+  
+
+
   
   // Delete reservation
   async deleteReserva(id) {

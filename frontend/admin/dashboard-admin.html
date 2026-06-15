@@ -11,6 +11,11 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <!-- SheetJS -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <!-- Flatpickr CSS y JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+
   <link rel="stylesheet" href="../css/admin.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -89,20 +94,8 @@
 
     <!-- Main Content -->
     <main class="content">
-      <!-- Topbar con notificaciones -->
-      <header class="flex justify-end items-center mb-6 pb-2 border-b border-gray-100">
-        <div class="relative">
-          <button
-            class="relative p-2 text-brand-deep hover:bg-gray-100 rounded-full transition-colors focus:outline-none"
-            aria-label="Notificaciones">
-            <i class="fa-regular fa-bell text-xl"></i>
-            <span class="absolute top-1 right-1 flex h-3 w-3">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white"></span>
-            </span>
-          </button>
-        </div>
-      </header>
+
+
 
       <div id="contenido">
         <!-- Content will be loaded dynamically here -->

@@ -119,6 +119,75 @@ async function enviarConfirmacionReserva(reserva) {
   }
 }
 
+/**
+ * Genera y envía el correo de recuperación de contraseña
+ */
+async function enviarCorreoRecuperacion(email, resetUrl, userName = "Usuario") {
+  const fromEmail = process.env.EMAIL_FROM || "onboarding@resend.dev";
+  
+  const subject = "Restablece tu contraseña - Via Luna Hospedaje";
+  const html = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Restablecer Contraseña</title>
+      <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4fdf8; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 4px solid #258a60; }
+        .header { padding: 30px; text-align: center; border-bottom: 1px solid #f0f0f0; }
+        .header h1 { margin: 0; color: #173029; font-size: 24px; }
+        .content { padding: 30px; line-height: 1.6; }
+        .content p { font-size: 16px; margin-bottom: 20px; }
+        .button-container { text-align: center; margin: 35px 0; }
+        .button { background-color: #258a60; color: #ffffff !important; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-size: 16px; font-weight: bold; display: inline-block; transition: background-color 0.3s; }
+        .button:hover { background-color: #1e704e; }
+        .footer { padding: 20px; text-align: center; background-color: #f9f9f9; font-size: 14px; color: #888; border-top: 1px solid #eee; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Vía Luna Hospedaje</h1>
+        </div>
+        <div class="content">
+          <p>Hola <strong>${userName}</strong>,</p>
+          <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en Vía Luna. Si hiciste esta solicitud, por favor haz clic en el siguiente botón para crear una nueva contraseña:</p>
+          
+          <div class="button-container">
+            <a href="${resetUrl}" class="button">Restablecer mi contraseña</a>
+          </div>
+          
+          <p>Este enlace es seguro y expirará en <strong>15 minutos</strong> por razones de seguridad.</p>
+          <p>Si no solicitaste un cambio de contraseña, puedes ignorar este correo de forma segura. Tu cuenta sigue protegida.</p>
+        </div>
+        <div class="footer">
+          &copy; ${new Date().getFullYear()} Vía Luna Hospedaje. Todos los derechos reservados.<br>
+          Si tienes problemas con el botón, copia y pega el siguiente enlace en tu navegador:<br>
+          <a href="${resetUrl}" style="color: #258a60; word-break: break-all;">${resetUrl}</a>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    const response = await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: subject,
+      html: html,
+    });
+    console.log(`[EmailService] ✅ Correo de recuperación enviado a: ${email}`);
+    return response;
+  } catch (error) {
+    console.error(`[EmailService] ❌ Error enviando correo de recuperación a ${email}:`, error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   enviarConfirmacionReserva,
+  enviarCorreoRecuperacion,
 };

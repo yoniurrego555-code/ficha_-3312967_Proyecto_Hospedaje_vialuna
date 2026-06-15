@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authModel = require("../models/auth.model");
+const emailService = require("../services/email.service");
 
 const JWT_SECRET = process.env.JWT_SECRET || "vialuna-jwt-secret";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "8h";
@@ -202,5 +203,77 @@ exports.recover = async (req, res) => {
     });
   } catch (error) {
     handleError(res, error, "Error al recuperar la contraseña");
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const email = String(req.body?.email || "").trim();
+    if (!email) {
+      throw authModel.buildError("El correo es obligatorio.", 400);
+    }
+
+    // Buscamos si existe la cuenta
+    const account = await authModel.findAccountByEmail(email);
+    if (!account) {
+      // Por seguridad, devolvemos success genérico
+      return res.json({ message: "Si el correo existe en nuestro sistema, hemos enviado un enlace de recuperación." });
+    }
+
+    // Generamos un token temporal (válido por 15 min)
+    const resetToken = jwt.sign(
+      { sub: account.id, email: account.email, type: "password_reset" },
+      JWT_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    // Frontend host
+    const host = req.get("origin") || req.get("referer") || "http://localhost:3000";
+    const baseURL = host.split("/auth")[0]; // Obtener URL base
+    const resetUrl = `${baseURL}/auth/reset-password.html?token=${resetToken}`;
+
+    // Enviamos el correo
+    await emailService.enviarCorreoRecuperacion(account.email, resetUrl, account.nombre);
+
+    res.json({
+      message: "Si el correo existe en nuestro sistema, hemos enviado un enlace de recuperación."
+    });
+  } catch (error) {
+    handleError(res, error, "Error al procesar solicitud de recuperación");
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      throw authModel.buildError("Token y nueva contraseña son obligatorios.", 400);
+    }
+
+    // Validamos la nueva clave
+    const password = validatePassword(newPassword, "nueva contraseña");
+
+    // Verificamos el token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      throw authModel.buildError("El enlace ha expirado o no es válido. Por favor solicita uno nuevo.", 401);
+    }
+
+    if (decoded.type !== "password_reset") {
+      throw authModel.buildError("Token inválido para esta operación.", 400);
+    }
+
+    // Hasheamos y guardamos la nueva clave
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    await authModel.updatePasswordByEmail(decoded.email, passwordHash);
+
+    res.json({
+      message: "Tu contraseña ha sido restablecida con éxito. Ya puedes iniciar sesión."
+    });
+  } catch (error) {
+    handleError(res, error, "Error al restablecer contraseña");
   }
 };

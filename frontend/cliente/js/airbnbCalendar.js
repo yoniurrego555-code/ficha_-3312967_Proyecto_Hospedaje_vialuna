@@ -1,5 +1,7 @@
 // airbnbCalendar.js
 // Utility to compute occupied date ranges for a given room based on reservations.
+import { showAlert } from '../../dashboard/modules/ui-utils.js';
+
 // Returns an array of objects: { from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' }.
 export function computeOccupiedRanges(roomId, reservations) {
   if (!roomId) return [];
@@ -52,7 +54,7 @@ export function initCalendar(startInputId, endInputId, occupiedRanges = []) {
     if (!startVal) return;
     // If selected start date is occupied, clear and warn.
     if (isDateOccupied(startVal)) {
-      alert('La fecha de inicio seleccionada está ocupada. Por favor elija otra fecha.');
+      showAlert('Advertencia', 'La fecha de inicio seleccionada está ocupada. Por favor elija otra fecha.', 'warning');
       startInput.value = '';
       endInput.value = '';
       endInput.min = '';
@@ -75,7 +77,7 @@ export function initCalendar(startInputId, endInputId, occupiedRanges = []) {
     const endVal = endInput.value;
     if (!startVal || !endVal) return;
     if (endVal <= startVal) {
-      alert('La fecha de salida debe ser posterior a la fecha de inicio.');
+      showAlert('Advertencia', 'La fecha de salida debe ser posterior a la fecha de inicio.', 'warning');
       endInput.value = '';
       return;
     }
@@ -91,7 +93,7 @@ export function initCalendar(startInputId, endInputId, occupiedRanges = []) {
       cursor.setDate(cursor.getDate() + 1);
     }
     if (conflict) {
-      alert('El rango seleccionado contiene fechas ocupadas. Por favor ajuste las fechas.');
+      showAlert('Advertencia', 'El rango seleccionado contiene fechas ocupadas. Por favor ajuste las fechas.', 'warning');
       endInput.value = '';
     }
   });

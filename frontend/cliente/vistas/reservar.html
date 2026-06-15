@@ -1,8 +1,16 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
-.flatpickr-day.disabled { text-decoration: line-through !important; color: #dc2626 !important; background: transparent !important; opacity: 0.7; }
-.flatpickr-day:not(.disabled):not(.today):not(.selected):not(.flatpickr-disabled) { background: #f3f4f6 !important; color: #4b5563 !important; border-color: #e5e7eb !important; }
-.flatpickr-day:not(.disabled):hover { background: #e5e7eb !important; }
+/* Flatpickr Airbnb Style UX */
+.flatpickr-calendar { box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important; border-radius: 16px !important; border: 1px solid #e5e7eb !important; padding: 10px !important; }
+.flatpickr-day { border-radius: 50% !important; font-weight: 600 !important; transition: all 0.2s !important; }
+/* Ocupado (Rojo) */
+.flatpickr-day.flatpickr-disabled, .flatpickr-day.disabled { text-decoration: line-through !important; color: #dc2626 !important; background: #fee2e2 !important; border-color: #fca5a5 !important; opacity: 1 !important; cursor: not-allowed !important; }
+/* Disponible (Verde Suave) */
+.flatpickr-day:not(.disabled):not(.today):not(.selected):not(.flatpickr-disabled):not(.inRange) { background: #d1fae5 !important; color: #065f46 !important; border-color: #a7f3d0 !important; }
+.flatpickr-day:not(.disabled):not(.selected):not(.inRange):hover { background: #34d399 !important; color: white !important; transform: scale(1.1); }
+/* Seleccionado / En Rango (Amarillo) */
+.flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange, .flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus, .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay, .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay { background: #f59e0b !important; color: white !important; border-color: #d97706 !important; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4) !important; }
+.flatpickr-day.inRange { background: #fef3c7 !important; border-color: #fde68a !important; color: #d97706 !important; box-shadow: none !important; }
 
 /* Estilos para Modales de Términos y Privacidad */
 .custom-modal-overlay {

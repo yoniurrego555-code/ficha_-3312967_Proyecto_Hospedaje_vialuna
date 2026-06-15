@@ -106,15 +106,42 @@
             <button class="close-modal" id="closeRegister" type="button" aria-label="Cerrar">×</button>
             <h2 id="registerTitle">Crear cuenta</h2>
             <div id="registerMessage" class="modal-message" aria-live="polite"></div>
+            <style>
+                .register-field { position: relative; display: flex; flex-direction: column; gap: 5px; text-align: left; }
+                .register-field label { font-size: 14px; font-weight: 600; color: #333; }
+                .register-field .req { color: red; }
+                .auth-modal-form .register-field input { margin: 0; }
+            </style>
             <form id="registerForm" class="auth-modal-form" novalidate>
-                <input name="Nombre" type="text" placeholder="Nombre *" required>
-                <input name="Apellido" type="text" placeholder="Apellido *" required>
-                <input name="NroDocumento" type="text" placeholder="Numero de documento *" required>
-                <input name="Telefono" type="tel" placeholder="Telefono *">
-                <input name="Email" type="email" placeholder="Correo electronico *" required>
-                <input name="Contrasena" id="regPassword" type="password" placeholder="Contrasena (min. 6 caracteres) *" minlength="6" required>
-                <input name="ConfirmarContrasena" id="regConfirmPassword" type="password" placeholder="Confirmar contrasena *" required>
-                <button type="submit" class="modal-submit">Crear cuenta</button>
+                <div class="register-field">
+                    <label>Nombre <span class="req">*</span></label>
+                    <input name="Nombre" type="text" placeholder="Ingresa tu nombre" required maxlength="50" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo se permiten letras">
+                </div>
+                <div class="register-field">
+                    <label>Apellido <span class="req">*</span></label>
+                    <input name="Apellido" type="text" placeholder="Ingresa tu apellido" required maxlength="50" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo se permiten letras">
+                </div>
+                <div class="register-field">
+                    <label>Número de documento <span class="req">*</span></label>
+                    <input name="NroDocumento" type="text" placeholder="Solo números" required minlength="5" maxlength="15" pattern="[0-9]+" title="Solo se permiten números sin espacios">
+                </div>
+                <div class="register-field">
+                    <label>Teléfono <span class="req">*</span></label>
+                    <input name="Telefono" type="tel" placeholder="Solo números" required minlength="7" maxlength="15" pattern="[0-9]+" title="Solo se permiten números">
+                </div>
+                <div class="register-field">
+                    <label>Correo electrónico <span class="req">*</span></label>
+                    <input name="Email" type="email" placeholder="tu@ejemplo.com" required maxlength="100">
+                </div>
+                <div class="register-field">
+                    <label>Contraseña <span class="req">*</span></label>
+                    <input name="Contrasena" id="regPassword" type="password" placeholder="Mínimo 6 caracteres" minlength="6" maxlength="50" required>
+                </div>
+                <div class="register-field">
+                    <label>Confirmar contraseña <span class="req">*</span></label>
+                    <input name="ConfirmarContrasena" id="regConfirmPassword" type="password" placeholder="Mínimo 6 caracteres" required>
+                </div>
+                <button type="submit" class="modal-submit" style="margin-top: 10px;">Crear cuenta</button>
             </form>
         </div>
     </div>
@@ -126,16 +153,15 @@
             <h2 id="recoveryTitle">Recuperar contrasena</h2>
             <div id="recoveryMessage" class="modal-message" aria-live="polite"></div>
             <form id="recoveryForm" class="auth-modal-form" novalidate>
+                <p style="font-size: 14px; color: #666; text-align: center; margin-bottom: 20px;">Ingresa el correo de tu cuenta y te enviaremos un enlace para restablecer tu contraseña de forma segura.</p>
                 <input name="email" id="recoveryEmail" type="email" placeholder="Correo electronico *" required>
-                <input name="newPassword" id="newPassword" type="password" placeholder="Nueva contrasena (min. 6 caracteres) *" minlength="6" required>
-                <input name="confirmNewPassword" id="confirmNewPassword" type="password" placeholder="Confirmar nueva contrasena *" required>
-                <button type="submit" class="modal-submit">Actualizar contrasena</button>
+                <button type="submit" class="modal-submit">Enviar enlace de recuperación</button>
             </form>
         </div>
     </div>
 
     <script type="module">
-        import { loginUsuario, registrarUsuario, recuperarContrasena } from '../js/usuarios.js';
+        import { loginUsuario, registrarUsuario, olvideContrasena } from '../js/usuarios.js';
 
         const redirectParam = new URLSearchParams(window.location.search).get('redirect');
         const form = document.getElementById('loginForm');
@@ -244,12 +270,23 @@
             const contrasena = registerForm.Contrasena.value;
             const confirmar = registerForm.ConfirmarContrasena.value;
 
+            const nombreRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
+            const numeroRegex = /^[0-9]+$/;
+
             if (!nombre || !apellido) {
                 showModalMessage('registerMessage', 'El nombre y apellido son obligatorios.', 'error');
                 return;
             }
-            if (!documento) {
-                showModalMessage('registerMessage', 'El numero de documento es obligatorio.', 'error');
+            if (!nombreRegex.test(nombre) || !nombreRegex.test(apellido)) {
+                showModalMessage('registerMessage', 'El nombre y apellido solo deben contener letras.', 'error');
+                return;
+            }
+            if (!documento || !numeroRegex.test(documento)) {
+                showModalMessage('registerMessage', 'El número de documento debe contener solo números.', 'error');
+                return;
+            }
+            if (!registerForm.Telefono.value.trim() || !numeroRegex.test(registerForm.Telefono.value.trim())) {
+                showModalMessage('registerMessage', 'El teléfono debe contener solo números.', 'error');
                 return;
             }
             if (!email || !isValidEmail(email)) {
@@ -292,37 +329,33 @@
             }
         });
 
-        // ---- Recuperar contrasena ----
+        // ---- Recuperar contrasena (Enviar Link) ----
         recoveryForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             clearModalMessage('recoveryMessage');
 
             const email = recoveryForm.email.value.trim();
-            const newPassword = recoveryForm.newPassword.value;
-            const confirmNewPassword = recoveryForm.confirmNewPassword.value;
 
             if (!email || !isValidEmail(email)) {
                 showModalMessage('recoveryMessage', 'Ingresa un correo electronico valido.', 'error');
                 return;
             }
-            if (!newPassword || newPassword.length < 6) {
-                showModalMessage('recoveryMessage', 'La nueva contrasena debe tener minimo 6 caracteres.', 'error');
-                return;
-            }
-            if (newPassword !== confirmNewPassword) {
-                showModalMessage('recoveryMessage', 'Las contrasenas no coinciden.', 'error');
-                return;
-            }
+
+            const btn = recoveryForm.querySelector('.modal-submit');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
 
             try {
-                const response = await recuperarContrasena({ email, newPassword });
-                showModalMessage('recoveryMessage', response.message || response.mensaje || 'Contrasena actualizada correctamente.', 'success');
+                const response = await olvideContrasena({ email });
+                showModalMessage('recoveryMessage', response.message || 'Se ha enviado un enlace a tu correo.', 'success');
                 recoveryForm.reset();
-                setTimeout(() => {
-                    document.getElementById('recoveryModal').classList.remove('show');
-                }, 2000);
             } catch (error) {
-                showModalMessage('recoveryMessage', 'No fue posible actualizar la contrasena. Verifica el correo ingresado.', 'error');
+                // Mensaje genérico por seguridad
+                showModalMessage('recoveryMessage', 'Si el correo existe, te hemos enviado un enlace.', 'success');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
         });
 

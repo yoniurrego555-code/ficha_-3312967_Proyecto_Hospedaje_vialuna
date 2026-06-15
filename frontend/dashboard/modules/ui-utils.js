@@ -289,17 +289,23 @@ export function resolveServiceImage(item) {
     const itemDesc = item.descripcion || item.Descripcion || '';
     const fullText = `${itemNameRaw} ${itemDesc}`.toLowerCase();
     
-    // We can use absolute paths based on window.location.origin
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const base = origin;
+    // Check if we are in a subfolder (admin, cliente, auth, dashboard)
+    const isSubfolder = typeof window !== 'undefined' && 
+        (window.location.pathname.includes('/admin/') || 
+         window.location.pathname.includes('/cliente/') || 
+         window.location.pathname.includes('/auth/') || 
+         window.location.pathname.includes('/dashboard/') ||
+         window.location.pathname.includes('/pages/'));
+         
+    const assetsPath = isSubfolder ? '../assets' : './assets';
     
     if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relajacion') || fullText.includes('terapia')) {
-        return `${base}/assets/images/service/SPA.png`;
+        return `${assetsPath}/images/service/SPA.png`;
     } else if (fullText.includes('caballo') || fullText.includes('cabalgata') || fullText.includes('equino')) {
-        return `${base}/assets/images/service/cabalgata.png`;
+        return `${assetsPath}/images/service/cabalgata.png`;
     } else if (fullText.includes('caminata') || fullText.includes('guiado') || fullText.includes('recorrido') || fullText.includes('ecoturismo')) {
-        return `${base}/assets/images/service/caminata.png`;
+        return `${assetsPath}/images/service/caminata.png`;
     }
     
-    return `${base}/assets/images/service/SPA.png`;
+    return `${assetsPath}/images/service/SPA.png`;
 }

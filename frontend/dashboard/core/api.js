@@ -1,4 +1,5 @@
-export const API_URL = "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com/api";
+import { getApiBase } from '../../js/shared/api-config.js';
+export const API_URL = getApiBase();
 export const SESSION_KEY = "vialuna_usuario";
 export const TOKEN_KEY = "vialuna_token";
 export const ROLE_KEY = "vialuna_rol";

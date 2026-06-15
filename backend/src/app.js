@@ -15,28 +15,20 @@ app.set("trust proxy", 1);
 // 🌐 CORS PRODUCCIÓN + DESARROLLO
 // =====================================
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-
-    const allowedOrigins = [
-      "http://localhost:3000",
-      "http://127.0.0.1:5500",
-      "http://127.0.0.1:5501",
-      "https://ficha-3312967-proyecto-hospedaje-vi.vercel.app"
-    ];
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    // 🔥 IMPORTANTE: NO romper respuesta
-    return callback(null, true);
-  },
+const corsOptions = {
+  origin: [
+    "http://localhost:3000",
+    "http://127.0.0.1:5500",
+    "http://127.0.0.1:5501",
+    "https://ficha-3312967-proyecto-hospedaje-vi.vercel.app"
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
 
 // =====================================
 // 📦 MIDDLEWARES

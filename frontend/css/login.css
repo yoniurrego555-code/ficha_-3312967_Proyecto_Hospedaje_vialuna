@@ -600,6 +600,8 @@ body{
 .auth-modal-card{
     width:100%;
     max-width:580px;
+    max-height:90vh;
+    overflow-y:auto;
 
     background:#fff;
 

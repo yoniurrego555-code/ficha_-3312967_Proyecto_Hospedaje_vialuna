@@ -235,8 +235,7 @@ class UsuariosModule {
         .join('')
         .toUpperCase() || 'U';
 
-      const unameLower = String(usuario.NombreUsuario || usuario.Nombre || '').toLowerCase();
-      const isProtected = unameLower === 'yoni' || unameLower === 'zury' || unameLower.includes('yoni') || unameLower.includes('zury');
+      const isProtected = Number(usuario.IDRol) === 1;
 
       const actionButtons = isProtected ? `
             <div class="action-group-modern justify-center">
@@ -416,9 +415,9 @@ class UsuariosModule {
     const usuario = this.usuarios.find(u => (u.IDUsuario || u.id_usuario || u.id) == id);
     if (!usuario) return;
 
-    const unameLower = String(usuario.NombreUsuario || usuario.Nombre || '').toLowerCase();
-    if (unameLower === 'yoni' || unameLower === 'zury' || unameLower.includes('yoni') || unameLower.includes('zury')) {
-      showAlert('Advertencia', 'Este usuario es un Súper Admin y no se puede cambiar su estado.', 'warning');
+    const isProtected = Number(usuario.IDRol) === 1;
+    if (isProtected) {
+      showAlert('Advertencia', 'Los Administradores están protegidos y no pueden ser inactivados.', 'warning');
       this.render(); // Reset the UI toggle
       return;
     }
@@ -461,9 +460,9 @@ class UsuariosModule {
     const usuario = this.usuarios.find(u => u.IDUsuario === id);
     if (!usuario) return;
 
-    const unameLowerDel = String(usuario.NombreUsuario || usuario.Nombre || '').toLowerCase();
-    if (unameLowerDel === 'yoni' || unameLowerDel === 'zury' || unameLowerDel.includes('yoni') || unameLowerDel.includes('zury')) {
-      showAlert('Advertencia', 'Este usuario es un Súper Admin y no se puede eliminar.', 'warning');
+    const isProtected = Number(usuario.IDRol) === 1;
+    if (isProtected) {
+      showAlert('Advertencia', 'Los Administradores están protegidos y no se pueden eliminar.', 'warning');
       return;
     }
 

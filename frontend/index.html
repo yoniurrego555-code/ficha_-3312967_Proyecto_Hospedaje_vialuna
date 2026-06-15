@@ -182,7 +182,7 @@
     </footer>
 
     <script type="module">
-        import { apiUrl, getConnectionErrorMessage, backendOrigin } from './js/shared/api-config.js';
+        import { apiUrl, getConnectionErrorMessage, backendOrigin, getFullImageUrl } from './js/shared/api-config.js';
         import { getSession, isClientSession } from './dashboard/core/api.js'; import { filterActive, sanitizeRoom, formatPrice, attachTooltip, resolveServiceImage } from './dashboard/modules/ui-utils.js';
 
         const MOCK_GALLERIES = {
@@ -282,32 +282,23 @@
             if (typeof value === 'string') {
                 value = value.trim();
                 if (value.startsWith('/http')) value = value.substring(1);
-
                 if (value === '[object Object]') return '';
                 if (value.startsWith('data:') || value.startsWith('http') || value.startsWith('../') || value.startsWith('./')) return value;
-                if (value.startsWith('/')) return value;
-                // If it's a simple filename like 'room_familiar.png', map to /uploads/<filename>
+
+                // Helper manual para la URL del backend
+                const backendURL = 'https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com';
+
+                // Si la imagen parece un nombre de archivo
                 if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(value)) {
-                    // Prefer frontend static assets when running on the root domain
-                    try {
-                        const origin = window.location.origin || '';
-                        if (/^room[_-]/i.test(value)) {
-                            return `${origin}/frontend/assets/images/rooms/${value}`;
-                        }
-                        if (/^service[_-]/i.test(value)) {
-                            return `${origin}/frontend/assets/images/service/${value}`;
-                        }
-                    } catch (e) {
-                        // ignore and fall back to backend
-                    }
-                    return `${backendOrigin()}/uploads/${value}`;
+                    return `${backendURL}/uploads/${value}`;
                 }
-                // If it contains 'uploads' but is missing leading slash, prefix it with backend origin
-                if (value.toLowerCase().includes('uploads') && !value.startsWith('/')) return `${backendOrigin()}/${value}`;
-                // If it already starts with '/uploads' make it absolute to backend origin
-                if (value.startsWith('/uploads')) return `${backendOrigin()}${value}`;
-                // Fallback: prefix with backend origin for other relative paths
-                if (!value.includes('base64') && !value.includes('://')) return `${backendOrigin()}/${value.replace(/^\/+/, '')}`;
+
+                // Fallback global con la API
+                if (!value.includes('base64') && !value.includes('://')) {
+                    const cleanPath = value.replace(/^\/+/, '');
+                    const isUpload = cleanPath.startsWith('uploads/') ? cleanPath : `uploads/${cleanPath}`;
+                    return `${backendURL}/${isUpload}`;
+                }
                 if (value.length > 80) return `data:image/jpeg;base64,${value}`;
             }
             if (value.data && Array.isArray(value.data)) {

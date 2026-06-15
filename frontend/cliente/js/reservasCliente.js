@@ -1,5 +1,6 @@
 import { logout, isClientSession, getSession } from "../../dashboard/core/authGuard.js";
 import { getReservas, cancelarReserva } from "../../dashboard/core/api.js";
+import { showAlert } from "../../dashboard/modules/ui-utils.js";
 
 let allReservas = [];
 const fallbackRoomImage = "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=85";
@@ -247,6 +248,8 @@ window.editarReserva = (id) => {
 
 window.cancelar = async (id) => {
     const reserva = allReservas.find((item) => String(getReservaId(item)) === String(id));
+    let warningMsg = `¿Estás seguro de que deseas cancelar la reserva #${id}?`;
+
     if (reserva) {
         const start = new Date(getStartDate(reserva));
         const now = new Date();
@@ -254,24 +257,41 @@ window.cancelar = async (id) => {
         const diffHours = diffMs / (1000 * 60 * 60);
         
         if (diffHours >= 0 && diffHours < 24) {
-            if (!confirm(`¡ADVERTENCIA! Estás cancelando con menos de 24 horas de antelación. Se aplicarán cargos según nuestra política de cancelación.\n\n¿Estás seguro de que deseas cancelar la reserva #${id}?`)) return;
-        } else {
-            if (!confirm(`¿Estás seguro de que deseas cancelar la reserva #${id}?`)) return;
+            warningMsg = `¡ADVERTENCIA! Estás cancelando con menos de 24 horas de antelación. Se aplicarán cargos según nuestra política de cancelación.\n\n¿Estás seguro de que deseas cancelar la reserva #${id}?`;
         }
-    } else {
-        if (!confirm(`¿Estás seguro de que deseas cancelar la reserva #${id}?`)) return;
     }
 
+    const confirmResult = await Swal.fire({
+        title: 'Cancelar Reserva',
+        text: warningMsg,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, cancelar',
+        cancelButtonText: 'Volver'
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    const { value: motivo } = await Swal.fire({
+        title: 'Motivo de cancelación',
+        input: 'text',
+        inputLabel: 'Por favor, indica un motivo (opcional):',
+        inputValue: 'Cancelación por el cliente',
+        showCancelButton: true,
+        confirmButtonText: 'Enviar',
+        cancelButtonText: 'Cancelar'
+    });
+
+    if (motivo === undefined) return; // Canceló el prompt
+
     try {
-        // Enviar motivo al backend para el soft delete
-        const motivo = prompt('Por favor, indica un motivo de cancelación (opcional):', 'Cancelación por el cliente');
-        if (motivo === null) return; // Canceló el prompt
-        
         await cancelarReserva(id, { motivo_cancelacion: motivo });
-        alert("Reserva cancelada correctamente");
+        showAlert('Éxito', "Reserva cancelada correctamente", 'success');
         location.reload();
     } catch (error) {
-        alert("Error al cancelar: " + error.message);
+        showAlert('Error', "Error al cancelar: " + error.message, 'error');
     }
 };
 

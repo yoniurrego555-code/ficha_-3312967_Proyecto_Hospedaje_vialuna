@@ -1,4 +1,4 @@
-const API_URL = "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com/api";
+import { apiUrl } from './shared/api-config.js';
 
 async function parseResponse(response, isLogin = false) {
   const text = await response.text();
@@ -23,7 +23,7 @@ async function parseResponse(response, isLogin = false) {
 
 export async function loginUsuario({ email, password }) {
   try {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(apiUrl('/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -44,7 +44,7 @@ export async function loginUsuario({ email, password }) {
 }
 
 export async function registrarUsuario(data) {
-  const response = await fetch(`${API_URL}/auth/register`, {
+  const response = await fetch(apiUrl('/auth/register'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -54,7 +54,7 @@ export async function registrarUsuario(data) {
 }
 
 export async function recuperarContrasena({ email, newPassword }) {
-  const response = await fetch(`${API_URL}/auth/recover`, {
+  const response = await fetch(apiUrl('/auth/recover'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, newPassword })
@@ -63,9 +63,29 @@ export async function recuperarContrasena({ email, newPassword }) {
   return parseResponse(response);
 }
 
+export async function olvideContrasena({ email }) {
+  const response = await fetch(apiUrl('/auth/forgot-password'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+
+  return parseResponse(response);
+}
+
+export async function restablecerContrasena({ token, newPassword }) {
+  const response = await fetch(apiUrl('/auth/reset-password'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, newPassword })
+  });
+
+  return parseResponse(response);
+}
+
 export async function verificarEmail(email) {
 
-  const response = await fetch(`${API_URL}/auth/check-email`, {
+  const response = await fetch(apiUrl('/auth/check-email'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

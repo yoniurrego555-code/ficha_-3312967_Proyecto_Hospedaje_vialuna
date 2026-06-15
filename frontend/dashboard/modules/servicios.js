@@ -1,16 +1,14 @@
 import { createCrudModule } from './shared/crud-module.js';
 import { apiUrl } from './shared/api-config.js';
+import { getFullImageUrl } from '../../js/shared/api-config.js';
 import { showAlert, renderPremiumPagination, resolveServiceImage } from './ui-utils.js';
 import { getAppUrl } from '../core/authGuard.js';
 
-// Normalize image path: map bare filenames to /uploads/, ensure leading slash for uploads
+// Normalize image path: map bare filenames to /uploads/, ensure absolute path to Render
 function normalizeImagePath(src) {
-    if (!src) return src;
+    if (!src) return 'assets/images/placeholder.png';
     if (typeof src !== 'string') return src;
-    if (src.startsWith('/') || src.startsWith('http') || src.startsWith('data:')) return src;
-    if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(src)) return `/uploads/${src}`;
-    if (src.toLowerCase().includes('uploads')) return src.startsWith('/') ? src : `/${src}`;
-    return src;
+    return getFullImageUrl(src);
 }
 
 // Helper to resolve dynamic service label

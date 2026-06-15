@@ -42,6 +42,31 @@ export async function renderNuevaReserva() {
         if (backToListBtn) backToListBtn.style.display = 'none';
 
         // ==========================================
+        // Sticky: Resumen de Costos (sidebar derecho)
+        // ==========================================
+        // Esperar a que el módulo termine de renderizar el DOM
+        setTimeout(() => {
+            const formSection = document.getElementById('reservationFormSection');
+            if (formSection) {
+                // Forzar align-items: start en el div de grid para que sticky funcione
+                const grid = formSection.querySelector('div[class*="grid"]');
+                if (grid) {
+                    grid.style.alignItems = 'start';
+                }
+                // Aplicar sticky directamente al aside (sidebar de resumen de costos)
+                const aside = formSection.querySelector('aside');
+                if (aside) {
+                    aside.style.position = 'sticky';
+                    aside.style.top = '0px';
+                    aside.style.maxHeight = '100vh';
+                    aside.style.overflowY = 'auto';
+                    aside.style.zIndex = '10';
+                    aside.style.alignSelf = 'start';
+                }
+            }
+        }, 300);
+
+        // ==========================================
         // Lógica de Checkboxes y Modales (Cliente)
         // ==========================================
         const chkTerminos = document.getElementById('chkTerminos');
