@@ -1,6 +1,9 @@
 function getApiBase() {
-    // URL en Render: 'https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com'
-    const defaultOrigin = 'http://localhost:10000'; // Apuntando al backend local para pruebas
+    const defaultOrigin =
+        window.location.hostname === 'localhost'
+            ? 'http://localhost:10000'
+            : 'https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com';
+
     return `${defaultOrigin}/api`;
 }
 
