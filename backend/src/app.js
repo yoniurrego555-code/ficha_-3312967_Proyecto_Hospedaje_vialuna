@@ -4,35 +4,56 @@ const path = require("path");
 
 const app = express();
 
-// Configuración para proxy inverso (Render, Railway, Heroku)
+// =====================================
+// 🔥 CONFIGURACIÓN BASE
+// =====================================
+
+// Si estás detrás de Render / proxy
 app.set("trust proxy", 1);
 
-// Configuración de CORS dinámica
-app.use(cors({
-    origin: function (origin, callback) {
-        // Permitir solicitudes sin origen (ej. Postman, curl) o si se especifica FRONTEND_URL como '*'
-        if (!origin || process.env.FRONTEND_URL === '*') {
-            return callback(null, true);
-        }
-        
-        const allowedOrigins = [];
-        
-        // Usar unicamente FRONTEND_URL dinámicamente para producción segura
-        if (process.env.FRONTEND_URL) {
-            allowedOrigins.push(process.env.FRONTEND_URL);
-        }
+// =====================================
+// 🌐 CORS PRODUCCIÓN + DESARROLLO
+// =====================================
 
-        if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
-            callback(null, true);
-        } else {
-            callback(new Error('No permitido por CORS'));
-        }
-    },
-    credentials: true
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = [
+      "http://localhost:3000",
+      "http://127.0.0.1:5500",
+      "http://127.0.0.1:5501",
+      "https://ficha-3312967-proyecto-hospedaje-vi.vercel.app"
+    ];
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    // 🔥 IMPORTANTE: NO romper respuesta
+    return callback(null, true);
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
 }));
+
+// =====================================
+// 📦 MIDDLEWARES
+// =====================================
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// =====================================
+// 📁 ARCHIVOS ESTÁTICOS
+// =====================================
+
 app.use("/uploads", express.static(path.resolve(__dirname, "../public/uploads")));
+
+// =====================================
+// 🛣️ RUTAS
+// =====================================
 
 app.use("/api/usuarios", require("./routes/usuarios.routes"));
 app.use("/api/clientes", require("./routes/clientes.routes"));
@@ -45,7 +66,8 @@ app.use("/api/rolespermisos", require("./routes/rolespermisos.routes"));
 
 app.use("/api/habitacion", require("./routes/habitacion.routes"));
 app.use("/api/habitaciones", require("./routes/habitacion.routes"));
-app.use('/api/habitaciones/:habitacionId/imagenes', require('./routes/imagenes_habitacion.routes'));
+app.use("/api/habitaciones/:habitacionId/imagenes", require("./routes/imagenes_habitacion.routes"));
+
 app.use("/api/servicios", require("./routes/servicios.routes"));
 app.use("/api/paquetes", require("./routes/paquetes.routes"));
 
@@ -56,12 +78,20 @@ app.use("/api/detalledereservapaquetes", require("./routes/detalledereservapaque
 app.use("/api/metodopago", require("./routes/metodopago.routes"));
 app.use("/api/estadosreserva", require("./routes/estadosreserva.routes"));
 
+// =====================================
+// 🧪 TEST API
+// =====================================
+
 app.get("/api", (req, res) => {
-  res.json({ mensaje: "API funcionando correctamente" });
+  res.json({ mensaje: "API funcionando correctamente 🚀" });
 });
 
+// =====================================
+// ❌ ERROR HANDLER
+// =====================================
+
 app.use((err, req, res, next) => {
-  console.error("ERROR:", err.stack);
+  console.error("ERROR:", err);
 
   res.status(500).json({
     mensaje: "Error interno del servidor",
@@ -70,6 +100,3 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
-
-// touch
-// touch

@@ -3,6 +3,68 @@
 .flatpickr-day.disabled { text-decoration: line-through !important; color: #dc2626 !important; background: transparent !important; opacity: 0.7; }
 .flatpickr-day:not(.disabled):not(.today):not(.selected):not(.flatpickr-disabled) { background: #f3f4f6 !important; color: #4b5563 !important; border-color: #e5e7eb !important; }
 .flatpickr-day:not(.disabled):hover { background: #e5e7eb !important; }
+
+/* Estilos para Modales de Términos y Privacidad */
+.custom-modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease-in-out;
+  backdrop-filter: blur(3px);
+}
+.custom-modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+.custom-modal-content {
+  background: white;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  transform: translateY(-20px) scale(0.95);
+  transition: all 0.3s ease-in-out;
+  position: relative;
+}
+.custom-modal-overlay.active .custom-modal-content {
+  transform: translateY(0) scale(1);
+}
+.custom-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #f3f4f6;
+  border: none;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: #4b5563; font-weight: bold;
+  transition: background 0.2s;
+}
+.custom-modal-close:hover {
+  background: #e5e7eb; color: #111827;
+}
+.custom-modal-title {
+  font-size: 1.25rem; font-weight: bold; color: #1f2937; margin-bottom: 16px; margin-top: 0;
+  padding-bottom: 12px; border-bottom: 1px solid #f3f4f6;
+}
+.custom-modal-body {
+  font-size: 0.95rem; color: #4b5563; line-height: 1.6; max-height: 60vh; overflow-y: auto;
+}
+.custom-modal-body ul {
+  padding-left: 20px; margin-top: 8px; margin-bottom: 8px;
+}
+.custom-modal-body li {
+  margin-bottom: 6px;
+}
 </style>
 
 <section id="reservationFormSection" class="transition-all duration-300 w-full box-border" style="display: block;">
@@ -87,10 +149,26 @@
           </div>
         </div>
 
+        <!-- 7. Políticas y Términos -->
+        <div class="flex flex-col gap-3 mt-2 p-4 bg-gray-50 rounded-xl border border-gray-100">
+          <label class="flex items-start gap-3 cursor-pointer group">
+            <input type="checkbox" id="chkTerminos" class="mt-1 w-4 h-4 text-brand rounded border-gray-300 focus:ring-brand">
+            <span class="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+              He leído y acepto los <a href="#" id="linkTerminos" class="text-brand font-bold hover:underline">Términos y Condiciones</a>
+            </span>
+          </label>
+          <label class="flex items-start gap-3 cursor-pointer group">
+            <input type="checkbox" id="chkPrivacidad" class="mt-1 w-4 h-4 text-brand rounded border-gray-300 focus:ring-brand">
+            <span class="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+              He leído y acepto la <a href="#" id="linkPrivacidad" class="text-brand font-bold hover:underline">Política de Privacidad</a>
+            </span>
+          </label>
+        </div>
+
         <!-- Form Action Buttons -->
         <div class="border-t border-gray-100 pt-6 mt-2 flex flex-col sm:flex-row justify-end gap-3 w-full box-border">
           <button type="button" id="clearFormBtn" class="px-5 py-3 rounded-xl border border-gray-200 text-muted font-semibold bg-white hover:bg-gray-50 transition-all duration-300 cursor-pointer text-sm w-full sm:w-auto box-border">Limpiar Formulario</button>
-          <button type="submit" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm w-full sm:w-auto box-border">Confirmar Reserva 🚀</button>
+          <button type="submit" id="confirmarReservaBtn" class="px-7 py-3 rounded-xl bg-brand text-white font-semibold shadow-md shadow-brand/10 hover:bg-brand-deep active:scale-98 transition-all duration-300 border-none cursor-pointer text-sm w-full sm:w-auto box-border disabled:opacity-50 disabled:cursor-not-allowed" disabled>Confirmar Reserva 🚀</button>
         </div>
       </form>
     </div>
@@ -143,4 +221,49 @@
       </div>
     </aside>
   </div>
+
+  <!-- Modal Términos y Condiciones -->
+  <div id="modalTerminos" class="custom-modal-overlay">
+    <div class="custom-modal-content" onclick="event.stopPropagation()">
+      <button type="button" class="custom-modal-close" id="closeTerminos">✕</button>
+      <h3 class="custom-modal-title">TÉRMINOS Y CONDICIONES</h3>
+      <div class="custom-modal-body">
+        <ul>
+          <li>Toda reserva está sujeta a disponibilidad.</li>
+          <li>La reserva se confirma una vez validado el pago.</li>
+          <li>El cliente debe respetar horarios de check-in y check-out.</li>
+          <li><strong>Check-in:</strong> 3:00 PM</li>
+          <li><strong>Check-out:</strong> 12:00 PM</li>
+          <li>Si no se realiza el pago en 30 minutos, la reserva puede cancelarse automáticamente.</li>
+          <li>El huésped será responsable por daños ocasionados durante su estadía.</li>
+          <li>Para realizar una cancelación, esta debe ser con al menos <strong>24 horas de anticipación</strong>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Política de Privacidad -->
+  <div id="modalPrivacidad" class="custom-modal-overlay">
+    <div class="custom-modal-content" onclick="event.stopPropagation()">
+      <button type="button" class="custom-modal-close" id="closePrivacidad">✕</button>
+      <h3 class="custom-modal-title">POLÍTICA DE PRIVACIDAD</h3>
+      <div class="custom-modal-body">
+        <p>En Via Luna recopilamos únicamente información necesaria para gestionar reservas:</p>
+        <ul>
+          <li>Nombre</li>
+          <li>Correo electrónico</li>
+          <li>Teléfono</li>
+          <li>Información de reserva</li>
+        </ul>
+        <p>Los datos serán usados únicamente para:</p>
+        <ul>
+          <li>Gestión de reservas</li>
+          <li>Contacto con el cliente</li>
+          <li>Soporte y notificaciones</li>
+        </ul>
+        <p><strong>No compartimos información personal con terceros.</strong></p>
+      </div>
+    </div>
+  </div>
+
 </section>

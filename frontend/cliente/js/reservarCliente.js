@@ -41,6 +41,68 @@ export async function renderNuevaReserva() {
         const backToListBtn = document.getElementById('backToListInlineBtn');
         if (backToListBtn) backToListBtn.style.display = 'none';
 
+        // ==========================================
+        // Lógica de Checkboxes y Modales (Cliente)
+        // ==========================================
+        const chkTerminos = document.getElementById('chkTerminos');
+        const chkPrivacidad = document.getElementById('chkPrivacidad');
+        const btnReservar = document.getElementById('confirmarReservaBtn');
+
+        const updateBtnState = () => {
+            if (chkTerminos && chkPrivacidad && btnReservar) {
+                btnReservar.disabled = !(chkTerminos.checked && chkPrivacidad.checked);
+            }
+        };
+
+        if (chkTerminos) chkTerminos.addEventListener('change', updateBtnState);
+        if (chkPrivacidad) chkPrivacidad.addEventListener('change', updateBtnState);
+
+        // Modales
+        const modalTerminos = document.getElementById('modalTerminos');
+        const modalPrivacidad = document.getElementById('modalPrivacidad');
+        
+        const openModal = (modal) => {
+            if (modal) modal.classList.add('active');
+        };
+        const closeModal = (modal) => {
+            if (modal) modal.classList.remove('active');
+        };
+
+        const linkTerminos = document.getElementById('linkTerminos');
+        if (linkTerminos) {
+            linkTerminos.addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal(modalTerminos);
+            });
+        }
+
+        const linkPrivacidad = document.getElementById('linkPrivacidad');
+        if (linkPrivacidad) {
+            linkPrivacidad.addEventListener('click', (e) => {
+                e.preventDefault();
+                openModal(modalPrivacidad);
+            });
+        }
+
+        // Botones de cerrar
+        const closeTerminos = document.getElementById('closeTerminos');
+        if (closeTerminos) closeTerminos.addEventListener('click', () => closeModal(modalTerminos));
+
+        const closePrivacidad = document.getElementById('closePrivacidad');
+        if (closePrivacidad) closePrivacidad.addEventListener('click', () => closeModal(modalPrivacidad));
+
+        // Cerrar al hacer clic fuera
+        if (modalTerminos) {
+            modalTerminos.addEventListener('click', (e) => {
+                if (e.target === modalTerminos) closeModal(modalTerminos);
+            });
+        }
+        if (modalPrivacidad) {
+            modalPrivacidad.addEventListener('click', (e) => {
+                if (e.target === modalPrivacidad) closeModal(modalPrivacidad);
+            });
+        }
+
     } catch (error) {
         console.error('Error inicializando vista de nueva reserva:', error);
     }
