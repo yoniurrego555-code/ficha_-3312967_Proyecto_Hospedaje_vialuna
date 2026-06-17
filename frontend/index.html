@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Via Luna Hospedaje — Habitaciones, naturaleza, descanso y experiencias pensadas para reservar sin fricción.">
+    <meta name="description"
+        content="Via Luna Hospedaje — Habitaciones, naturaleza, descanso y experiencias pensadas para reservar sin fricción.">
     <title>Via Luna | Hospedaje</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,7 +26,8 @@
             </a>
 
             <!-- Botón hamburguesa (solo mobile) -->
-            <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainMenu">
+            <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false"
+                aria-controls="mainMenu">
                 <span></span>
                 <span></span>
                 <span></span>
@@ -546,7 +548,7 @@
     <script>
         (function () {
             const toggle = document.getElementById('navToggle');
-            const menu   = document.getElementById('mainMenu');
+            const menu = document.getElementById('mainMenu');
             const header = document.querySelector('.booking-header');
 
             /* Hamburguesa toggle */
@@ -585,76 +587,147 @@
             }
         })();
     </script>
-<!-- ── Modales Términos y Privacidad (Landing) ── -->
-<style>
-  .landing-terms-modal { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; visibility:hidden; transition:all .3s ease; backdrop-filter:blur(4px); }
-  .landing-terms-modal.active { opacity:1; visibility:visible; }
-  .landing-terms-modal-content { background:#fff; width:90%; max-width:520px; border-radius:18px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,.25); transform:translateY(-16px) scale(.96); transition:all .3s ease; position:relative; }
-  .landing-terms-modal.active .landing-terms-modal-content { transform:translateY(0) scale(1); }
-  .landing-terms-modal-close { position:absolute; top:16px; right:16px; background:#f3f4f6; border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1rem; font-weight:bold; color:#374151; transition:background .2s; }
-  .landing-terms-modal-close:hover { background:#e5e7eb; }
-  .landing-terms-modal h3 { font-size:1.2rem; font-weight:800; color:#014034; margin:0 0 14px; padding-bottom:12px; border-bottom:1px solid #f0f0f0; }
-  .landing-terms-modal-body { font-size:.92rem; color:#4b5563; line-height:1.65; max-height:60vh; overflow-y:auto; }
-  .landing-terms-modal-body ul { padding-left:20px; margin:8px 0; }
-  .landing-terms-modal-body li { margin-bottom:6px; }
-</style>
+    <!-- ── Modales Términos y Privacidad (Landing) ── -->
+    <style>
+        .landing-terms-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all .3s ease;
+            backdrop-filter: blur(4px);
+        }
 
-<div id="landingModalTerminos" class="landing-terms-modal">
-  <div class="landing-terms-modal-content" onclick="event.stopPropagation()">
-    <button class="landing-terms-modal-close" id="closeLandingTerminos">✕</button>
-    <h3>TÉRMINOS Y CONDICIONES</h3>
-    <div class="landing-terms-modal-body">
-      <ul>
-        <li>Toda reserva está sujeta a disponibilidad.</li>
-        <li>La reserva se confirma una vez validado el pago.</li>
-        <li>El cliente debe respetar horarios de check-in y check-out.</li>
-        <li><strong>Check-in:</strong> 3:00 PM</li>
-        <li><strong>Check-out:</strong> 12:00 PM</li>
-        <li>Si no se realiza el pago en 30 minutos, la reserva puede cancelarse automáticamente.</li>
-        <li>El huésped será responsable por daños ocasionados durante su estadía.</li>
-        <li>Para realizar una cancelación, esta debe ser con al menos <strong>24 horas de anticipación</strong>.</li>
-      </ul>
+        .landing-terms-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .landing-terms-modal-content {
+            background: #fff;
+            width: 90%;
+            max-width: 520px;
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+            transform: translateY(-16px) scale(.96);
+            transition: all .3s ease;
+            position: relative;
+        }
+
+        .landing-terms-modal.active .landing-terms-modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        .landing-terms-modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: #f3f4f6;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #374151;
+            transition: background .2s;
+        }
+
+        .landing-terms-modal-close:hover {
+            background: #e5e7eb;
+        }
+
+        .landing-terms-modal h3 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #014034;
+            margin: 0 0 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .landing-terms-modal-body {
+            font-size: .92rem;
+            color: #4b5563;
+            line-height: 1.65;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .landing-terms-modal-body ul {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+
+        .landing-terms-modal-body li {
+            margin-bottom: 6px;
+        }
+    </style>
+
+    <div id="landingModalTerminos" class="landing-terms-modal">
+        <div class="landing-terms-modal-content" onclick="event.stopPropagation()">
+            <button class="landing-terms-modal-close" id="closeLandingTerminos">✕</button>
+            <h3>TÉRMINOS Y CONDICIONES</h3>
+            <div class="landing-terms-modal-body">
+                <ul>
+                    <li>Toda reserva está sujeta a disponibilidad.</li>
+                    <li>La reserva se confirma una vez validado el pago.</li>
+                    <li>El cliente debe respetar horarios de check-in y check-out.</li>
+                    <li><strong>Check-in:</strong> 3:00 PM</li>
+                    <li><strong>Check-out:</strong> 12:00 PM</li>
+                    <li>Si no se realiza el pago en 30 minutos, la reserva puede cancelarse automáticamente.</li>
+                    <li>El huésped será responsable por daños ocasionados durante su estadía.</li>
+                    <li>Para realizar una cancelación, esta debe ser con al menos <strong>24 horas de
+                            anticipación</strong>.</li>
+                </ul>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<div id="landingModalPrivacidad" class="landing-terms-modal">
-  <div class="landing-terms-modal-content" onclick="event.stopPropagation()">
-    <button class="landing-terms-modal-close" id="closeLandingPrivacidad">✕</button>
-    <h3>POLÍTICA DE PRIVACIDAD</h3>
-    <div class="landing-terms-modal-body">
-      <p>En Via Luna recopilamos únicamente información necesaria para gestionar reservas:</p>
-      <ul>
-        <li>Nombre</li>
-        <li>Correo electrónico</li>
-        <li>Teléfono</li>
-        <li>Información de reserva</li>
-      </ul>
-      <p>Los datos serán usados únicamente para:</p>
-      <ul>
-        <li>Gestión de reservas</li>
-        <li>Contacto con el cliente</li>
-        <li>Soporte y notificaciones</li>
-      </ul>
-      <p><strong>No compartimos información personal con terceros.</strong></p>
+    <div id="landingModalPrivacidad" class="landing-terms-modal">
+        <div class="landing-terms-modal-content" onclick="event.stopPropagation()">
+            <button class="landing-terms-modal-close" id="closeLandingPrivacidad">✕</button>
+            <h3>POLÍTICA DE PRIVACIDAD</h3>
+            <div class="landing-terms-modal-body">
+                <p>En Via Luna recopilamos únicamente información necesaria para gestionar reservas:</p>
+                <ul>
+                    <li>Nombre</li>
+                    <li>Correo electrónico</li>
+                    <li>Teléfono</li>
+                    <li>Información de reserva</li>
+                </ul>
+                <p>Los datos serán usados únicamente para:</p>
+                <ul>
+                    <li>Gestión de reservas</li>
+                    <li>Contacto con el cliente</li>
+                    <li>Soporte y notificaciones</li>
+                </ul>
+                <p><strong>No compartimos información personal con terceros.</strong></p>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<script>
-  (function() {
-    const openModal = (id) => document.getElementById(id)?.classList.add('active');
-    const closeModal = (id) => document.getElementById(id)?.classList.remove('active');
+    <script>
+        (function () {
+            const openModal = (id) => document.getElementById(id)?.classList.add('active');
+            const closeModal = (id) => document.getElementById(id)?.classList.remove('active');
 
-    document.getElementById('landingBtnTerminos')?.addEventListener('click', () => openModal('landingModalTerminos'));
-    document.getElementById('closeLandingTerminos')?.addEventListener('click', () => closeModal('landingModalTerminos'));
-    document.getElementById('landingModalTerminos')?.addEventListener('click', (e) => { if (e.target.id === 'landingModalTerminos') closeModal('landingModalTerminos'); });
+            document.getElementById('landingBtnTerminos')?.addEventListener('click', () => openModal('landingModalTerminos'));
+            document.getElementById('closeLandingTerminos')?.addEventListener('click', () => closeModal('landingModalTerminos'));
+            document.getElementById('landingModalTerminos')?.addEventListener('click', (e) => { if (e.target.id === 'landingModalTerminos') closeModal('landingModalTerminos'); });
 
-    document.getElementById('landingBtnPrivacidad')?.addEventListener('click', () => openModal('landingModalPrivacidad'));
-    document.getElementById('closeLandingPrivacidad')?.addEventListener('click', () => closeModal('landingModalPrivacidad'));
-    document.getElementById('landingModalPrivacidad')?.addEventListener('click', (e) => { if (e.target.id === 'landingModalPrivacidad') closeModal('landingModalPrivacidad'); });
-  })();
-</script>
+            document.getElementById('landingBtnPrivacidad')?.addEventListener('click', () => openModal('landingModalPrivacidad'));
+            document.getElementById('closeLandingPrivacidad')?.addEventListener('click', () => closeModal('landingModalPrivacidad'));
+            document.getElementById('landingModalPrivacidad')?.addEventListener('click', (e) => { if (e.target.id === 'landingModalPrivacidad') closeModal('landingModalPrivacidad'); });
+        })();
+    </script>
 
 </body>
 
