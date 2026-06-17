@@ -20,50 +20,16 @@ exports.obtener = (req, res) => {
     });
 };
 
-// 🔹 LOGIN MEJORADO - SOLO POR EMAIL
+// 🔹 LOGIN - DESHABILITADO POR SEGURIDAD
 exports.login = (req, res) => {
-  const { Email } = req.body;
-
-  if (!Email) {
-    return res.status(400).json({
-      error: "El correo es obligatorio"
-    });
-  }
-
-  service.login({ Email })
-    .then(cliente => {
-      if (!cliente) {
-        return res.status(401).json({
-          error: "Credenciales invalidas"
-        });
-      }
-
-      res.json({
-        mensaje: "Login exitoso",
-        usuario: cliente
-      });
-    })
-    .catch(err => {
-      console.error(err);
-      
-      // 🔐 MANEJO DE ERRORES ESPECÍFICOS
-      if (err.code === 'ER_DUP_ENTRY') {
-        return res.status(409).json({
-          error: "El correo ya está registrado"
-        });
-      }
-      
-      res.status(500).json({ 
-        error: "Error al iniciar sesion" 
-      });
-    });
+  res.status(403).json({
+    error: "Endpoint deshabilitado por seguridad. Utilice /api/auth/login."
+  });
 };
 
 // 🔹 CREAR
 exports.crear = (req, res) => {
-  console.log("📥 Crear Cliente - Body:", req.body);
   if (req.file) {
-    console.log("🖼️ Crear Cliente - File:", req.file);
     const host = req.get("host") || "localhost:3000";
     req.body.AvatarUsuario = `${req.protocol}://${host}/uploads/${req.file.filename}`;
   }
@@ -89,9 +55,7 @@ exports.crear = (req, res) => {
 
 // 🔹 ACTUALIZAR
 exports.actualizar = (req, res) => {
-  console.log("📥 Actualizar Cliente - Body:", req.body);
   if (req.file) {
-    console.log("🖼️ Actualizar Cliente - File:", req.file);
     const host = req.get("host") || "localhost:3000";
     req.body.AvatarUsuario = `${req.protocol}://${host}/uploads/${req.file.filename}`;
   }

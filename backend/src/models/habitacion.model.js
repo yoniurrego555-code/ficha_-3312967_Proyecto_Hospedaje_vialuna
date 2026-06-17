@@ -76,6 +76,15 @@ const obtener = () => {
 
       return rows.map(r => ({
         ...r,
+        // Aliases normalizados para compatibilidad con frontend
+        id_habitacion: r.IDHabitacion,
+        IDHabitacion: r.IDHabitacion,
+        nombre: r.NombreHabitacion,
+        NombreHabitacion: r.NombreHabitacion,
+        precio: Number(r.Costo || 0),
+        costo: Number(r.Costo || 0),
+        Costo: Number(r.Costo || 0),
+        capacidad: r.CapacidadMaximaPersonas,
         imagenes: map[r.IDHabitacion] || (r.ImagenUrl ? [r.ImagenUrl] : [])
       }));
     });

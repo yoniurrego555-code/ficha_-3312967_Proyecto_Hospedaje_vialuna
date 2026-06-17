@@ -1,0 +1,32 @@
+[
+  {
+    "IDUsuario": 12,
+    "NombreUsuario": "Yoni",
+    "Contrasena": "$2b$10$K3hqEowqwuAU45HsjoWT2ezffYFZLs2km9CgLJ8Nx8CKL92SUvZSe",
+    "Apellido": "Urrego",
+    "Email": "yoniurrego444@gmail.com",
+    "TipoDocumento": "CC",
+    "NumeroDocumento": 123456789,
+    "Telefono": "3001234567",
+    "Pais": "Colombia",
+    "Direccion": "Medellín",
+    "IDRol": 1,
+    "Departamento": null,
+    "Estado": 1
+  },
+  {
+    "IDUsuario": 13,
+    "NombreUsuario": "Zury",
+    "Contrasena": "$2b$10$/N06TG6tRDYi18UA4Cf2rekC1rF8SzX9MBMSa6zniiB/1GvAsgyHm",
+    "Apellido": "Daniela",
+    "Email": "zury.daniela@vialuna.com",
+    "TipoDocumento": "CC",
+    "NumeroDocumento": 987654321,
+    "Telefono": "3007654321",
+    "Pais": "Colombia",
+    "Direccion": "Medellín",
+    "IDRol": 1,
+    "Departamento": null,
+    "Estado": 1
+  }
+]

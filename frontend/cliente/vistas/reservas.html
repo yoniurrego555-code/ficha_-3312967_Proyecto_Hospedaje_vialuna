@@ -91,6 +91,10 @@
         <dt>Extras</dt>
         <dd id="detailModalExtras">—</dd>
       </div>
+      <div class="detail-modal-item detail-modal-item--wide" id="detailModalMotivoContainer" style="display:none; background:#fee2e2; padding:10px; border-radius:8px; border:1px solid #fca5a5; margin-top:8px;">
+        <dt style="color:#b42318; font-weight:800; font-size:0.8rem;">🔒 Motivo de Cancelación</dt>
+        <dd id="detailModalMotivo" style="color:#991b1b; font-weight:600; font-size:0.95rem; margin-top:4px;">—</dd>
+      </div>
     </dl>
     <div class="detail-modal-actions">
       <button type="button" class="room-btn" id="closeDetailModalBtn">Cerrar</button>
@@ -109,6 +113,82 @@
     <div class="detail-modal-actions">
       <button type="button" class="btn-glass light" id="closeCancelModalBtn">No, mantener</button>
       <button type="button" class="room-btn cancel-btn" id="confirmCancelBtn">Sí, cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR RESERVA CLIENTE -->
+<div class="detail-modal" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" aria-hidden="true" style="z-index: 1000;">
+  <div class="detail-modal-backdrop" id="editModalBackdrop"></div>
+  <div class="detail-modal-card" style="max-width: 800px; width: 95%; max-height: 98vh; overflow: hidden; display: flex; flex-direction: column;">
+    <button class="detail-modal-close" id="closeEditModal" type="button" aria-label="Cerrar">×</button>
+    <div class="detail-modal-header" style="flex-shrink: 0; padding-bottom: 10px;">
+      <h2 id="editModalTitle" style="margin:0;color:#173029;font-size:1.3rem;">Modificar mi reserva</h2>
+    </div>
+    
+    <div style="flex-grow: 1; overflow-y: auto; padding: 0 5px;">
+      <p style="color:#6b7280; font-size:0.85rem; margin-bottom: 15px;">
+        Puedes extender tu estadía y agregar nuevos paquetes o servicios. No es posible cambiar la habitación ni eliminar paquetes/servicios ya contratados.
+      </p>
+
+      <form id="editReservaClientForm" style="display:flex; flex-direction:column; gap:15px;">
+        
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:15px;margin-bottom:5px;">
+          <h3 style="margin:0 0 12px;color:#173029;font-size:0.95rem;font-weight:800;display:flex;align-items:center;gap:8px;">
+            🏨 Sección 1: Datos de la Reserva
+          </h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="grid-column: span 2; background:#f9fafb; padding:10px 14px; border-radius:10px; border:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <p style="font-size:0.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;margin:0 0 4px;">Habitación Reservada</p>
+                <p id="editClientHabitacionName" style="margin:0;font-weight:800;color:#173029;font-size:1rem;">-</p>
+                <input type="hidden" id="editClientHabitacionId" value="">
+                <input type="hidden" id="editClientHabitacionPrice" value="0">
+              </div>
+              <span style="font-size:0.8rem;background:#e5e7eb;padding:4px 8px;border-radius:6px;color:#374151;font-weight:600;">Solo lectura</span>
+            </div>
+
+            <div>
+              <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Fecha Check-in (Solo lectura)</label>
+              <input type="date" id="editClientFechaInicio" readonly style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:#f3f4f6;font-size:0.9rem;color:#6b7280;box-sizing:border-box;">
+            </div>
+
+            <div>
+              <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Fecha Check-out <span style="color:#258a60;">(Solo extender)</span></label>
+              <input type="date" id="editClientFechaFin" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:#f9fafb;font-size:0.9rem;color:#173029;box-sizing:border-box;">
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:15px;margin-bottom:5px;">
+          <h3 style="margin:0 0 12px;color:#173029;font-size:0.95rem;font-weight:800;display:flex;align-items:center;gap:8px;">
+            🎁 Sección 2: Extras
+          </h3>
+          <div style="margin-bottom:12px;">
+            <h4 style="margin:0 0 8px;color:#173029;font-size:0.8rem;font-weight:800;text-transform:uppercase;">Paquetes Adicionales</h4>
+            <div id="editClientPaquetesGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:8px;">
+              <!-- Renderizado desde JS -->
+            </div>
+          </div>
+          <div>
+            <h4 style="margin:0 0 8px;color:#173029;font-size:0.8rem;font-weight:800;text-transform:uppercase;">Servicios Adicionales</h4>
+            <div id="editClientServiciosGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:8px;">
+              <!-- Renderizado desde JS -->
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:15px;margin-bottom:10px;" id="editClientBreakdown">
+          <!-- Renderizado desde JS -->
+        </div>
+
+      </form>
+    </div>
+
+    <!-- Botones fijos abajo -->
+    <div style="flex-shrink: 0; padding-top: 15px; border-top: 1px solid #e5e7eb; display:flex; gap:12px; justify-content:flex-end;">
+      <button type="button" class="btn-glass light" id="closeEditModalBtn" style="padding:10px 20px;">Cancelar</button>
+      <button type="submit" form="editReservaClientForm" class="room-btn" id="btnSaveClientEdit" style="padding:10px 24px; background:linear-gradient(135deg,#014034,#258a60); color:white; font-weight:800; box-shadow:0 4px 14px rgba(1,64,52,.3);">💾 Guardar Cambios</button>
     </div>
   </div>
 </div>

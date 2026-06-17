@@ -160,13 +160,13 @@
         <!-- 7. Políticas y Términos -->
         <div class="flex flex-col gap-3 mt-2 p-4 bg-gray-50 rounded-xl border border-gray-100">
           <label class="flex items-start gap-3 cursor-pointer group">
-            <input type="checkbox" id="chkTerminos" class="mt-1 w-4 h-4 text-brand rounded border-gray-300 focus:ring-brand">
+            <input type="checkbox" id="chkTerminos" class="mt-1 w-4 h-4 text-brand rounded border-gray-300 focus:ring-brand" required>
             <span class="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
               He leído y acepto los <a href="#" id="linkTerminos" class="text-brand font-bold hover:underline">Términos y Condiciones</a>
             </span>
           </label>
           <label class="flex items-start gap-3 cursor-pointer group">
-            <input type="checkbox" id="chkPrivacidad" class="mt-1 w-4 h-4 text-brand rounded border-gray-300 focus:ring-brand">
+            <input type="checkbox" id="chkPrivacidad" class="mt-1 w-4 h-4 text-brand rounded border-gray-300 focus:ring-brand" required>
             <span class="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
               He leído y acepto la <a href="#" id="linkPrivacidad" class="text-brand font-bold hover:underline">Política de Privacidad</a>
             </span>
@@ -275,3 +275,64 @@
   </div>
 
 </section>
+
+<script>
+  // ═══ Validación de Términos y Privacidad — reservar.html ═══
+  (function() {
+    const chkTerminos   = document.getElementById('chkTerminos');
+    const chkPrivacidad = document.getElementById('chkPrivacidad');
+    const confirmarBtn  = document.getElementById('confirmarReservaBtn');
+    const reservForm    = document.getElementById('reservationForm');
+    const linkTerminos  = document.getElementById('linkTerminos');
+    const linkPrivacidad = document.getElementById('linkPrivacidad');
+    const modalTerminos  = document.getElementById('modalTerminos');
+    const modalPrivacidad = document.getElementById('modalPrivacidad');
+
+    function updateBtnState() {
+      if (!confirmarBtn) return;
+      const ambosAceptados = chkTerminos?.checked && chkPrivacidad?.checked;
+      confirmarBtn.disabled = !ambosAceptados;
+      confirmarBtn.style.opacity = ambosAceptados ? '1' : '0.5';
+      confirmarBtn.style.cursor = ambosAceptados ? 'pointer' : 'not-allowed';
+    }
+
+    chkTerminos?.addEventListener('change', updateBtnState);
+    chkPrivacidad?.addEventListener('change', updateBtnState);
+
+    // Protección defensiva en el submit (por si el disabled se bypasea)
+    reservForm?.addEventListener('submit', function(e) {
+      if (!chkTerminos?.checked || !chkPrivacidad?.checked) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        let msgEl = document.getElementById('clientTermsWarningMsg');
+        if (!msgEl) {
+          msgEl = document.createElement('p');
+          msgEl.id = 'clientTermsWarningMsg';
+          msgEl.style.cssText = 'color:#dc2626;font-size:0.85rem;font-weight:700;margin:8px 0 0;padding:10px 14px;background:#fee2e2;border-radius:10px;border:1px solid #fca5a5;';
+          const container = chkTerminos?.closest('div')?.parentElement;
+          if (container) container.appendChild(msgEl);
+        }
+        msgEl.textContent = '⚠️ Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.';
+        setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 5000);
+      }
+    }, true);
+
+    // Abrir/cerrar modales de términos y privacidad
+    linkTerminos?.addEventListener('click', function(e) {
+      e.preventDefault();
+      modalTerminos?.classList.add('active');
+    });
+    document.getElementById('closeTerminos')?.addEventListener('click', () => modalTerminos?.classList.remove('active'));
+    modalTerminos?.addEventListener('click', function(e) { if (e.target === modalTerminos) modalTerminos.classList.remove('active'); });
+
+    linkPrivacidad?.addEventListener('click', function(e) {
+      e.preventDefault();
+      modalPrivacidad?.classList.add('active');
+    });
+    document.getElementById('closePrivacidad')?.addEventListener('click', () => modalPrivacidad?.classList.remove('active'));
+    modalPrivacidad?.addEventListener('click', function(e) { if (e.target === modalPrivacidad) modalPrivacidad.classList.remove('active'); });
+
+    // Estado inicial
+    updateBtnState();
+  })();
+</script>

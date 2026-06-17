@@ -101,47 +101,133 @@
     </main>
 
     <!-- MODAL CREAR CUENTA -->
-    <div class="auth-modal" id="registerModal" role="dialog" aria-modal="true" aria-labelledby="registerTitle">
-        <div class="auth-modal-card">
-            <button class="close-modal" id="closeRegister" type="button" aria-label="Cerrar">×</button>
-            <h2 id="registerTitle">Crear cuenta</h2>
+    <div class="auth-modal" id="registerModal" role="dialog" aria-modal="true" aria-labelledby="registerTitle"
+        aria-hidden="true">
+        <div class="auth-modal-card register-modal-card">
+            <button class="close-modal" id="closeRegister" type="button" aria-label="Cerrar">&#x2715;</button>
+            <div class="register-modal-header">
+                <h2 id="registerTitle">Crear cuenta</h2>
+                <p>Completa tus datos para registrarte en Via Luna.</p>
+            </div>
             <div id="registerMessage" class="modal-message" aria-live="polite"></div>
-            <style>
-                .register-field { position: relative; display: flex; flex-direction: column; gap: 5px; text-align: left; }
-                .register-field label { font-size: 14px; font-weight: 600; color: #333; }
-                .register-field .req { color: red; }
-                .auth-modal-form .register-field input { margin: 0; }
-            </style>
-            <form id="registerForm" class="auth-modal-form" novalidate>
-                <div class="register-field">
-                    <label>Nombre <span class="req">*</span></label>
-                    <input name="Nombre" type="text" placeholder="Ingresa tu nombre" required maxlength="50" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo se permiten letras">
+            <form id="registerForm" class="auth-modal-form register-modal-form" novalidate autocomplete="off">
+
+                <!-- Fila 1: Nombre + Apellido -->
+                <div class="reg-row">
+                    <div class="reg-field">
+                        <label for="regNombre">Nombre <span class="req">*</span></label>
+                        <input id="regNombre" name="Nombre" type="text"
+                            placeholder="Tu nombre"
+                            required maxlength="50"
+                            pattern="[A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00E1\u00E9\u00ED\u00F3\u00FA\u00D1\u00F1\s]+"
+                            autocomplete="given-name">
+                    </div>
+                    <div class="reg-field">
+                        <label for="regApellido">Apellido <span class="req">*</span></label>
+                        <input id="regApellido" name="Apellido" type="text"
+                            placeholder="Tu apellido"
+                            required maxlength="50"
+                            pattern="[A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00E1\u00E9\u00ED\u00F3\u00FA\u00D1\u00F1\s]+"
+                            autocomplete="family-name">
+                    </div>
                 </div>
-                <div class="register-field">
-                    <label>Apellido <span class="req">*</span></label>
-                    <input name="Apellido" type="text" placeholder="Ingresa tu apellido" required maxlength="50" pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+" title="Solo se permiten letras">
+
+                <!-- Fila 2: Tipo Documento + N° Documento -->
+                <div class="reg-row">
+                    <div class="reg-field">
+                        <label for="regTipoDoc">Tipo Documento</label>
+                        <select id="regTipoDoc" name="TipoDocumento" autocomplete="off">
+                            <option value="CC">Cédula de Ciudadanía</option>
+                            <option value="TI">Tarjeta de Identidad</option>
+                            <option value="CE">Cédula de Extranjería</option>
+                            <option value="Pasaporte">Pasaporte</option>
+                        </select>
+                    </div>
+                    <div class="reg-field">
+                        <label for="regDocumento">N° Documento <span class="req">*</span></label>
+                        <input id="regDocumento" name="NroDocumento" type="text"
+                            placeholder="Solo números"
+                            required minlength="5" maxlength="15"
+                            pattern="[0-9]+"
+                            inputmode="numeric"
+                            autocomplete="off">
+                    </div>
                 </div>
-                <div class="register-field">
-                    <label>Número de documento <span class="req">*</span></label>
-                    <input name="NroDocumento" type="text" placeholder="Solo números" required minlength="5" maxlength="15" pattern="[0-9]+" title="Solo se permiten números sin espacios">
+
+                <!-- Fila 3: País (ancho completo) -->
+                <div class="reg-field">
+                    <label for="regPais">País <span class="req">*</span></label>
+                    <select id="regPais" name="Pais" autocomplete="country">
+                        <!-- opciones inyectadas por JS -->
+                    </select>
                 </div>
-                <div class="register-field">
-                    <label>Teléfono <span class="req">*</span></label>
-                    <input name="Telefono" type="tel" placeholder="Solo números" required minlength="7" maxlength="15" pattern="[0-9]+" title="Solo se permiten números">
+
+                <!-- Fila 4: Teléfono con prefijo -->
+                <div class="reg-field">
+                    <label for="regTelefono">Teléfono <span class="req">*</span></label>
+                    <div style="display:flex; align-items:stretch; gap:8px;">
+                        <span id="regDialCode" class="reg-dial-prefix"></span>
+                        <input id="regTelefono" name="Telefono" type="tel"
+                            placeholder="Número sin código"
+                            required minlength="7" maxlength="15"
+                            pattern="[0-9]+"
+                            inputmode="numeric"
+                            autocomplete="tel"
+                            style="flex:1;">
+                    </div>
+                    <small class="reg-hint">El código de país es solo referencial.</small>
                 </div>
-                <div class="register-field">
-                    <label>Correo electrónico <span class="req">*</span></label>
-                    <input name="Email" type="email" placeholder="tu@ejemplo.com" required maxlength="100">
+
+                <!-- Fila 5: Departamento y Dirección -->
+                <div class="reg-row">
+                    <div class="reg-field">
+                        <label for="regDepartamento">Departamento</label>
+                        <input id="regDepartamento" name="Departamento" type="text"
+                            placeholder="Ej. Antioquia"
+                            maxlength="50"
+                            pattern="[A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00E1\u00E9\u00ED\u00F3\u00FA\u00D1\u00F1\s]+"
+                            autocomplete="address-level1">
+                    </div>
+                    <div class="reg-field">
+                        <label for="regDireccion">Dirección</label>
+                        <input id="regDireccion" name="Direccion" type="text"
+                            placeholder="Tu dirección física"
+                            maxlength="150"
+                            autocomplete="street-address">
+                    </div>
                 </div>
-                <div class="register-field">
-                    <label>Contraseña <span class="req">*</span></label>
-                    <input name="Contrasena" id="regPassword" type="password" placeholder="Mínimo 6 caracteres" minlength="6" maxlength="50" required>
+
+                <!-- Fila 6: Email (ancho completo) -->
+                <div class="reg-field">
+                    <label for="regEmail">Correo electrónico <span class="req">*</span></label>
+                    <input id="regEmail" name="Email" type="email"
+                        placeholder="tu@ejemplo.com"
+                        required maxlength="100"
+                        autocomplete="email">
                 </div>
-                <div class="register-field">
-                    <label>Confirmar contraseña <span class="req">*</span></label>
-                    <input name="ConfirmarContrasena" id="regConfirmPassword" type="password" placeholder="Mínimo 6 caracteres" required>
+
+                <!-- Fila 6: Contraseña + Confirmar -->
+                <div class="reg-row">
+                    <div class="reg-field">
+                        <label for="regPassword">Contraseña <span class="req">*</span></label>
+                        <input id="regPassword" name="Contrasena" type="password"
+                            placeholder="Mín. 6 caracteres"
+                            minlength="6" maxlength="50"
+                            required
+                            autocomplete="new-password">
+                    </div>
+                    <div class="reg-field">
+                        <label for="regConfirmPassword">Confirmar <span class="req">*</span></label>
+                        <input id="regConfirmPassword" name="ConfirmarContrasena" type="password"
+                            placeholder="Repite la contraseña"
+                            required
+                            autocomplete="new-password">
+                    </div>
                 </div>
-                <button type="submit" class="modal-submit" style="margin-top: 10px;">Crear cuenta</button>
+
+                <button type="submit" class="modal-submit" id="registerSubmitBtn">
+                    Crear cuenta
+                </button>
             </form>
         </div>
     </div>
@@ -162,6 +248,8 @@
 
     <script type="module">
         import { loginUsuario, registrarUsuario, olvideContrasena } from '../js/usuarios.js';
+        import { validateRegisterPayload, buildRegisterPayload } from '../js/shared/register-validation.js';
+        import { buildCountryOptions, bindCountryDial } from '../js/shared/countries.js';
 
         const redirectParam = new URLSearchParams(window.location.search).get('redirect');
         const form = document.getElementById('loginForm');
@@ -258,57 +346,46 @@
             }
         });
 
-        // ---- Registro ----
+        // ---- Registro (usa módulo compartido register-validation.js) ----
         registerForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             clearModalMessage('registerMessage');
 
-            const nombre = registerForm.Nombre.value.trim();
-            const apellido = registerForm.Apellido.value.trim();
-            const documento = registerForm.NroDocumento.value.trim();
-            const email = registerForm.Email.value.trim();
-            const contrasena = registerForm.Contrasena.value;
-            const confirmar = registerForm.ConfirmarContrasena.value;
+            const paisSel = document.getElementById('regPais');
+            const paisInfo = paisSel ? { value: paisSel.value } : { value: 'CO' };
+            const payload = {
+                nombre:    registerForm.Nombre.value.trim(),
+                apellido:  registerForm.Apellido.value.trim(),
+                documento: registerForm.NroDocumento.value.trim(),
+                tipoDocumento: (registerForm.TipoDocumento && registerForm.TipoDocumento.value) || 'CC',
+                pais:      paisSel ? paisSel.options[paisSel.selectedIndex]?.textContent?.split('(')[0].trim() : 'Colombia',
+                telefono:  registerForm.Telefono.value.trim(),
+                email:     registerForm.Email.value.trim(),
+                contrasena: registerForm.Contrasena.value,
+                confirmar:  registerForm.ConfirmarContrasena.value,
+            };
 
-            const nombreRegex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$/;
-            const numeroRegex = /^[0-9]+$/;
+            const validation = validateRegisterPayload(payload);
+            if (!validation.ok) {
+                showModalMessage('registerMessage', validation.error, 'error');
+                return;
+            }
 
-            if (!nombre || !apellido) {
-                showModalMessage('registerMessage', 'El nombre y apellido son obligatorios.', 'error');
-                return;
-            }
-            if (!nombreRegex.test(nombre) || !nombreRegex.test(apellido)) {
-                showModalMessage('registerMessage', 'El nombre y apellido solo deben contener letras.', 'error');
-                return;
-            }
-            if (!documento || !numeroRegex.test(documento)) {
-                showModalMessage('registerMessage', 'El número de documento debe contener solo números.', 'error');
-                return;
-            }
-            if (!registerForm.Telefono.value.trim() || !numeroRegex.test(registerForm.Telefono.value.trim())) {
-                showModalMessage('registerMessage', 'El teléfono debe contener solo números.', 'error');
-                return;
-            }
-            if (!email || !isValidEmail(email)) {
-                showModalMessage('registerMessage', 'Ingresa un correo electronico valido.', 'error');
-                return;
-            }
-            if (!contrasena || contrasena.length < 6) {
-                showModalMessage('registerMessage', 'La contrasena debe tener minimo 6 caracteres.', 'error');
-                return;
-            }
-            if (contrasena !== confirmar) {
-                showModalMessage('registerMessage', 'Las contrasenas no coinciden.', 'error');
-                return;
-            }
+            const submitBtn = document.getElementById('registerSubmitBtn');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creando cuenta...';
 
             try {
-                const payload = Object.fromEntries(new FormData(registerForm).entries());
-                delete payload.ConfirmarContrasena;
-                payload.TipoDocumento = 'CC';
-                payload.Direccion = '';
-                
-                const response = await registrarUsuario(payload);
+                const formPayload = buildRegisterPayload(registerForm);
+                // Agregar país legible desde el selector
+                const regPaisSel = document.getElementById('regPais');
+                if (regPaisSel && regPaisSel.value) {
+                    const opt = regPaisSel.options[regPaisSel.selectedIndex];
+                    formPayload.Pais = opt ? opt.textContent.split('(')[0].trim() : 'Colombia';
+                    formPayload.TipoDocumento = (registerForm.TipoDocumento && registerForm.TipoDocumento.value) || 'CC';
+                }
+                const response = await registrarUsuario(formPayload);
                 const usuario = response.user || response.usuario;
 
                 if (response.token && usuario) {
@@ -319,13 +396,16 @@
                     return;
                 }
 
-                showModalMessage('registerMessage', response.message || response.mensaje || 'Cuenta creada correctamente. Ya puedes iniciar sesion.', 'success');
+                showModalMessage('registerMessage', response.message || response.mensaje || '¡Cuenta creada! Ya puedes iniciar sesión.', 'success');
                 registerForm.reset();
                 setTimeout(() => {
                     document.getElementById('registerModal').classList.remove('show');
-                }, 2000);
+                }, 2200);
             } catch (error) {
                 showModalMessage('registerMessage', error.message || 'No fue posible crear la cuenta. Intenta de nuevo.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
         });
 
@@ -360,26 +440,60 @@
         });
 
         // ---- Abrir/cerrar modales ----
+        function openModal(id, firstFocusId) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
+
+            // Inicializar selector de países en el modal de registro
+            if (id === 'registerModal') {
+                const regPais = document.getElementById('regPais');
+                if (regPais && !regPais.options.length) {
+                    regPais.innerHTML = buildCountryOptions('CO');
+                }
+                bindCountryDial('regPais', 'regDialCode');
+            }
+
+            if (firstFocusId) {
+                setTimeout(() => {
+                    const el = document.getElementById(firstFocusId);
+                    if (el) el.focus();
+                }, 60);
+            }
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
         document.getElementById('openRegister').addEventListener('click', () => {
             clearModalMessage('registerMessage');
-            document.getElementById('registerModal').classList.add('show');
+            registerForm.reset();
+            openModal('registerModal', 'regNombre');
         });
         document.getElementById('openRecovery').addEventListener('click', () => {
             clearModalMessage('recoveryMessage');
-            document.getElementById('recoveryModal').classList.add('show');
+            openModal('recoveryModal', 'recoveryEmail');
         });
-        document.getElementById('closeRegister').addEventListener('click', () => {
-            document.getElementById('registerModal').classList.remove('show');
-        });
-        document.getElementById('closeRecovery').addEventListener('click', () => {
-            document.getElementById('recoveryModal').classList.remove('show');
-        });
+        document.getElementById('closeRegister').addEventListener('click', () => closeModal('registerModal'));
+        document.getElementById('closeRecovery').addEventListener('click',  () => closeModal('recoveryModal'));
 
-        // Cerrar modal al hacer clic fuera
+        // Cerrar modal al hacer clic fuera o con Escape
         document.querySelectorAll('.auth-modal').forEach((modal) => {
             modal.addEventListener('click', (e) => {
-                if (e.target === modal) modal.classList.remove('show');
+                if (e.target === modal) closeModal(modal.id);
             });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal('registerModal');
+                closeModal('recoveryModal');
+            }
         });
     </script>
 </body>

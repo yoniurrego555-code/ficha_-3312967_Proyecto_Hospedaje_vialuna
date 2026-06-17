@@ -13,27 +13,66 @@
       </div>
 
       <form id="perfilForm" class="premium-form readonly-profile">
-        <label class="premium-field">
-          <span>Nombre completo</span>
-          <input type="text" id="nombreCompleto" name="nombre_completo" readonly>
-        </label>
-        <label class="premium-field">
-          <span>Documento</span>
-          <input type="text" id="documento" readonly>
-        </label>
-        <label class="premium-field">
-          <span>Correo</span>
-          <input type="email" id="email" readonly>
-        </label>
-        <label class="premium-field">
-          <span>Teléfono</span>
-          <input type="text" id="telefono" name="telefono" readonly>
-        </label>
-        <label class="premium-field">
-          <span>Fecha de nacimiento</span>
-          <input type="date" id="fechaNacimiento" name="fecha_nacimiento" readonly>
-        </label>
-        <input type="hidden" id="tipo_documento" name="tipo_documento" value="CC">
+        <div class="reg-row" style="display:flex; gap:15px; margin-bottom:15px;">
+          <label class="premium-field" style="flex:1;">
+            <span>Nombre</span>
+            <input type="text" id="nombre" name="nombre" readonly>
+          </label>
+          <label class="premium-field" style="flex:1;">
+            <span>Apellido</span>
+            <input type="text" id="apellido" name="apellido" readonly>
+          </label>
+        </div>
+        <div class="reg-row" style="display:flex; gap:15px; margin-bottom:15px;">
+          <label class="premium-field" style="flex:1;">
+            <span>Tipo Documento</span>
+            <select id="tipo_documento" name="tipo_documento" disabled style="width:100%; padding:10px; border-radius:8px; border:1px solid #d1d5db; background:#f9fafb; color:#1f2937;">
+                <option value="CC">Cédula de Ciudadanía</option>
+                <option value="TI">Tarjeta de Identidad</option>
+                <option value="CE">Cédula de Extranjería</option>
+                <option value="Pasaporte">Pasaporte</option>
+            </select>
+          </label>
+          <label class="premium-field" style="flex:1;">
+            <span>N° Documento</span>
+            <input type="text" id="documento" readonly>
+          </label>
+        </div>
+        <div class="reg-row" style="display:flex; gap:15px; margin-bottom:15px;">
+          <label class="premium-field" style="flex:1;">
+            <span>País</span>
+            <select id="paisCode" name="Pais" disabled style="width:100%; padding:10px; border-radius:8px; border:1px solid #d1d5db; background:#f9fafb; color:#1f2937;">
+                <!-- opciones inyectadas por JS -->
+            </select>
+          </label>
+          <label class="premium-field" style="flex:1;">
+            <span>Teléfono</span>
+            <div style="display:flex; align-items:stretch; gap:8px;">
+                <span id="dialCodeDisplay" style="background:#f3f4f6; border:1px solid #d1d5db; border-radius:8px; padding:10px; font-size:0.9rem; color:#4b5563; display:flex; align-items:center; justify-content:center; min-width:45px;"></span>
+                <input type="text" id="telefono" name="telefono" readonly style="flex:1;">
+            </div>
+          </label>
+        </div>
+        <div class="reg-row" style="display:flex; gap:15px; margin-bottom:15px;">
+          <label class="premium-field" style="flex:1;">
+            <span>Departamento</span>
+            <input type="text" id="departamento" name="departamento" readonly>
+          </label>
+          <label class="premium-field" style="flex:1;">
+            <span>Dirección</span>
+            <input type="text" id="direccion" name="direccion" readonly>
+          </label>
+        </div>
+        <div class="reg-row" style="display:flex; gap:15px; margin-bottom:15px;">
+          <label class="premium-field" style="flex:1;">
+            <span>Correo Electrónico</span>
+            <input type="email" id="email" readonly>
+          </label>
+          <label class="premium-field" style="flex:1;">
+            <span>Fecha de nacimiento</span>
+            <input type="date" id="fechaNacimiento" name="fecha_nacimiento" readonly>
+          </label>
+        </div>
         <div class="premium-actions profile-save-actions">
           <button type="button" class="btn-glass light" id="cancelEditBtn">Cancelar</button>
           <button type="submit" class="package-btn">Guardar cambios</button>

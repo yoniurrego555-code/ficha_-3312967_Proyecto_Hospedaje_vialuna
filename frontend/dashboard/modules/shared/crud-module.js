@@ -1,4 +1,4 @@
-﻿import { getAuthHeaders } from './api-config.js';
+import { getAuthHeaders } from '../../../js/shared/api-config.js';
 // Generic CRUD Module for frontend modules
 
 export function createCrudModule(config) {

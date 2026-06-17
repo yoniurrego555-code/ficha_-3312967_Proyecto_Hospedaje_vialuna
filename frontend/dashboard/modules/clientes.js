@@ -1,5 +1,5 @@
 import { getClientes, createCliente, updateCliente, deleteCliente, toggleEstadoCliente } from "../core/api.js";
-
+import { buildCountryOptions, findCountry, bindCountryDial } from "../../js/shared/countries.js";
 import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
   class ClientesModule {
   constructor(container) {
@@ -41,21 +41,14 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
       }));
 
       this.calculateMetrics();
-    } catch (error) {
+      } catch (error) {
       console.error('Error cargando clientes desde API:', error);
-      // Usar datos de ejemplo si falla la API
-      this.clientes = this.getClientesEjemplo();
-      this.calculateMetrics();
+      this.showError("Error", "No se pudieron cargar los clientes del servidor.");
+      return;
     }
   }
 
-  getClientesEjemplo() {
-    return [
-      { IDCliente: '1', Nombre: 'Juan', Apellido: 'Pérez', Email: 'juan@example.com', Telefono: '3124567890', Estado: '1', NroDocumento: '1234567890', TipoDocumento: 'CC' },
-      { IDCliente: '2', Nombre: 'María', Apellido: 'García', Email: 'maria@example.com', Telefono: '3107654321', Estado: '1', NroDocumento: '0987654321', TipoDocumento: 'CC' },
-      { IDCliente: '3', Nombre: 'Carlos', Apellido: 'López', Email: 'carlos@example.com', Telefono: '3155555555', Estado: '0', NroDocumento: '5555555555', TipoDocumento: 'CE' }
-    ];
-  }
+
 
   calculateMetrics() {
     const total = this.clientes.length;
@@ -314,6 +307,13 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
 
     const nombreCompleto = `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || 'Sin nombre';
     
+    // Lookup country info for the detail view (presentational only)
+    const countryCode = cliente.PaisCode || 'CO';
+    const countryInfo = findCountry(countryCode) || { flag: '🌎', name: cliente.Pais || 'Colombia', dial: '' };
+    const phoneDisplay = countryInfo.dial
+      ? `<span class="text-muted text-xs mr-1">${countryInfo.flag} ${countryInfo.dial}</span>${cliente.Telefono || ''}`
+      : (cliente.Telefono || 'No especificado');
+
     this.container.innerHTML = `
       <div class="max-w-2xl mx-auto p-6 sm:p-8 bg-white border border-gray-100 rounded-3xl shadow-sm">
         <div class="flex items-center justify-between border-b border-gray-100 pb-5 mb-6">
@@ -347,11 +347,11 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
               </div>
               <div class="flex flex-col gap-1">
                 <span class="text-xs text-muted font-semibold uppercase tracking-wide">Teléfono:</span>
-                <span class="font-bold text-brand-deep">${cliente.Telefono || 'No especificado'}</span>
+                <span class="font-bold text-brand-deep">${phoneDisplay}</span>
               </div>
               <div class="flex flex-col gap-1 sm:col-span-2">
-                <span class="text-xs text-muted font-semibold uppercase tracking-wide">Ubicación:</span>
-                <span class="font-bold text-brand-deep">${cliente.Pais || 'Colombia'}${cliente.Departamento ? `, ${cliente.Departamento}` : ''}</span>
+                <span class="text-xs text-muted font-semibold uppercase tracking-wide">País:</span>
+                <span class="font-bold text-brand-deep">${countryInfo.flag} ${countryInfo.name}${cliente.Departamento ? ` · ${cliente.Departamento}` : ''}</span>
               </div>
               <div class="flex flex-col gap-1 sm:col-span-2 mt-2 pt-2 border-t border-gray-200/50">
                 <span class="text-xs text-muted font-semibold uppercase tracking-wide">Estado Cuenta:</span>
@@ -443,16 +443,29 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
                     <input type="tel" id="editTelefono" value="${cliente.Telefono || ''}" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required>
                   </div>
                   
-                  <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-muted uppercase tracking-wider">País <span class="text-red-500">*</span></label>
-                    <input type="text" id="editPais" value="${cliente.Pais || 'Colombia'}" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required>
-                  </div>
-                  
-                  <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Departamento <span class="text-red-500">*</span></label>
-                    <input type="text" id="editDepartamento" value="${cliente.Departamento || ''}" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required>
-                  </div>
+                  <!-- País con selector + código de llamada (solo presentacional) -->
                   <div class="flex flex-col gap-2 sm:col-span-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">País <span class="text-red-500">*</span></label>
+                    <select id="editPais" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all cursor-pointer">
+                      ${buildCountryOptions(cliente.PaisCode || 'CO')}
+                    </select>
+                  </div>
+
+                  <!-- Teléfono con prefijo de país (presentacional) -->
+                  <div class="flex flex-col gap-2 sm:col-span-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Teléfono <span class="text-red-500">*</span></label>
+                    <div class="flex items-center gap-2">
+                      <span id="editDialCode" class="inline-flex items-center min-h-[44px] px-3 rounded-xl border border-gray-200 bg-gray-100 text-sm font-bold text-brand-deep whitespace-nowrap"></span>
+                      <input type="tel" id="editTelefono" value="${cliente.Telefono || ''}" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required placeholder="Número sin código">
+                    </div>
+                    <p class="text-[10px] text-muted mt-0.5">El código de país es solo referencial, no se guarda en la base de datos.</p>
+                  </div>
+
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Departamento</label>
+                    <input type="text" id="editDepartamento" value="${cliente.Departamento || ''}" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                  </div>
+                  <div class="flex flex-col gap-2">
                     <label class="text-xs font-bold text-muted uppercase tracking-wider">Dirección</label>
                     <input type="text" id="editDireccion" value="${cliente.Direccion || ''}" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                   </div>
@@ -489,12 +502,18 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
       e.preventDefault();
       this.saveClient(id);
     });
+
+    // Bind country selector → dial code display
+    bindCountryDial('editPais', 'editDialCode');
     
     // Ensure module is globally available for onclick handlers
     window.clientesModule = this;
   }
 
   async saveClient(id) {
+    const paisSel  = document.getElementById('editPais');
+    const paisCode = paisSel ? paisSel.value : 'CO';
+    const paisInfo = findCountry(paisCode);
     const formData = {
       NroDocumento: id,
       Nombre: document.getElementById('editNombre').value,
@@ -502,7 +521,8 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
       Email: document.getElementById('editEmail').value,
       Telefono: document.getElementById('editTelefono').value,
       TipoDocumento: document.getElementById('editTipoDocumento').value,
-      Pais: document.getElementById('editPais').value,
+      Pais: paisInfo ? paisInfo.name : paisCode,   // nombre legible para la BD
+      PaisCode: paisCode,                           // código ISO solo en memoria
       Departamento: document.getElementById('editDepartamento').value,
       Direccion: document.getElementById('editDireccion').value,
       IDRol: 1, // Defaulting regular role
@@ -651,15 +671,30 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
                     <input type="tel" id="newTelefono" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required>
                     <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="newTelefono"></div>
                   </div>
-                  <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-muted uppercase tracking-wider">País <span class="text-red-500">*</span></label>
-                    <input type="text" id="newPais" value="Colombia" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required>
-                  </div>
-                  <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Departamento <span class="text-red-500">*</span></label>
-                    <input type="text" id="newDepartamento" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required>
-                  </div>
+                  <!-- País con selector + código de llamada (solo presentacional) -->
                   <div class="flex flex-col gap-2 sm:col-span-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">País <span class="text-red-500">*</span></label>
+                    <select id="newPais" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all cursor-pointer">
+                      ${buildCountryOptions('CO')}
+                    </select>
+                  </div>
+
+                  <!-- Teléfono con prefijo de país (presentacional) -->
+                  <div class="flex flex-col gap-2 sm:col-span-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Teléfono <span class="text-red-500">*</span></label>
+                    <div class="flex items-center gap-2">
+                      <span id="newDialCode" class="inline-flex items-center min-h-[44px] px-3 rounded-xl border border-gray-200 bg-gray-100 text-sm font-bold text-brand-deep whitespace-nowrap"></span>
+                      <input type="tel" id="newTelefono" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" required placeholder="Número sin código">
+                      <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="newTelefono"></div>
+                    </div>
+                    <p class="text-[10px] text-muted mt-0.5">El código de país es solo referencial, no se guarda en la base de datos.</p>
+                  </div>
+
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Departamento</label>
+                    <input type="text" id="newDepartamento" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
+                  </div>
+                  <div class="flex flex-col gap-2">
                     <label class="text-xs font-bold text-muted uppercase tracking-wider">Dirección</label>
                     <input type="text" id="newDireccion" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                   </div>
@@ -695,7 +730,10 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
       e.preventDefault();
       this.createClient();
     });
-    
+
+    // Bind country selector → dial code display
+    bindCountryDial('newPais', 'newDialCode');
+
     // Ensure module is globally available for onclick handlers
     window.clientesModule = this;
   }
@@ -709,7 +747,10 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
     const apellido = (document.getElementById('newApellido').value || '').trim();
     const email = (document.getElementById('newEmail').value || '').trim();
     const telefono = (document.getElementById('newTelefono').value || '').trim();
-    const pais = (document.getElementById('newPais').value || '').trim();
+    const paisSel = document.getElementById('newPais');
+    const paisCode = paisSel ? paisSel.value : 'CO';
+    const paisInfo = findCountry(paisCode);
+    const paisName = paisInfo ? paisInfo.name : paisCode;
     const departamento = (document.getElementById('newDepartamento').value || '').trim();
     const direccion = (document.getElementById('newDireccion').value || '').trim();
     const tipoDoc = document.getElementById('newTipoDocumento').value;
@@ -733,7 +774,8 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
       Apellido: apellido,
       Email: email || null,
       Telefono: telefono || null,
-      Pais: pais || null,
+      Pais: paisName,        // nombre legible del país → BD
+      PaisCode: paisCode,    // código ISO → solo en memoria/detalle
       Departamento: departamento || null,
       Direccion: direccion || null,
       TipoDocumento: tipoDoc,

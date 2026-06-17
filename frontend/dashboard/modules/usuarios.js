@@ -10,6 +10,7 @@ import {
   toggleEstadoCliente
 } from "../core/api.js";
 import { showAlert, ICONS } from './ui-utils.js';
+import { buildCountryOptions, findCountry, bindCountryDial } from '../../js/shared/countries.js';
 
 class UsuariosModule {
   constructor(container) {
@@ -92,24 +93,12 @@ class UsuariosModule {
       this.calculateMetrics();
     } catch (error) {
       console.error('Error cargando información de la API:', error);
-      // Fallback a datos estáticos si la base de datos no está disponible
-      this.usuarios = this.getUsuariosEjemplo();
-      this.roles = [
-        { IDRol: 1, Nombre: 'Administrador', Descripcion: 'Acceso total', Estado: '1' },
-        { IDRol: 2, Nombre: 'Cliente', Descripcion: 'Acceso limitado', Estado: '1' }
-      ];
+      this.usuarios = [];
+      this.roles = [];
       this.reservas = [];
       this.calculateMetrics();
+      this.showError("Error", "No se pudieron cargar los datos del servidor.");
     }
-  }
-
-  // Fallback de usuarios si falla la conexión
-  getUsuariosEjemplo() {
-    return [
-      { IDUsuario: 1, NombreUsuario: 'admin', Email: 'admin@vialuna.com', Telefono: '3000000000', IDRol: 1, NombreRol: 'Administrador', Estado: 1, NumeroDocumento: 10001, TipoDocumento: 'CC', Apellido: 'Administrador', Pais: 'Colombia', Direccion: 'Calle Principal #10' },
-      { IDUsuario: 2, NombreUsuario: 'zurydaniela', Email: 'zury.daniela@vialuna.com', Telefono: '3157894561', IDRol: 1, NombreRol: 'Administrador', Estado: 1, NumeroDocumento: 10002, TipoDocumento: 'CC', Apellido: 'Daniela', Pais: 'Colombia', Direccion: 'Calle 50 #24' },
-      { IDUsuario: 3, NombreUsuario: 'Yoni', Email: 'yoniurrego444@gmail.com', Telefono: '3052786212', IDRol: 1, NombreRol: 'Administrador', Estado: 1, NumeroDocumento: 10003, TipoDocumento: 'CC', Apellido: 'Urrego', Pais: 'Colombia', Direccion: 'Diagonal 45 #12' }
-    ];
   }
 
   // Calcular estadísticas dinámicas
@@ -144,9 +133,9 @@ class UsuariosModule {
       this.render();
       this.setupEventListeners();
     } catch (error) {
-      console.error('Error cargando HTML de usuarios:', error);
-      this.render();
-      this.setupEventListeners();
+      console.error('Error cargando datos iniciales:', error);
+      this.showError("Error", "No se pudieron cargar los datos del servidor.");
+      return;
     }
   }
 
@@ -719,17 +708,24 @@ class UsuariosModule {
                     <label class="text-xs font-bold text-muted uppercase tracking-wider">Email <span class="text-red-500">*</span></label>
                     <input type="email" id="newEmail" maxlength="100" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="correo@vialuna.com" required>
                   </div>
-                  <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Teléfono <span class="text-red-500">*</span></label>
-                    <input type="tel" id="newTelefono" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Número de contacto" required>
-                  </div>
-                  <div class="flex flex-col gap-2">
+
+                  <div class="flex flex-col gap-2 sm:col-span-2">
                     <label class="text-xs font-bold text-muted uppercase tracking-wider">País <span class="text-red-500">*</span></label>
-                    <input type="text" id="newPais" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" value="Colombia" oninput="this.value = this.value.replace(/[0-9]/g, '')" required>
+                    <select id="newPais" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all cursor-pointer">
+                      ${buildCountryOptions('CO')}
+                    </select>
+                  </div>
+                  <div class="flex flex-col gap-2 sm:col-span-2">
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Teléfono <span class="text-red-500">*</span></label>
+                    <div class="flex items-center gap-2">
+                      <span id="newUserDialCode" class="inline-flex items-center min-h-[44px] px-3 rounded-xl border border-gray-200 bg-gray-100 text-sm font-bold text-brand-deep whitespace-nowrap"></span>
+                      <input type="tel" id="newTelefono" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="flex-1 min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Número sin código" required>
+                    </div>
+                    <p class="text-[10px] text-muted mt-0.5">El código de país es solo referencial, no se guarda en la base de datos.</p>
                   </div>
                   <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Departamento <span class="text-red-500">*</span></label>
-                    <input type="text" id="newDepartamento" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Departamento o Estado" oninput="this.value = this.value.replace(/[0-9]/g, '')" required>
+                    <label class="text-xs font-bold text-muted uppercase tracking-wider">Departamento</label>
+                    <input type="text" id="newDepartamento" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Departamento o Estado" oninput="this.value = this.value.replace(/[0-9]/g, '')">
                   </div>
                   <div class="flex flex-col gap-2 sm:col-span-2">
                     <label class="text-xs font-bold text-muted uppercase tracking-wider">Dirección</label>
@@ -781,10 +777,18 @@ class UsuariosModule {
       e.preventDefault();
       this.saveNewUser();
     });
+
+    // Vincular selector de país con prefijo telefónico
+    bindCountryDial('newPais', 'newUserDialCode');
   }
 
   // Guardar el nuevo usuario por medio de la API
   async saveNewUser() {
+    const paisSel = document.getElementById('newPais');
+    const paisCode = paisSel ? paisSel.value : 'CO';
+    const paisInfo = findCountry(paisCode);
+    const paisName = paisInfo ? paisInfo.name : (paisSel?.options[paisSel.selectedIndex]?.textContent?.split('(')[0].trim() || 'Colombia');
+
     const payload = {
       Nombre: document.getElementById("newNombre").value,
       Apellido: document.getElementById("newApellido").value,
@@ -794,7 +798,7 @@ class UsuariosModule {
       Password: document.getElementById("newPassword").value,
       TipoDocumento: document.getElementById("newTipoDocumento").value,
       NumeroDocumento: parseInt(document.getElementById("newNroDocumento").value),
-      Pais: document.getElementById("newPais").value,
+      Pais: paisName,
       Departamento: document.getElementById("newDepartamento").value,
       Direccion: document.getElementById("newDireccion").value,
       IDRol: parseInt(document.getElementById("newRol").value),

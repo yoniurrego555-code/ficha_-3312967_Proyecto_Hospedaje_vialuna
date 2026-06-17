@@ -686,3 +686,231 @@ body{
 
     cursor:pointer;
 }
+
+/* =========================================
+   MODAL CREAR CUENTA — MEJORADO
+========================================= */
+
+/* Card del modal de registro: más ancha, sin scroll en desktop */
+.register-modal-card {
+    width: 100%;
+    max-width: 680px;
+    /* Sin overflow-y: auto → sin scroll interno en desktop */
+    max-height: none;
+    overflow-y: visible;
+    padding: 36px 40px 32px;
+}
+
+/* Header con subtítulo */
+.register-modal-header {
+    margin-bottom: 22px;
+}
+
+.register-modal-header h2 {
+    margin: 0 0 6px;
+    color: #173029;
+    font-size: 28px;
+    font-weight: 800;
+    font-family: Georgia, serif;
+}
+
+.register-modal-header p {
+    margin: 0;
+    color: #6d8078;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Formulario en grid compacto */
+.register-modal-form {
+    gap: 14px !important;
+}
+
+/* Fila de 2 columnas */
+.reg-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+/* Campo individual */
+.reg-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.reg-field label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #3b5249;
+    letter-spacing: 0.01em;
+}
+
+.req {
+    color: #c0392b;
+    font-weight: 900;
+}
+
+/* Inputs compactos */
+.register-modal-form input,
+.register-modal-form select {
+    height: 48px !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(18, 54, 44, .14) !important;
+    padding: 0 14px !important;
+    font-size: 15px !important;
+    transition: border-color .2s ease, box-shadow .2s ease !important;
+    background: #fafcfb !important;
+}
+
+.register-modal-form input:focus {
+    outline: none !important;
+    border-color: #02634f !important;
+    box-shadow: 0 0 0 3px rgba(2, 99, 79, .10) !important;
+    background: #fff !important;
+}
+
+.register-modal-form input::placeholder {
+    color: #9baca6;
+    font-size: 14px;
+}
+
+/* Botón submit en el modal */
+.register-modal-form .modal-submit {
+    margin-top: 6px;
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.register-modal-form .modal-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(1, 64, 52, .22);
+}
+
+.register-modal-form .modal-submit:disabled {
+    opacity: .72;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Mensaje feedback */
+.modal-message {
+    display: none;
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    line-height: 1.5;
+}
+
+.modal-message--visible {
+    display: block;
+}
+
+.modal-message--success {
+    background: #e9f8f0;
+    color: #02634f;
+    border: 1px solid rgba(2, 99, 79, .18);
+}
+
+.modal-message--error {
+    background: #fdeceb;
+    color: #b42318;
+    border: 1px solid rgba(180, 35, 24, .18);
+}
+
+/* Animación de entrada del modal */
+.auth-modal {
+    transition: opacity .2s ease;
+}
+
+.auth-modal-card {
+    transform: translateY(16px);
+    transition: transform .28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.auth-modal.show .auth-modal-card {
+    transform: translateY(0);
+}
+
+/* ── Responsive del modal ────────────────────────── */
+@media (max-width: 720px) {
+    .register-modal-card {
+        padding: 28px 20px 24px;
+        max-height: 92vh;
+        overflow-y: auto;   /* solo en mobile pequeño activa scroll */
+    }
+
+    .reg-row {
+        grid-template-columns: 1fr;   /* una columna en móvil */
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-modal {
+        padding: 12px;
+    }
+
+    .register-modal-card {
+        border-radius: 20px;
+        padding: 22px 16px 20px;
+    }
+
+    .register-modal-header h2 {
+        font-size: 22px;
+    }
+}
+
+/* =========================================
+   COUNTRY DIAL PREFIX & SELECT (registro)
+========================================= */
+
+#registerForm select,
+#registerForm select#regPais,
+#registerForm select#regTipoDoc {
+    width: 100%;
+    height: 52px;
+    padding: 0 14px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(23, 48, 41, .13);
+    background: #f7fbf9;
+    font-size: 14px;
+    font-weight: 600;
+    color: #173029;
+    cursor: pointer;
+    appearance: auto;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+#registerForm select:focus {
+    outline: none;
+    border-color: #5e9e7e;
+    box-shadow: 0 0 0 3px rgba(94, 158, 126, .12);
+}
+
+.reg-dial-prefix {
+    display: inline-flex;
+    align-items: center;
+    min-height: 52px;
+    padding: 0 12px;
+    border-radius: 14px;
+    border: 1.5px solid rgba(23, 48, 41, .13);
+    background: #e8f0eb;
+    font-size: 13px;
+    font-weight: 700;
+    color: #173029;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 56px;
+    justify-content: center;
+}
+
+.reg-hint {
+    display: block;
+    font-size: 11px;
+    color: #7a9088;
+    margin-top: 4px;
+}

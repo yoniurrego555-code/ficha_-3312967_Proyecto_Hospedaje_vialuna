@@ -4,7 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Via Luna Hospedaje — Habitaciones, naturaleza, descanso y experiencias pensadas para reservar sin fricción.">
     <title>Via Luna | Hospedaje</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./css/landing.css">
     <link rel="stylesheet" href="./css/tooltip.css">
 </head>
@@ -20,7 +24,14 @@
                 </span>
             </a>
 
-            <nav class="booking-menu" aria-label="Navegacion publica">
+            <!-- Botón hamburguesa (solo mobile) -->
+            <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainMenu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <nav class="booking-menu" id="mainMenu" aria-label="Navegacion publica">
                 <a href="#habitaciones">Habitaciones</a>
                 <a href="#paquetes">Paquetes</a>
                 <a href="#servicios">Servicios</a>
@@ -171,11 +182,11 @@
                     style="margin: 0; color: rgba(255,255,255,0.8); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem;">
                     © 2026 Via Luna Hospedaje. Todos los derechos reservados.</p>
                 <div style="display: flex; gap: 20px;">
-                    <a href="#"
-                        style="color: #ffffff; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem; font-weight: 500; text-decoration: none; transition: opacity 0.3s;">Términos
-                        y condiciones</a>
-                    <a href="#"
-                        style="color: #ffffff; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem; font-weight: 500; text-decoration: none; transition: opacity 0.3s;">Privacidad</a>
+                    <button type="button" id="landingBtnTerminos"
+                        style="background:none;border:none;cursor:pointer;color: #ffffff; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem; font-weight: 500; text-decoration: none; transition: opacity 0.3s;">Términos
+                        y condiciones</button>
+                    <button type="button" id="landingBtnPrivacidad"
+                        style="background:none;border:none;cursor:pointer;color: #ffffff; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 1.05rem; font-weight: 500; text-decoration: none; transition: opacity 0.3s;">Privacidad</button>
                 </div>
             </div>
         </div>
@@ -409,7 +420,7 @@
                          <p>${detail.description || 'Sin descripción'}</p>
                          <div class="amenities">
                              ${detail.capacity ? `<span data-tooltip="Capacidad">${detail.capacity}</span>` : ''}
-                             ${detail.extras.length ? detail.extras.map((item) => `<span data-tooltip="${item}">${item}</span>`).join('') : '<span>Detalles en BD</span>'}
+                             ${detail.extras.length ? detail.extras.map((item) => `<span data-tooltip="${item}">${item}</span>`).join('') : ''}
                          </div>
                          <div class="card-bottom">
                              <div class="price-box">
@@ -530,6 +541,121 @@
 
         loadLandingData();
     </script>
+
+    <!-- ── Navbar hamburguesa + efecto scroll ───────────────────── -->
+    <script>
+        (function () {
+            const toggle = document.getElementById('navToggle');
+            const menu   = document.getElementById('mainMenu');
+            const header = document.querySelector('.booking-header');
+
+            /* Hamburguesa toggle */
+            if (toggle && menu) {
+                toggle.addEventListener('click', () => {
+                    const isOpen = menu.classList.toggle('open');
+                    toggle.classList.toggle('open', isOpen);
+                    toggle.setAttribute('aria-expanded', String(isOpen));
+                    toggle.setAttribute('aria-label', isOpen ? 'Cerrar menú' : 'Abrir menú');
+                });
+
+                /* Cerrar al hacer clic en cualquier enlace del menú */
+                menu.querySelectorAll('a').forEach(link => {
+                    link.addEventListener('click', () => {
+                        menu.classList.remove('open');
+                        toggle.classList.remove('open');
+                        toggle.setAttribute('aria-expanded', 'false');
+                        toggle.setAttribute('aria-label', 'Abrir menú');
+                    });
+                });
+            }
+
+            /* Efecto scroll: intensificar sombra y fondo al bajar */
+            if (header) {
+                const onScroll = () => {
+                    if (window.scrollY > 20) {
+                        header.style.boxShadow = '0 4px 8px -2px rgba(1,64,52,.10), 0 16px 40px -6px rgba(1,64,52,.16)';
+                        header.style.background = 'rgba(255,255,255,.96)';
+                    } else {
+                        header.style.boxShadow = '';
+                        header.style.background = '';
+                    }
+                };
+                window.addEventListener('scroll', onScroll, { passive: true });
+                onScroll(); // estado inicial
+            }
+        })();
+    </script>
+<!-- ── Modales Términos y Privacidad (Landing) ── -->
+<style>
+  .landing-terms-modal { position:fixed; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; z-index:99999; opacity:0; visibility:hidden; transition:all .3s ease; backdrop-filter:blur(4px); }
+  .landing-terms-modal.active { opacity:1; visibility:visible; }
+  .landing-terms-modal-content { background:#fff; width:90%; max-width:520px; border-radius:18px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,.25); transform:translateY(-16px) scale(.96); transition:all .3s ease; position:relative; }
+  .landing-terms-modal.active .landing-terms-modal-content { transform:translateY(0) scale(1); }
+  .landing-terms-modal-close { position:absolute; top:16px; right:16px; background:#f3f4f6; border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:1rem; font-weight:bold; color:#374151; transition:background .2s; }
+  .landing-terms-modal-close:hover { background:#e5e7eb; }
+  .landing-terms-modal h3 { font-size:1.2rem; font-weight:800; color:#014034; margin:0 0 14px; padding-bottom:12px; border-bottom:1px solid #f0f0f0; }
+  .landing-terms-modal-body { font-size:.92rem; color:#4b5563; line-height:1.65; max-height:60vh; overflow-y:auto; }
+  .landing-terms-modal-body ul { padding-left:20px; margin:8px 0; }
+  .landing-terms-modal-body li { margin-bottom:6px; }
+</style>
+
+<div id="landingModalTerminos" class="landing-terms-modal">
+  <div class="landing-terms-modal-content" onclick="event.stopPropagation()">
+    <button class="landing-terms-modal-close" id="closeLandingTerminos">✕</button>
+    <h3>TÉRMINOS Y CONDICIONES</h3>
+    <div class="landing-terms-modal-body">
+      <ul>
+        <li>Toda reserva está sujeta a disponibilidad.</li>
+        <li>La reserva se confirma una vez validado el pago.</li>
+        <li>El cliente debe respetar horarios de check-in y check-out.</li>
+        <li><strong>Check-in:</strong> 3:00 PM</li>
+        <li><strong>Check-out:</strong> 12:00 PM</li>
+        <li>Si no se realiza el pago en 30 minutos, la reserva puede cancelarse automáticamente.</li>
+        <li>El huésped será responsable por daños ocasionados durante su estadía.</li>
+        <li>Para realizar una cancelación, esta debe ser con al menos <strong>24 horas de anticipación</strong>.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div id="landingModalPrivacidad" class="landing-terms-modal">
+  <div class="landing-terms-modal-content" onclick="event.stopPropagation()">
+    <button class="landing-terms-modal-close" id="closeLandingPrivacidad">✕</button>
+    <h3>POLÍTICA DE PRIVACIDAD</h3>
+    <div class="landing-terms-modal-body">
+      <p>En Via Luna recopilamos únicamente información necesaria para gestionar reservas:</p>
+      <ul>
+        <li>Nombre</li>
+        <li>Correo electrónico</li>
+        <li>Teléfono</li>
+        <li>Información de reserva</li>
+      </ul>
+      <p>Los datos serán usados únicamente para:</p>
+      <ul>
+        <li>Gestión de reservas</li>
+        <li>Contacto con el cliente</li>
+        <li>Soporte y notificaciones</li>
+      </ul>
+      <p><strong>No compartimos información personal con terceros.</strong></p>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const openModal = (id) => document.getElementById(id)?.classList.add('active');
+    const closeModal = (id) => document.getElementById(id)?.classList.remove('active');
+
+    document.getElementById('landingBtnTerminos')?.addEventListener('click', () => openModal('landingModalTerminos'));
+    document.getElementById('closeLandingTerminos')?.addEventListener('click', () => closeModal('landingModalTerminos'));
+    document.getElementById('landingModalTerminos')?.addEventListener('click', (e) => { if (e.target.id === 'landingModalTerminos') closeModal('landingModalTerminos'); });
+
+    document.getElementById('landingBtnPrivacidad')?.addEventListener('click', () => openModal('landingModalPrivacidad'));
+    document.getElementById('closeLandingPrivacidad')?.addEventListener('click', () => closeModal('landingModalPrivacidad'));
+    document.getElementById('landingModalPrivacidad')?.addEventListener('click', (e) => { if (e.target.id === 'landingModalPrivacidad') closeModal('landingModalPrivacidad'); });
+  })();
+</script>
+
 </body>
 
 </html>

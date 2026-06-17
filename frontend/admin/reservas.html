@@ -74,9 +74,11 @@
     <div class="flex gap-2">
       <select id="filterStatus" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
         <option value="">Todos los estados</option>
-        <option value="1">Confirmada (Activa)</option>
-        <option value="2">Cancelada</option>
+        <option value="1">Activa</option>
+        <option value="4">Aceptada</option>
         <option value="3">Finalizada</option>
+        <option value="5">Rechazada</option>
+        <option value="2">Cancelada</option>
       </select>
     </div>
   </div>
@@ -201,8 +203,11 @@
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial:</label>
               <select id="estadoReserva" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer w-full box-border" required>
-                <option value="1">Confirmada (Activa)</option>
-                <option value="2">Pendiente</option>
+                <option value="5">Pendiente</option>
+                <option value="1">Activa</option>
+                <option value="4">Rechazada</option>
+                <option value="3">Finalizada</option>
+                <option value="2">Cancelada</option>
               </select>
             </div>
           </div>
@@ -211,13 +216,13 @@
         <!-- 7. Políticas y Términos -->
         <div class="flex flex-col gap-3 mt-2 p-4 bg-gray-50 rounded-xl border border-gray-100">
           <label class="flex items-start gap-3 cursor-pointer group">
-            <input type="checkbox" id="chkTerminos" class="mt-1 w-4 h-4 rounded border-gray-300">
+            <input type="checkbox" id="chkTerminos" class="mt-1 w-4 h-4 rounded border-gray-300" required>
             <span class="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
               He leído y acepto los <a href="#" id="linkTerminos" class="text-brand font-bold hover:underline">Términos y Condiciones</a>
             </span>
           </label>
           <label class="flex items-start gap-3 cursor-pointer group">
-            <input type="checkbox" id="chkPrivacidad" class="mt-1 w-4 h-4 rounded border-gray-300">
+            <input type="checkbox" id="chkPrivacidad" class="mt-1 w-4 h-4 rounded border-gray-300" required>
             <span class="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
               He leído y acepto la <a href="#" id="linkPrivacidad" class="text-brand font-bold hover:underline">Política de Privacidad</a>
             </span>
@@ -362,6 +367,12 @@
           <strong id="detResTotal" class="text-2xl font-bold text-brand block mt-0.5">$0</strong>
         </div>
       </div>
+
+      <!-- Motivo de cancelación (se muestra solo si la reserva está cancelada) -->
+      <div id="detResMotivoCancelacionContainer" style="display:none;" class="p-4 bg-red-50 rounded-2xl border border-red-100">
+        <span class="text-xs text-red-700 font-bold uppercase tracking-wider block mb-1">🔒 Motivo de Cancelación</span>
+        <p id="detResMotivoCancelacion" class="text-sm text-red-800 font-medium m-0"></p>
+      </div>
     </div>
 
     <div class="flex gap-3 mt-8 pt-4 border-t border-gray-100">
@@ -462,19 +473,19 @@
             return;
           }
 
-          tableBody.innerHTML = pageItems.map((r) => {
-          const cliente = r.cliente?.nombreCompleto || '—';
-          const habitacion = r.habitacion?.nombre || '—';
-          const fechaInicio = r.fecha_inicio || r.fecha_reserva || '—';
-          const fechaFin = r.fecha_fin || '—';
-          const estadoNombre = r.estado?.nombre || '—';
-          
+          const totalStr = formatMoney(r.total || 0);
           let estadoColor = 'bg-gray-100 text-gray-800';
-          if (estadoNombre.toLowerCase().includes('activ') || estadoNombre.toLowerCase().includes('confirm')) {
+          const estadoId = String(r.estado?.id || '');
+          const estadoNombreLow = (r.estado?.nombre || '').toLowerCase();
+          if (estadoId === '1' || estadoNombreLow.includes('activ') || estadoNombreLow.includes('confirm')) {
             estadoColor = 'bg-emerald-100 text-emerald-800';
-          } else if (estadoNombre.toLowerCase().includes('cancel')) {
+          } else if (estadoId === '2' || estadoNombreLow.includes('cancel')) {
             estadoColor = 'bg-red-100 text-red-800';
-          } else if (estadoNombre.toLowerCase().includes('pendient')) {
+          } else if (estadoId === '3' || estadoNombreLow.includes('finaliz')) {
+            estadoColor = 'bg-blue-100 text-blue-800';
+          } else if (estadoId === '4' || estadoNombreLow.includes('aceptad')) {
+            estadoColor = 'bg-indigo-100 text-indigo-800';
+          } else if (estadoId === '5' || estadoNombreLow.includes('rechaz')) {
             estadoColor = 'bg-amber-100 text-amber-800';
           }
 
@@ -487,7 +498,7 @@
               <td class="px-6 py-4 text-xs text-muted font-medium">${fechaFin}</td>
               <td class="px-6 py-4">
                 <span class="px-3 py-1 rounded-full text-[11px] font-bold ${estadoColor}">
-                  ${estadoNombre}
+                  ${r.estado?.nombre || '—'}
                 </span>
               </td>
               <td class="px-6 py-4 font-bold text-brand-deep">${totalStr}</td>
@@ -540,6 +551,20 @@
         document.getElementById('detResEstadoBadge').textContent = r.estado?.nombre || '—';
         document.getElementById('detResTotal').textContent = formatMoney(r.total || 0);
 
+        // Mostrar motivo de cancelación si aplica
+        const motivoContainer = document.getElementById('detResMotivoCancelacionContainer');
+        const motivoEl = document.getElementById('detResMotivoCancelacion');
+        if (motivoContainer) {
+          const motivo = r.motivo_cancelacion;
+          const esCancelada = String(r.estado?.id || '') === '2';
+          if (motivo && esCancelada) {
+            motivoContainer.style.display = 'block';
+            if (motivoEl) motivoEl.textContent = motivo;
+          } else {
+            motivoContainer.style.display = 'none';
+          }
+        }
+
         document.getElementById('reservaDetalleModal').classList.remove('hidden');
       }
 
@@ -571,6 +596,40 @@
 
       // Inicializar
       fetchReservations();
+
+      // === VALIDACIÓN TÉRMINOS: bloquear submit si no se aceptan ===
+      const reservationForm = document.getElementById('reservationForm');
+      if (reservationForm) {
+        reservationForm.addEventListener('submit', (e) => {
+          const chkTerminos = document.getElementById('chkTerminos');
+          const chkPrivacidad = document.getElementById('chkPrivacidad');
+          if (!chkTerminos?.checked || !chkPrivacidad?.checked) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Destacar con mensaje
+            let msgEl = document.getElementById('termsWarningMsg');
+            if (!msgEl) {
+              msgEl = document.createElement('p');
+              msgEl.id = 'termsWarningMsg';
+              msgEl.style.cssText = 'color:#dc2626;font-size:0.85rem;font-weight:700;margin:8px 0 0;padding:10px 14px;background:#fee2e2;border-radius:10px;border:1px solid #fca5a5;';
+              const chkContainer = chkTerminos?.closest('div')?.parentElement;
+              if (chkContainer) chkContainer.appendChild(msgEl);
+            }
+            msgEl.textContent = '⚠️ Debes aceptar los términos y condiciones y la política de privacidad para continuar.';
+            chkTerminos?.closest('label')?.classList.add('ring-2', 'ring-red-400', 'rounded-xl');
+            chkPrivacidad?.closest('label')?.classList.add('ring-2', 'ring-red-400', 'rounded-xl');
+            setTimeout(() => {
+              msgEl.textContent = '';
+              chkTerminos?.closest('label')?.classList.remove('ring-2', 'ring-red-400', 'rounded-xl');
+              chkPrivacidad?.closest('label')?.classList.remove('ring-2', 'ring-red-400', 'rounded-xl');
+            }, 5000);
+            return;
+          }
+          // Limpiar mensaje si ya estaba
+          const msgEl2 = document.getElementById('termsWarningMsg');
+          if (msgEl2) msgEl2.textContent = '';
+        });
+      }
 
       // === MODALES TÉRMINOS Y PRIVACIDAD ===
       const modalTerminos = document.getElementById('adminModalTerminos');

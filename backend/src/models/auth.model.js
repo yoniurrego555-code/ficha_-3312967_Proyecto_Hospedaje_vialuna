@@ -190,13 +190,15 @@ async function createCliente(data) {
     Telefono: String(data.Telefono || "").trim(),
     Contrasena: data.Contrasena,
     Estado: Number(data.Estado ?? 1),
-    IDRol: Number(data.IDRol ?? 2)
+    IDRol: Number(data.IDRol ?? 2),
+    Pais: String(data.Pais || "Colombia").trim(),
+    Departamento: data.Departamento ? String(data.Departamento).trim() : null
   };
 
   const [result] = await db.query(
     `INSERT INTO clientes
-      (NroDocumento, TipoDocumento, Nombre, Apellido, Direccion, Email, Telefono, Contrasena, Estado, IDRol)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (NroDocumento, TipoDocumento, Nombre, Apellido, Direccion, Email, Telefono, Contrasena, Estado, IDRol, Pais, Departamento)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       payload.NroDocumento,
       payload.TipoDocumento,
@@ -207,7 +209,9 @@ async function createCliente(data) {
       payload.Telefono,
       payload.Contrasena,
       payload.Estado,
-      payload.IDRol
+      payload.IDRol,
+      payload.Pais,
+      payload.Departamento
     ]
   );
 

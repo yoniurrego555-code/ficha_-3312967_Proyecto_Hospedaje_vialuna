@@ -1,5 +1,5 @@
 import { createCrudModule } from './shared/crud-module.js';
-import { apiUrl } from './shared/api-config.js';
+import { apiUrl } from '../../js/shared/api-config.js';
 import { showAlert, renderPremiumPagination } from './ui-utils.js';
 
 const crud = createCrudModule({

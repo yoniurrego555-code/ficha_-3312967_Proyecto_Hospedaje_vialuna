@@ -85,7 +85,8 @@ async function obtenerReservasBase(connection, whereClause = "", params = []) {
         c.Nombre AS ClienteNombre,
         c.Apellido AS ClienteApellido,
         c.Email AS ClienteEmail,
-        c.Telefono AS ClienteTelefono
+        c.Telefono AS ClienteTelefono,
+        r.motivo_cancelacion
       FROM reservas r
       LEFT JOIN clientes c
         ON CAST(c.NroDocumento AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci =
@@ -234,10 +235,14 @@ async function hidratarReservas(connection, rows) {
     hora_entrada: normalizeTime(row.hora_entrada),
     hora_salida: normalizeTime(row.hora_salida),
     total: Number(row.total || 0),
+    motivo_cancelacion: row.motivo_cancelacion || null,
     estado: {
       id: row.id_estado_reserva,
       nombre: row.NombreEstadoReserva || "Sin estado"
     },
+    id_estado_reserva: row.id_estado_reserva,
+    id_metodo_pago: row.id_metodo_pago,
+    id_habitacion: row.id_habitacion,
     metodoPago: {
       id: row.id_metodo_pago,
       nombre: row.NomMetodoPago || "Sin metodo"
@@ -245,9 +250,14 @@ async function hidratarReservas(connection, rows) {
     habitacion: row.id_habitacion
       ? {
           id: row.id_habitacion,
+          id_habitacion: row.id_habitacion,
+          IDHabitacion: row.id_habitacion,
           nombre: row.NombreHabitacion,
+          NombreHabitacion: row.NombreHabitacion,
           descripcion: row.DescripcionHabitacion,
-          costo: Number(row.CostoHabitacion || 0)
+          costo: Number(row.CostoHabitacion || 0),
+          precio: Number(row.CostoHabitacion || 0),
+          Costo: Number(row.CostoHabitacion || 0)
         }
       : null,
     cliente: {
@@ -321,12 +331,7 @@ async function validarReserva(connection, data, options = {}) {
   const fechaInicio = new Date(`${fechaInicioStr}T12:00:00`);
   const fechaFin    = new Date(`${fechaFinStr}T12:00:00`);
 
-  // ── Debug logs (eliminables en producción) ────────────────────────────────
-  console.log('[reservas.model] Fecha recibida (inicio):', fechaInicioStr);
-  console.log('[reservas.model] Fecha recibida (fin)   :', fechaFinStr);
-  console.log('[reservas.model] Hoy (local servidor)   :', fechaHoyStr);
-  console.log('[reservas.model] isUpdate               :', !!options.isUpdate);
-  // ─────────────────────────────────────────────────────────────────────────
+
 
   if (Number.isNaN(fechaInicio.getTime()) || Number.isNaN(fechaFin.getTime())) {
     throw buildError("Las fechas de la reserva no son validas");
@@ -339,6 +344,30 @@ async function validarReserva(connection, data, options = {}) {
 
   if (fechaFinStr <= fechaInicioStr) {
     throw buildError("La fecha final debe ser mayor a la fecha inicial");
+  }
+
+  // VALIDACIÓN DE CONFLICTOS DE HABITACIÓN
+  if (idEstadoReserva === 1 || idEstadoReserva === 5) {
+    let queryConflictos = `
+      SELECT id_reserva
+      FROM reservas
+      WHERE id_habitacion = ?
+        AND id_estado_reserva IN (1, 5)
+        AND fecha_inicio < ?
+        AND fecha_fin > ?
+    `;
+    let paramsConflictos = [idHabitacion, fechaFinStr, fechaInicioStr];
+
+    if (options.isUpdate && options.reservationId) {
+      queryConflictos += " AND id_reserva != ?";
+      paramsConflictos.push(options.reservationId);
+    }
+
+    const [conflictosRows] = await connection.query(queryConflictos, paramsConflictos);
+
+    if (conflictosRows.length > 0) {
+      throw buildError("La habitacion no esta disponible para las fechas seleccionadas");
+    }
   }
 
   const [
@@ -636,7 +665,8 @@ async function actualizar(id, data) {
 
     const payload = await validarReserva(connection, data, {
       fechaReserva: normalizeDate(existingRows[0].fecha_reserva),
-      isUpdate: true
+      isUpdate: true,
+      reservationId: id
     });
     const hasHoraEntrada = reservationColumns.has("hora_entrada");
     const hasHoraSalida = reservationColumns.has("hora_salida");
@@ -700,9 +730,18 @@ async function eliminar(id, motivo = null) {
   try {
     await connection.beginTransaction();
     
-    // Soft delete: actualizar el estado a 2 (Cancelada)
-    const updateQuery = "UPDATE reservas SET id_estado_reserva = 2 WHERE id_reserva = ?";
-    const updateParams = [id];
+    // Soft delete: actualizar el estado a 2 (Cancelada) y guardar el motivo
+    let updateQuery;
+    let updateParams;
+    
+    // Intentaremos guardar el motivo si la base de datos lo soporta, o simplemente actualizamos el estado.
+    if (motivo) {
+      updateQuery = "UPDATE reservas SET id_estado_reserva = 2, motivo_cancelacion = ? WHERE id_reserva = ?";
+      updateParams = [motivo, id];
+    } else {
+      updateQuery = "UPDATE reservas SET id_estado_reserva = 2 WHERE id_reserva = ?";
+      updateParams = [id];
+    }
     
     const [result] = await connection.query(updateQuery, updateParams);
     

@@ -187,7 +187,94 @@ async function enviarCorreoRecuperacion(email, resetUrl, userName = "Usuario") {
   }
 }
 
+/**
+ * Genera y envía el correo de bienvenida a nuevos usuarios
+ */
+async function enviarBienvenida(email, userName = "Usuario") {
+  const fromEmail = process.env.EMAIL_FROM;
+  if (!fromEmail) return;
+  
+  const subject = "¡Bienvenido a Via Luna Hospedaje!";
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="color: #02634f; margin: 0;">¡Bienvenido, ${userName}!</h1>
+        <p style="color: #666; font-size: 16px;">Via Luna Hospedaje</p>
+      </div>
+      
+      <p style="font-size: 16px; color: #333;">Estamos muy felices de que te unas a nosotros.</p>
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">Desde ahora puedes empezar a realizar tus reservas y disfrutar de la mejor experiencia en nuestro hospedaje.</p>
+      
+      <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 30px 0;">
+      <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">© 2026 Via Luna Hospedaje. Todos los derechos reservados.</p>
+    </div>
+  `;
+
+  try {
+    await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: subject,
+      html: html,
+    });
+    console.log(`[EmailService] ✅ Correo de bienvenida enviado a: ${email}`);
+  } catch (error) {
+    console.error(`[EmailService] ❌ Error enviando bienvenida a ${email}:`, error.message);
+  }
+}
+
+/**
+ * Genera y envía el correo de cancelación de reserva
+ */
+async function enviarCancelacionReserva(reserva, motivo = "Sin motivo especificado") {
+  const fromEmail = process.env.EMAIL_FROM;
+  if (!fromEmail) return;
+  
+  const clienteEmail = reserva.cliente?.email;
+  const nombreCliente = reserva.cliente?.nombreCompleto || reserva.cliente?.Nombres || "Huésped";
+  const habitacionNombre = reserva.habitacion?.nombre || reserva.habitacion?.NombreHabitacion || "Habitación";
+  
+  if (!clienteEmail) return;
+
+  const subject = "Cancelación de Reserva - Via Luna Hospedaje";
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="color: #b45309; margin: 0;">Reserva Cancelada</h1>
+        <p style="color: #666; font-size: 16px;">Via Luna Hospedaje</p>
+      </div>
+      
+      <p style="font-size: 16px; color: #333;">Hola <strong>${nombreCliente}</strong>,</p>
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">Te confirmamos que tu reserva para la habitación <strong>${habitacionNombre}</strong> ha sido cancelada.</p>
+      
+      <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #b45309;">
+        <p style="margin: 8px 0; font-size: 15px;"><strong>Código de Reserva:</strong> #${reserva.id_reserva || reserva.IDReserva}</p>
+        <p style="margin: 8px 0; font-size: 15px;"><strong>Motivo de cancelación:</strong> ${motivo}</p>
+      </div>
+      
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">Esperamos poder recibirte en el futuro.</p>
+      
+      <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 30px 0;">
+      <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">© 2026 Via Luna Hospedaje. Todos los derechos reservados.</p>
+    </div>
+  `;
+
+  try {
+    await resend.emails.send({
+      from: fromEmail,
+      to: clienteEmail,
+      subject: subject,
+      html: html,
+    });
+    console.log(`[EmailService] ✅ Correo de cancelación enviado a: ${clienteEmail}`);
+  } catch (error) {
+    console.error(`[EmailService] ❌ Error enviando cancelación a ${clienteEmail}:`, error.message);
+  }
+}
+
 module.exports = {
   enviarConfirmacionReserva,
   enviarCorreoRecuperacion,
+  enviarBienvenida,
+  enviarCancelacionReserva,
 };

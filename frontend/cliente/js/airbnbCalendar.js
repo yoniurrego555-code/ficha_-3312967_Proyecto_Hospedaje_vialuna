@@ -10,9 +10,9 @@ export function computeOccupiedRanges(roomId, reservations) {
   reservations.forEach((res) => {
     const rRoomId = String(res.id_habitacion || res.IDHabitacion || '');
     if (rRoomId !== String(roomId)) return;
-    // Exclude cancelled reservations (estado 2 or similar)
+    // Exclude cancelled/rejected reservations (estado 2 or 4)
     const estado = String(res.id_estado_reserva || res.Estado || res.estado || '').toLowerCase();
-    if (['2', 'cancelada', 'cancelado'].includes(estado)) return;
+    if (['2', 'cancelada', 'cancelado', '4', 'rechazada'].includes(estado)) return;
     const start = (res.fecha_inicio || res.FechaInicio || '').split('T')[0];
     const end = (res.fecha_fin || res.FechaFin || '').split('T')[0];
     if (start && end) {

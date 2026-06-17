@@ -1429,24 +1429,222 @@ button, input, select, textarea { font: inherit; }
 
 /* Badges de Estado */
 .reserva-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-.badge-pendiente { background-color: #FEF3C7; color: #D97706; border: 1px solid #FDE68A; }
-.badge-pagada { background-color: #D1FAE5; color: #059669; border: 1px solid #A7F3D0; }
+.badge-pendiente { background-color: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+.badge-pagada    { background-color: #D1FAE5; color: #059669; border: 1px solid #A7F3D0; }
 .badge-cancelada { background-color: #FEE2E2; color: #DC2626; border: 1px solid #FECACA; }
-.badge-finalizada { background-color: #E5E7EB; color: #4B5563; border: 1px solid #D1D5DB; }
+.badge-finalizada{ background-color: #DBEAFE; color: #1D4ED8; border: 1px solid #BFDBFE; }
+.badge-aceptada  { background-color: #E0E7FF; color: #3730A3; border: 1px solid #C7D2FE; }
+.badge-rechazada { background-color: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
 
-/* Flatpickr Airbnb Style UX */
-.flatpickr-calendar { box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important; border-radius: 16px !important; border: 1px solid #e5e7eb !important; padding: 10px !important; }
-.flatpickr-day { border-radius: 50% !important; font-weight: 600 !important; transition: all 0.2s !important; }
-.flatpickr-day.flatpickr-disabled, .flatpickr-day.disabled { text-decoration: line-through !important; color: #dc2626 !important; background: #fee2e2 !important; border-color: #fca5a5 !important; opacity: 1 !important; cursor: not-allowed !important; }
+.detail-modal.show {
+  display: flex;
+}
+
+.detail-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+.detail-modal-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.detail-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--ink);
+  font-size: 24px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.detail-modal-close:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.detail-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.detail-modal-header h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.5rem;
+}
+
+.detail-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 24px;
+}
+
+.detail-modal-item {
+  display: grid;
+  gap: 6px;
+}
+
+.detail-modal-item dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.detail-modal-item dd {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.detail-modal-item--wide {
+  grid-column: 1 / -1;
+}
+
+.detail-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px 24px;
+  border-top: 1px solid var(--line);
+}
+
+.detail-modal-card--sm {
+  max-width: 420px;
+}
+
+.modal-message {
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: none;
+}
+
+.modal-message--visible {
+  display: block;
+}
+
+.modal-message--error {
+  background: #fdeceb;
+  color: #b42318;
+}
+
+.modal-message--success {
+  background: #e9f8f0;
+  color: #02634f;
+}
+
+.form-message {
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-top: 16px;
+  font-weight: 600;
+  display: none;
+}
+
+.form-message--visible {
+  display: block;
+}
+
+.form-message--error {
+  background: #fdeceb;
+  color: #b42318;
+}
+
+.form-message--success {
+  background: #e9f8f0;
+  color: #02634f;
+}
+
+@media (max-width: 620px) {
+  .detail-modal {
+    padding: 16px;
+  }
+
+  .detail-modal-card {
+    max-height: 95vh;
+    border-radius: 20px;
+  }
+
+  .detail-modal-grid {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+
+  .detail-modal-header {
+    padding: 20px 20px 14px;
+  }
+
+  .detail-modal-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .detail-modal-actions {
+    padding: 14px 20px 20px;
+  }
+
+  .detail-modal-actions .room-btn {
+    width: 100%;
+  }
+}
+
+/* Badges de Estado */
+.reserva-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.badge-pendiente { background-color: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
+.badge-pagada    { background-color: #D1FAE5; color: #059669; border: 1px solid #A7F3D0; }
+.badge-cancelada { background-color: #FEE2E2; color: #DC2626; border: 1px solid #FECACA; }
+.badge-finalizada{ background-color: #DBEAFE; color: #1D4ED8; border: 1px solid #BFDBFE; }
+.badge-aceptada  { background-color: #E0E7FF; color: #3730A3; border: 1px solid #C7D2FE; }
+.badge-rechazada { background-color: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+
+
 .flatpickr-day:not(.disabled):not(.today):not(.selected):not(.flatpickr-disabled):not(.inRange) { background: #d1fae5 !important; color: #065f46 !important; border-color: #a7f3d0 !important; }
 .flatpickr-day:not(.disabled):not(.selected):not(.inRange):hover { background: #34d399 !important; color: white !important; transform: scale(1.1); }
 .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange, .flatpickr-day.selected.inRange, .flatpickr-day.startRange.inRange, .flatpickr-day.endRange.inRange, .flatpickr-day.selected:focus, .flatpickr-day.startRange:focus, .flatpickr-day.endRange:focus, .flatpickr-day.selected:hover, .flatpickr-day.startRange:hover, .flatpickr-day.endRange:hover, .flatpickr-day.selected.prevMonthDay, .flatpickr-day.startRange.prevMonthDay, .flatpickr-day.endRange.prevMonthDay, .flatpickr-day.selected.nextMonthDay, .flatpickr-day.startRange.nextMonthDay, .flatpickr-day.endRange.nextMonthDay { background: #f59e0b !important; color: white !important; border-color: #d97706 !important; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4) !important; }
 .flatpickr-day.inRange { background: #fef3c7 !important; border-color: #fde68a !important; color: #d97706 !important; box-shadow: none !important; }
 
-/* Scale down Flatpickr to make it look less bulky */
-.flatpickr-calendar { transform: scale(0.85); transform-origin: top center; font-size: 14px; margin-top: -10px; }
-
-/* Ajuste de tamanos de Flatpickr */
-.flatpickr-calendar { width: 280px !important; padding: 5px !important; font-size: 13px !important; }
-.flatpickr-day { max-width: 32px !important; height: 32px !important; line-height: 32px !important; font-size: 13px !important; margin: 2px !important; }
-.flatpickr-days { width: auto !important; }
+/* Flatpickr — sin transform:scale para que el día 15 no quede cortado */
+.flatpickr-calendar { z-index: 99999 !important; overflow: visible !important; box-sizing: border-box !important; }
+.flatpickr-calendar { width: auto !important; min-width: 320px !important; max-width: max-content !important; padding: 12px !important; font-size: 14px !important; }
+.flatpickr-day { max-width: 40px !important; height: 40px !important; line-height: 40px !important; font-size: 13px !important; flex-basis: 14.28% !important; }
+.flatpickr-days { width: max-content !important; display: flex !important; justify-content: center !important; }
+.flatpickr-weeks { overflow: visible !important; }
+.dayContainer { width: max-content !important; min-width: 290px !important; }
+.flatpickr-day:not(.disabled):not(.selected):not(.inRange):hover { background: #34d399 !important; color: white !important; }

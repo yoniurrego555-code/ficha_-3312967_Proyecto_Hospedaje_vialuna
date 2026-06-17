@@ -1,5 +1,5 @@
 import { logout, isClientSession, getSession } from "../../dashboard/core/authGuard.js";
-import { getReservas, cancelarReserva } from "../../dashboard/core/api.js";
+import { getReservas, cancelarReserva, getPaquetes, getServicios, actualizarReserva } from "../../dashboard/core/api.js";
 import { showAlert } from "../../dashboard/modules/ui-utils.js";
 
 let allReservas = [];
@@ -165,7 +165,7 @@ function renderReservationCard(r, featured = false) {
     const id = getReservaId(r);
     const estado = getEstadoValue(r);
     const estadoTexto = getStatusText(estado, r);
-    const canEdit = ["Pendiente", "Confirmada"].includes(estadoTexto);
+    const canEdit = ["Pendiente", "Confirmada", "En curso"].includes(estadoTexto);
     const start = getStartDate(r);
     const end = getEndDate(r);
     const nights = getNights(start, end);
@@ -223,6 +223,19 @@ window.verDetalle = (id) => {
     const extrasText = paquetes || servicios ? `${paquetes}${paquetes && servicios ? ", " : ""}${servicios}` : "Sin extras";
     document.getElementById('detailModalExtras').textContent = extrasText;
 
+    // Mostrar motivo de cancelación si aplica
+    const motivoContainer = document.getElementById('detailModalMotivoContainer');
+    const motivoEl = document.getElementById('detailModalMotivo');
+    if (motivoContainer) {
+        const estadoText = getStatusText(getEstadoValue(reserva), reserva).toLowerCase();
+        if (estadoText === 'cancelada' && reserva.motivo_cancelacion) {
+            motivoContainer.style.display = 'block';
+            if (motivoEl) motivoEl.textContent = reserva.motivo_cancelacion;
+        } else {
+            motivoContainer.style.display = 'none';
+        }
+    }
+
     // Mostrar modal
     modal.classList.add('show');
     modal.setAttribute('aria-hidden', 'false');
@@ -242,8 +255,204 @@ window.verDetalle = (id) => {
     if (backdrop) backdrop.onclick = closeModal;
 };
 
-window.editarReserva = (id) => {
-    window.location.hash = `reservar?id=${id}`;
+let allPaquetesCatalog = [];
+let allServiciosCatalog = [];
+
+function calcularNuevoTotal(reserva) {
+    const editClientFechaInicio = document.getElementById('editClientFechaInicio').value;
+    const editClientFechaFin = document.getElementById('editClientFechaFin').value;
+    const precioHab = Number(document.getElementById('editClientHabitacionPrice').value || 0);
+
+    let noches = getNights(editClientFechaInicio, editClientFechaFin);
+    const totalHab = precioHab * noches;
+
+    let totalPaq = 0;
+    let paqHtml = '';
+    const paqChecks = document.querySelectorAll('input[name="clientEditPaquetes"]:checked');
+    paqChecks.forEach(cb => {
+        totalPaq += Number(cb.getAttribute('data-price') || 0);
+        paqHtml += `<div style="font-size:0.8rem;color:#6b7280;margin-left:12px;">• ${cb.getAttribute('data-name')} (${formatMoney(cb.getAttribute('data-price') || 0)})</div>`;
+    });
+
+    let totalSvc = 0;
+    let svcHtml = '';
+    const svcChecks = document.querySelectorAll('input[name="clientEditServicios"]:checked');
+    svcChecks.forEach(cb => {
+        totalSvc += Number(cb.getAttribute('data-price') || 0);
+        svcHtml += `<div style="font-size:0.8rem;color:#6b7280;margin-left:12px;">• ${cb.getAttribute('data-name')} (${formatMoney(cb.getAttribute('data-price') || 0)})</div>`;
+    });
+
+    const totalNuevo = totalHab + totalPaq + totalSvc;
+    const totalAnterior = Number(reserva.total || reserva.Total || reserva.TotalPagado || 0);
+    const diferencia = totalNuevo - totalAnterior;
+
+    const breakdownEl = document.getElementById('editClientBreakdown');
+    if (breakdownEl) {
+        let diffHtml = '';
+        if (diferencia > 0) {
+            diffHtml = `<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px dashed #e5e7eb;margin-top:6px;">
+                <span style="font-size:0.85rem;color:#b45309;font-weight:700;">Diferencia a pagar:</span>
+                <span style="font-weight:800;color:#b45309;">+${formatMoney(diferencia)}</span>
+            </div>`;
+        }
+
+        breakdownEl.innerHTML = `
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+                    <span style="font-size:0.85rem;color:#6b7280;">🛏 Habitación (${noches} noches × ${formatMoney(precioHab)}):</span>
+                    <span style="font-weight:700;color:#173029;">${formatMoney(totalHab)}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="font-size:0.85rem;color:#6b7280;">🎁 Paquetes (${paqChecks.length}):</span>
+                        <span style="font-weight:700;color:#173029;">${formatMoney(totalPaq)}</span>
+                    </div>
+                    ${paqHtml}
+                </div>
+                <div style="display:flex;flex-direction:column;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+                    <div style="display:flex;justify-content:space-between;">
+                        <span style="font-size:0.85rem;color:#6b7280;">🔧 Servicios extra (${svcChecks.length}):</span>
+                        <span style="font-weight:700;color:#173029;">${formatMoney(totalSvc)}</span>
+                    </div>
+                    ${svcHtml}
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;">
+                    <strong style="color:#173029;font-size:1rem;">TOTAL NUEVO:</strong>
+                    <strong style="color:#258a60;font-size:1.25rem;">${formatMoney(totalNuevo)}</strong>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:6px 0;">
+                    <span style="font-size:0.85rem;color:#6b7280;">Total pagado/anterior:</span>
+                    <span style="font-weight:700;color:#6b7280;">${formatMoney(totalAnterior)}</span>
+                </div>
+                ${diffHtml}
+            </div>
+        `;
+    }
+
+    return totalNuevo;
+}
+
+window.editarReserva = async (id) => {
+    const reserva = allReservas.find((item) => String(getReservaId(item)) === String(id));
+    if (!reserva) return;
+
+    const modal = document.getElementById('editModal');
+    if (!modal) return;
+
+    if (!allPaquetesCatalog.length) allPaquetesCatalog = await getPaquetes();
+    if (!allServiciosCatalog.length) allServiciosCatalog = await getServicios();
+
+    document.getElementById('editClientHabitacionName').textContent = getHabitacionName(reserva);
+    document.getElementById('editClientHabitacionId').value = reserva.id_habitacion || reserva.IDHabitacion || (reserva.habitacion ? reserva.habitacion.id : null);
+    
+    // Extraer costo habitación
+    const hab = reserva.habitacion;
+    const precioHab = hab ? Number(hab.precio || hab.Precio || hab.Costo || 0) : 0;
+    document.getElementById('editClientHabitacionPrice').value = precioHab;
+
+    const fi = document.getElementById('editClientFechaInicio');
+    const ff = document.getElementById('editClientFechaFin');
+    
+    fi.value = getStartDate(reserva).split('T')[0];
+    ff.value = getEndDate(reserva).split('T')[0];
+    
+    // No permitir reducir fecha de llegada o adelantar checkout
+    ff.min = ff.value;
+
+    const pkGrid = document.getElementById('editClientPaquetesGrid');
+    const svGrid = document.getElementById('editClientServiciosGrid');
+
+    const pqReservados = reserva.paquetes || [];
+    const svReservados = reserva.servicios || [];
+
+    pkGrid.innerHTML = allPaquetesCatalog.filter(p => p.Estado == 1 || String(p.Estado).toLowerCase() === 'activo').map(p => {
+        const pid = String(p.id_paquete || p.IDPaquete || '');
+        const currentPq = pqReservados.find(pr => String(pr.id_paquete || pr.IDPaquete || pr.id || '') === pid);
+        const precio = Number((currentPq && (currentPq.precio || currentPq.total)) || p.precio || p.Precio || 0);
+        const checked = !!currentPq;
+        const disabled = checked ? 'disabled' : '';
+
+        return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${checked?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};">
+            <input type="checkbox" name="clientEditPaquetes" value="${pid}" data-price="${precio}" data-name="${p.nombre || p.Nombre || p.NombrePaquete || 'Paquete'}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
+            <div style="flex:1;">
+                <div style="font-size:0.9rem;font-weight:600;color:#173029;">${p.nombre || p.Nombre || p.NombrePaquete}</div>
+                <div style="font-size:0.85rem;color:#258a60;font-weight:700;">${formatMoney(precio)}</div>
+            </div>
+        </label>`;
+    }).join("");
+
+    svGrid.innerHTML = allServiciosCatalog.filter(s => s.Estado == 1 || String(s.Estado).toLowerCase() === 'activo').map(s => {
+        const sid = String(s.id_servicio || s.IDServicio || '');
+        const currentSv = svReservados.find(sr => String(sr.id_servicio || sr.IDServicio || sr.id || '') === sid);
+        const precio = Number((currentSv && (currentSv.precioGuardado || currentSv.costo || currentSv.Precio)) || s.precio || s.Precio || s.Costo || 0);
+        const checked = !!currentSv;
+        const disabled = checked ? 'disabled' : '';
+
+        return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${checked?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};">
+            <input type="checkbox" name="clientEditServicios" value="${sid}" data-price="${precio}" data-name="${s.nombre || s.Nombre || s.NombreServicio || 'Servicio'}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
+            <div style="flex:1;">
+                <div style="font-size:0.9rem;font-weight:600;color:#173029;">${s.nombre || s.Nombre || s.NombreServicio}</div>
+                <div style="font-size:0.85rem;color:#258a60;font-weight:700;">${formatMoney(precio)}</div>
+            </div>
+        </label>`;
+    }).join("");
+
+    calcularNuevoTotal(reserva);
+
+    // Eventos
+    const recalc = () => calcularNuevoTotal(reserva);
+    document.querySelectorAll('input[name="clientEditPaquetes"], input[name="clientEditServicios"]').forEach(el => el.addEventListener('change', recalc));
+    ff.addEventListener('change', recalc);
+    fi.addEventListener('change', recalc);
+
+    const form = document.getElementById('editReservaClientForm');
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const btn = document.getElementById('btnSaveClientEdit');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+            btn.disabled = true;
+
+            const newTotal = calcularNuevoTotal(reserva);
+            const paquetesArr = Array.from(document.querySelectorAll('input[name="clientEditPaquetes"]:checked')).map(cb => parseInt(cb.value));
+            const serviciosArr = Array.from(document.querySelectorAll('input[name="clientEditServicios"]:checked')).map(cb => parseInt(cb.value));
+
+            const payload = {
+                id_cliente: reserva.id_cliente || reserva.IDCliente || (reserva.cliente ? reserva.cliente.id : null),
+                id_habitacion: parseInt(document.getElementById('editClientHabitacionId').value),
+                fecha_inicio: fi.value,
+                fecha_fin: ff.value,
+                hora_entrada: reserva.hora_entrada || reserva.HoraEntrada || '14:00',
+                hora_salida: reserva.hora_salida || reserva.HoraSalida || '12:00',
+                id_metodo_pago: reserva.id_metodo_pago || reserva.IDMetodoPago || (reserva.metodoPago ? reserva.metodoPago.id : 1),
+                id_estado_reserva: parseInt(reserva.id_estado_reserva || reserva.estado?.id || reserva.estado || 1), // Se mantiene igual
+                total: newTotal,
+                paquetes: paquetesArr,
+                servicios: serviciosArr
+            };
+
+            await actualizarReserva(id, payload);
+            showAlert('Éxito', "Reserva actualizada correctamente", 'success');
+            setTimeout(() => location.reload(), 1500);
+        } catch (error) {
+            showAlert('Error', "No se pudo actualizar: " + error.message, 'error');
+            const btn = document.getElementById('btnSaveClientEdit');
+            btn.innerHTML = 'Guardar Cambios';
+            btn.disabled = false;
+        }
+    };
+
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+
+    const closeModal = () => {
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+    };
+
+    document.getElementById('closeEditModal').onclick = closeModal;
+    document.getElementById('closeEditModalBtn').onclick = closeModal;
+    document.getElementById('editModalBackdrop').onclick = closeModal;
 };
 
 window.cancelar = async (id) => {
@@ -315,16 +524,17 @@ function getStatusClass(estado, reserva = null) {
     const text = getStatusText(estado, reserva).toLowerCase();
     if (text === "en curso" || text === "confirmada") return "status-active";
     if (text === "finalizada") return "status-completed";
-    if (text === "cancelada") return "status-cancelled";
+    if (text === "cancelada" || text === "rechazada") return "status-cancelled";
     if (text === "pendiente") return "status-pending";
     return "status-active";
 }
 
 function getStatusText(estado, reserva = null) {
     const s = String(estado || "").toLowerCase();
-    if (["2", "cancelada", "cancelado", "cancelado"].includes(s)) return "Cancelada";
+    if (["2", "cancelada", "cancelado"].includes(s)) return "Cancelada";
+    if (["4", "rechazada", "rechazado"].includes(s)) return "Rechazada";
     if (["3", "finalizada", "completada", "completado", "finalizado"].includes(s)) return "Finalizada";
-    if (["0", "pendiente", "por confirmar"].includes(s)) return "Pendiente";
+    if (["0", "5", "pendiente", "por confirmar"].includes(s)) return "Pendiente";
     if (["1", "activa", "activo", "confirmada", "confirmado", "reservada"].includes(s)) {
         if (reserva && isCurrentReservation(reserva)) return "En curso";
         return "Confirmada";

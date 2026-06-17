@@ -18,6 +18,7 @@ import {
 } from "../core/api.js";
 import { consumeAccessDeniedMessage, getAppUrl, logout } from "../core/authGuard.js";
 import { renderPremiumPagination, showAlert } from "./ui-utils.js";
+import { formatCurrency } from "../../js/shared/helpers.js";
 
 const TODAY = new Date().toISOString().split("T")[0];
 const ESTADO_ACTIVA = 1;
@@ -89,9 +90,7 @@ const refs = {
   prevButtons: document.querySelectorAll("[data-step-prev]")
 };
 
-function formatCurrency(value) {
-  return Number(value || 0).toLocaleString("es-CO");
-}
+
 
 function getFullName(person) {
   return `${person?.Nombre || person?.nombre || ""} ${person?.Apellido || person?.apellido || ""}`.trim();
@@ -104,6 +103,8 @@ function getStatusName(reserva) {
   if (reserva?.estado == 1) return 'Activa';
   if (reserva?.estado == 2) return 'Cancelada';
   if (reserva?.estado == 3) return 'Finalizada';
+  if (reserva?.estado == 4) return 'Rechazada';
+  if (reserva?.estado == 5) return 'Pendiente';
   return String(reserva?.estado || "Sin estado").trim();
 }
 
@@ -733,12 +734,13 @@ function renderReservasTable() {
   const paginated = reservas.slice(startIndex, startIndex + state.itemsPerPage);
 
   refs.reservasTable.innerHTML = paginated.map((reserva) => {
-    const isCancelled = Number(reserva.estado?.id) === ESTADO_CANCELADA || getStatusName(reserva).toLowerCase().includes("cancel");
+    const isCancelled = Number(reserva.estado?.id) === ESTADO_CANCELADA || getStatusName(reserva).toLowerCase().includes("cancel") || getStatusName(reserva).toLowerCase().includes("rechaz");
     const statusName = getStatusName(reserva);
     let statusClass = "bg-gray-100 text-gray-700";
     if (statusName.toLowerCase().includes("activ") || statusName.toLowerCase().includes("confirm")) statusClass = "bg-emerald-100 text-emerald-700";
-    else if (statusName.toLowerCase().includes("cancel")) statusClass = "bg-rose-100 text-rose-700";
+    else if (statusName.toLowerCase().includes("cancel") || statusName.toLowerCase().includes("rechaz")) statusClass = "bg-rose-100 text-rose-700";
     else if (statusName.toLowerCase().includes("finaliz")) statusClass = "bg-blue-100 text-blue-700";
+    else if (statusName.toLowerCase().includes("pend")) statusClass = "bg-yellow-100 text-yellow-700";
 
     return `
       <tr class="hover:bg-gray-50/50 transition-colors group">

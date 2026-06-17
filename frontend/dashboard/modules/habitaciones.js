@@ -1,4 +1,4 @@
-import { apiUrl, getConnectionErrorMessage, getAuthHeaders } from './shared/api-config.js';
+import { apiUrl, getConnectionErrorMessage, getAuthHeaders } from '../../js/shared/api-config.js';
 import { getAppUrl } from '../core/authGuard.js';
 
 const BASE_URL = apiUrl('habitaciones');

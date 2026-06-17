@@ -228,6 +228,8 @@ export class DashboardModule {
     
     if (statusValue.includes('cancel') || statusValue.includes('anul') || statusValue === '2') return '2';
     if (statusValue.includes('final') || statusValue.includes('complete') || statusValue.includes('completada') || statusValue === '3') return '3';
+    if (statusValue.includes('rechaz') || statusValue === '4') return '4';
+    if (statusValue.includes('pend') || statusValue === '5') return '5';
     
     return '1';
   }
@@ -242,6 +244,8 @@ export class DashboardModule {
       '1': 'status-active',
       '2': 'status-completed',
       '3': 'status-cancelled',
+      '4': 'status-cancelled',
+      '5': 'status-active',
       'activo': 'status-active',
       'completada': 'status-completed',
       'cancelada': 'status-cancelled',
@@ -257,6 +261,8 @@ export class DashboardModule {
       '1': 'Activa',
       '2': 'Cancelada',
       '3': 'Finalizada',
+      '4': 'Rechazada',
+      '5': 'Pendiente',
       'activo': 'Activa',
       'completada': 'Finalizada',
       'finalizada': 'Finalizada',
@@ -314,6 +320,12 @@ export class DashboardModule {
       alert('No se pudo actualizar el estado de la reserva');
       this.renderRecentReservationsTable();
     }
+  }
+
+  // Render tabla de reservas recientes (placeholder para evitar errores al cambiar estado)
+  renderRecentReservationsTable() {
+    // La tabla del dashboard principal no muestra reservas directamente;
+    // la vista detallada está en reservas-admin.js
   }
 
   // Show error message

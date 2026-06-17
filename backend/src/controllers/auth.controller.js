@@ -177,6 +177,9 @@ exports.register = async (req, res) => {
       Contrasena: passwordHash
     });
 
+    // Enviar correo de bienvenida (fire-and-forget)
+    emailService.enviarBienvenida(payload.Email, payload.Nombre).catch(err => console.error(err));
+
     res.status(201).json({
       message: "Cliente registrado correctamente.",
       ...sanitizeSession(account)

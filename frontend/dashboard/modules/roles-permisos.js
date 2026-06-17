@@ -112,12 +112,9 @@ export class RolesPermisosModule {
       });
 
     } catch (error) {
-      console.error('Error general de la API, cargando ejemplos:', error);
-      this.roles = this.getRolesEjemplo();
-      this.permisos = this.getPermisosEjemplo();
-      this.originalAsignaciones = [];
-      this.asignaciones = { 1: [1, 2, 3, 4, 5, 6], 2: [5, 6, 7] };
-      this.usuarios = [];
+      console.error('Error general de la API:', error);
+      this.showError("Error", "No se pudieron cargar los roles y permisos del servidor.");
+      return;
     }
   }
 
@@ -736,26 +733,7 @@ export class RolesPermisosModule {
     `;
   }
 
-  // Fallbacks de roles
-  getRolesEjemplo() {
-    return [
-      { IDRol: 1, Nombre: 'Administrador', Descripcion: 'Acceso total al sistema', Estado: 1 },
-      { IDRol: 2, Nombre: 'Cliente', Descripcion: 'Acceso limitado a funciones de cliente', Estado: 1 }
-    ];
-  }
 
-  // Fallbacks de permisos
-  getPermisosEjemplo() {
-    return [
-      { IDPermiso: 1, NombrePermisos: 'Gestionar dashboard', Descripcion: 'Visualizar y administrar el dashboard', IsActive: 1 },
-      { IDPermiso: 2, NombrePermisos: 'Gestionar usuarios', Descripcion: 'Crear, editar y eliminar usuarios', IsActive: 1 },
-      { IDPermiso: 3, NombrePermisos: 'Gestionar roles', Descripcion: 'Administrar roles del sistema', IsActive: 1 },
-      { IDPermiso: 4, NombrePermisos: 'Gestionar permisos', Descripcion: 'Administrar permisos y asignaciones', IsActive: 1 },
-      { IDPermiso: 5, NombrePermisos: 'Gestionar reservas', Descripcion: 'Crear, editar y cancelar reservas', IsActive: 1 },
-      { IDPermiso: 6, NombrePermisos: 'Consultar habitaciones', Descripcion: 'Visualizar habitaciones disponibles', IsActive: 1 },
-      { IDPermiso: 7, NombrePermisos: 'Editar perfil cliente', Descripcion: 'Actualizar datos del cliente', IsActive: 1 }
-    ];
-  }
 }
 
 // Función exportada de carga para el SPA

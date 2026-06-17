@@ -54,5 +54,28 @@ exports.crear = async (data) => {
   
   return reserva;
 };
-exports.actualizar = (id, data) => model.actualizar(id, data);
-exports.eliminar = (id, motivo) => model.eliminar(id, motivo);
+exports.actualizar = async (id, data) => {
+  const oldReserva = await model.obtenerPorId(id).catch(() => null);
+  const result = await model.actualizar(id, data);
+  
+  if (data.id_estado_reserva && [2, 4].includes(Number(data.id_estado_reserva)) && oldReserva && Number(oldReserva.id_estado_reserva) !== Number(data.id_estado_reserva)) {
+    model.obtenerPorId(id).then(reserva => {
+      if (reserva) {
+        emailService.enviarCancelacionReserva(reserva, "Cambio de estado en el sistema").catch(err => console.error(err));
+      }
+    }).catch(err => console.error(err));
+  }
+  return result;
+};
+
+exports.eliminar = async (id, motivo) => {
+  const result = await model.eliminar(id, motivo);
+  if (result.affectedRows > 0) {
+    model.obtenerPorId(id).then(reserva => {
+      if (reserva) {
+        emailService.enviarCancelacionReserva(reserva, motivo || "Cancelada por el usuario").catch(err => console.error(err));
+      }
+    }).catch(err => console.error(err));
+  }
+  return result;
+};

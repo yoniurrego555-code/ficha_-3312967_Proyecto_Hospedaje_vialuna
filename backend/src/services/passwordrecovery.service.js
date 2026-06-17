@@ -1,6 +1,5 @@
 const crypto = require("crypto");
-const resend = require("../config/resend");
-const getPasswordRecoveryEmail = require("../templates/emails/passwordRecoveryTemplate");
+const emailService = require("./email.service");
 const usuariosService = require("./usuarios.auth.service");
 
 const TOKEN_DURATION_MINUTES = Number(process.env.PASSWORD_RESET_TOKEN_MINUTES || 30);
@@ -75,19 +74,13 @@ exports.requestReset = async ({ email }) => {
     });
 
     const resetLink = `${RESET_PAGE_URL}?token=${encodeURIComponent(token)}`;
-    const emailHtml = getPasswordRecoveryEmail(resetLink, TOKEN_DURATION_MINUTES);
 
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
-      to: [normalizedEmail],
-      subject: "Recuperación de clave - ViaLuna",
-      html: emailHtml
-    });
-
-    if (error) {
-      console.error("Error al enviar correo con Resend:", error);
-      throw buildError("No se pudo enviar el correo de recuperación. Intenta más tarde.", 500);
-    }
+    // Se delega el envío al servicio centralizado
+    await emailService.enviarCorreoRecuperacion(
+      normalizedEmail, 
+      resetLink, 
+      usuario.NombreUsuario || usuario.Nombre || "Administrador"
+    );
 
     return {
       mensaje: "Se envió un correo de recuperación al email registrado."

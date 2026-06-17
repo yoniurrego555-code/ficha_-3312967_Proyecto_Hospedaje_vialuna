@@ -1,6 +1,6 @@
 function getApiBase() {
     const defaultOrigin =
-        window.location.hostname === 'localhost'
+        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
             ? 'http://localhost:10000'
             : 'https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com';
 
@@ -39,4 +39,35 @@ function getFullImageUrl(imagePath) {
     return `${backendOrigin()}/${isUpload}`;
 }
 
-export { getApiBase, apiUrl, backendOrigin, backendUrl, getConnectionErrorMessage, getFullImageUrl };
+const TOKEN_KEY = 'vialuna_token';
+const SESSION_KEY = 'vialuna_usuario';
+
+function getAuthToken() {
+    const storedToken =
+        localStorage.getItem(TOKEN_KEY) ||
+        sessionStorage.getItem(TOKEN_KEY) ||
+        localStorage.getItem('token') ||
+        sessionStorage.getItem('token') ||
+        '';
+
+    if (storedToken) {
+        return storedToken;
+    }
+
+    try {
+        const session =
+            JSON.parse(localStorage.getItem(SESSION_KEY) || 'null') ||
+            JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+        return session?.token || '';
+    } catch {
+        return '';
+    }
+}
+
+function getAuthHeaders() {
+    const token = getAuthToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+export { getApiBase, apiUrl, backendOrigin, backendUrl, getConnectionErrorMessage, getFullImageUrl, getAuthToken, getAuthHeaders };
+

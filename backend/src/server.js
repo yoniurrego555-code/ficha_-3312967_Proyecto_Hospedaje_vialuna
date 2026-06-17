@@ -11,6 +11,7 @@ console.log("=======================");
 const app = require("./app"); // Importa la app de app.js
 const pool = require("./config/db"); // Importar pool de base de datos
 const PORT = process.env.PORT; // Puerto dinámico para producción
+const { initCronJobs } = require("./services/cron.service"); // Importar cron jobs
 
 // Script temporal para validar que la Base de Datos responde
 async function checkDatabaseConnection() {
@@ -26,4 +27,5 @@ async function checkDatabaseConnection() {
 app.listen(PORT, async () => {
     console.log(`Servidor de API corriendo exitosamente en el puerto ${PORT}`);
     await checkDatabaseConnection();
+    initCronJobs(); // Iniciar tareas programadas de reservas
 });

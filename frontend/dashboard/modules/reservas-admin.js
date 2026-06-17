@@ -10,6 +10,8 @@ import {
 } from "../core/api.js";
 import { getAppUrl } from "../core/authGuard.js";
 import { showAlert } from "./ui-utils.js";
+import { getStatusClass, getStatusText } from "../../js/shared/reservaStatus.js";
+import { formatCurrency } from "../../js/shared/helpers.js";
 
 // Admin Reservas module
 export class ReservasAdminModule {
@@ -56,15 +58,11 @@ export class ReservasAdminModule {
         ]);
       } catch (apiError) {
         console.error('Error cargando datos desde API:', apiError);
-        // Usar datos de ejemplo si falla la API
-        clientes = this.getClientesEjemplo();
-        habitaciones = this.getHabitacionesEjemplo();
-        paquetes = this.getPaquetesEjemplo();
-        servicios = this.getServiciosEjemplo();
-        reservas = this.getReservasEjemplo();
-        console.log('Usando datos de ejemplo para reservas-admin');
+        this.showError("Error de Conexión", "No se pudieron cargar los datos del servidor. Intente recargar la página.");
+        return; // Salir de la función si falla la carga
       }
 
+      // Solo dejamos logs de métricas básicas
       console.log('Resumen de datos cargados:', {
         clientes: clientes.length,
         habitaciones: habitaciones.length,
@@ -72,34 +70,6 @@ export class ReservasAdminModule {
         servicios: servicios.length,
         reservas: reservas.length
       });
-      
-      // Mostrar ejemplo de cada tipo de dato
-      if (habitaciones.length > 0) {
-        console.log('EJEMPLO Habitación:', habitaciones[0]);
-      }
-      if (paquetes.length > 0) {
-        console.log('EJEMPLO Paquete:', paquetes[0]);
-      }
-      if (servicios.length > 0) {
-        console.log('EJEMPLO Servicio:', servicios[0]);
-      }
-
-      console.log('=== ESTRUCTURA DE DATOS DE LA BASE DE DATOS ===');
-      console.log('Clientes:', clientes);
-      console.log('Habitaciones:', habitaciones);
-      console.log('Paquetes:', paquetes);
-      console.log('Servicios:', servicios);
-      console.log('Reservas:', reservas);
-      
-      if (habitaciones.length > 0) {
-        console.log('Estructura de habitación (primer registro):', Object.keys(habitaciones[0]));
-      }
-      if (paquetes.length > 0) {
-        console.log('Estructura de paquete (primer registro):', Object.keys(paquetes[0]));
-      }
-      if (servicios.length > 0) {
-        console.log('Estructura de servicio (primer registro):', Object.keys(servicios[0]));
-      }
 
       this.currentData = {
         clientes,
@@ -274,25 +244,47 @@ export class ReservasAdminModule {
     this.setupDateRestrictions();
   }
 
+  // ── UTILIDAD FECHAS ──────────────────────────────────────────
+  // Normaliza cualquier campo de fecha a 'YYYY-MM-DD' sin problemas
+  // de zona horaria (evita off-by-one que crea new Date('2025-06-17') en UTC-5).
+  _normDate(value) {
+    if (!value) return '';
+    // Si ya viene como 'YYYY-MM-DD'
+    const iso = String(value).split('T')[0];
+    return iso.length === 10 ? iso : '';
+  }
+
+  // Devuelve 'YYYY-MM-DD' de hoy en zona local (no UTC).
+  _todayLocal() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // Suma N días a una fecha 'YYYY-MM-DD' → 'YYYY-MM-DD' (sin UTC shift).
+  _addDays(dateStr, n) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d + n);
+    return [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0')
+    ].join('-');
+  }
+
   // Setup date restrictions
   setupDateRestrictions() {
-    const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    const today = this._todayLocal();
     
-    // Set minimum date for fechaInicio
     if (this.refs.fechaInicio) {
       this.refs.fechaInicio.setAttribute('min', today);
-      
-      // Add change event to sync fechaFin
       this.refs.fechaInicio.addEventListener('change', (e) => {
         const startDate = e.target.value;
         if (this.refs.fechaFin && startDate) {
-          // Set minimum date for fechaFin to be the same as fechaInicio + 1 day
-          const minEndDate = new Date(startDate);
-          minEndDate.setDate(minEndDate.getDate() + 1);
-          const minEndStr = minEndDate.toISOString().split('T')[0];
+          const minEndStr = this._addDays(startDate, 1);
           this.refs.fechaFin.setAttribute('min', minEndStr);
-          
-          // If fechaFin is earlier than fechaInicio, clear it
           if (this.refs.fechaFin.value && this.refs.fechaFin.value <= startDate) {
             this.refs.fechaFin.value = '';
           }
@@ -301,12 +293,9 @@ export class ReservasAdminModule {
       });
     }
     
-    // Set minimum date for fechaFin
     if (this.refs.fechaFin) {
-      this.refs.fechaFin.setAttribute('min', today);
-      this.refs.fechaFin.addEventListener('change', () => {
-        this.calculateTotal();
-      });
+      this.refs.fechaFin.setAttribute('min', this._addDays(today, 1));
+      this.refs.fechaFin.addEventListener('change', () => this.calculateTotal());
     }
   }
 
@@ -480,136 +469,195 @@ export class ReservasAdminModule {
     });
   }
 
-  // Render services
+  // ─── helpers de imagen de servicio ──────────────────────────
+  _resolveServiceImg(service) {
+    const name = String(service.nombre || service.Nombre || service.NombreServicio || '').toLowerCase();
+    const desc = String(service.descripcion || service.Descripcion || '').toLowerCase();
+    const fullText = `${name} ${desc}`;
+    let img = service.ImagenUrl || service.imagenUrl || service.Imagen || service.imagen || service.ImagenServicio || null;
+    if (img && typeof img === 'object' && img.type === 'Buffer') img = String.fromCharCode.apply(null, img.data);
+    if (!img || img === 'null') {
+      if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relax')) img = getAppUrl('assets/images/service/SPA.png');
+      else if (fullText.includes('caballo') || fullText.includes('cabalgata')) img = getAppUrl('assets/images/service/cabalgata.png');
+      else if (fullText.includes('caminata') || fullText.includes('guiado') || fullText.includes('senderismo')) img = getAppUrl('assets/images/service/caminata.png');
+      else img = getAppUrl('assets/images/service/SPA.png');
+    }
+    if (typeof img === 'string' && img.trim()) {
+      img = img.trim();
+      if (img.startsWith('/http')) img = img.substring(1);
+      if (!img.startsWith('http') && /^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(img)) img = `/uploads/${img}`;
+      else if (!img.startsWith('http') && img.toLowerCase().includes('uploads') && !img.startsWith('/')) img = `/${img}`;
+    }
+    return img;
+  }
+
+  _resolveServiceTitle(service) {
+    let title = service.nombre || service.Nombre || service.NombreServicio || 'Servicio';
+    if (title.toLowerCase() === 'servicio') {
+      const full = `${title} ${service.descripcion || service.Descripcion || ''}`.toLowerCase();
+      if (full.includes('spa') || full.includes('masaje')) title = 'Spa & Relajación';
+      else if (full.includes('caballo') || full.includes('cabalgata')) title = 'Cabalgata Guiada';
+      else if (full.includes('caminata') || full.includes('guiado')) title = 'Caminata Ecológica';
+    }
+    return title;
+  }
+
+  // Render services — con contador de personas por servicio
   renderServices(servicios) {
     const activeServices = servicios.filter(s => {
-        const estado = s.estado !== undefined ? s.estado : (s.Estado !== undefined ? s.Estado : 1);
-        return Number(estado) === 1;
+      const estado = s.estado !== undefined ? s.estado : (s.Estado !== undefined ? s.Estado : 1);
+      return Number(estado) === 1;
     });
-    
-    if (!this.refs.servicesGrid) return;
 
+    if (!this.refs.servicesGrid) return;
     if (activeServices.length === 0) {
-        this.refs.servicesGrid.innerHTML = '<div class="text-center py-6 text-muted font-semibold col-span-2">No hay servicios disponibles.</div>';
-        return;
+      this.refs.servicesGrid.innerHTML = '<div class="text-center py-6 text-muted font-semibold col-span-2">No hay servicios disponibles.</div>';
+      return;
     }
 
-    // Cambiamos el estilo del contenedor a grid dinámicamente si no lo tiene
-    this.refs.servicesGrid.className = "grid grid-cols-1 sm:grid-cols-2 gap-4 w-full box-border";
-    
-    this.refs.servicesGrid.innerHTML = activeServices.map(service => {
-      const isSelected = this.currentData.selectedServices.find(s => (s.id_servicio || s.IDServicio) == (service.id_servicio || service.IDServicio));
-      
-      // Resolve service info and image
-      const name = String(service.nombre || service.Nombre || service.NombreServicio || '').toLowerCase();
-      const desc = String(service.descripcion || service.Descripcion || '').toLowerCase();
-      const fullText = `${name} ${desc}`;
-      
-      let serviceImg = service.ImagenUrl || service.imagenUrl || service.Imagen || service.imagen || service.ImagenServicio || null;
-      if (serviceImg && typeof serviceImg === 'object' && serviceImg.type === 'Buffer') {
-          serviceImg = String.fromCharCode.apply(null, serviceImg.data);
-      }
-      if (!serviceImg || serviceImg === 'null') {
-        if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relajacion')) {
-          serviceImg = getAppUrl('assets/images/service/SPA.png');
-        } else if (fullText.includes('caballo') || fullText.includes('cabalgata')) {
-          serviceImg = getAppUrl('assets/images/service/cabalgata.png');
-        } else if (fullText.includes('caminata') || fullText.includes('guiado') || fullText.includes('recorrido') || fullText.includes('senderismo')) {
-          serviceImg = getAppUrl('assets/images/service/caminata.png');
-        } else {
-          serviceImg = getAppUrl('assets/images/service/SPA.png');
-        }
-      }
-      // Normalize filename-only or uploads path for services
-      if (typeof serviceImg === 'string' && serviceImg.trim()) {
-        serviceImg = serviceImg.trim();
-        if (serviceImg.startsWith('/http')) serviceImg = serviceImg.substring(1);
+    this.refs.servicesGrid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4 w-full box-border';
 
-        if (serviceImg.startsWith('http')) {
-          // Keep absolute URL
-        } else if (/^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(serviceImg)) {
-          serviceImg = `/uploads/${serviceImg}`;
-        } else if (serviceImg.toLowerCase().includes('uploads') && !serviceImg.startsWith('/')) {
-          serviceImg = `/${serviceImg}`;
-        }
-      }
-      // Improve title if generic
-      let displayTitle = service.nombre || service.Nombre || service.NombreServicio || 'Servicio';
-      if (displayTitle.toLowerCase() === 'servicio') {
-        if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relajacion')) displayTitle = 'Spa & Relajación';
-        else if (fullText.includes('caballo') || fullText.includes('cabalgata')) displayTitle = 'Cabalgata Guiada';
-        else if (fullText.includes('caminata') || fullText.includes('guiado') || fullText.includes('recorrido')) displayTitle = 'Caminata Ecológica';
-      }
+    this.refs.servicesGrid.innerHTML = activeServices.map(service => {
+      const svcId = service.id_servicio || service.IDServicio;
+      const selected = this.currentData.selectedServices.find(s => (s.id_servicio || s.IDServicio) == svcId);
+      const personas = selected ? (selected._personas || 1) : 1;
+      const unitPrice = Number(service.precio || service.Precio || service.Costo || 0);
+      const subtotalSvc = unitPrice * (selected ? personas : 0);
+      const serviceImg = this._resolveServiceImg(service);
+      const displayTitle = this._resolveServiceTitle(service);
+      const isSelected = !!selected;
 
       return `
-        <div class="service-checkbox modern-service">
-          <input type="checkbox" id="svc_${service.id_servicio || service.IDServicio}" 
-                 class="service-check-input"
-                 data-service-id="${service.id_servicio || service.IDServicio}" 
-                 ${isSelected ? 'checked' : ''}
-                 style="position: absolute; opacity: 0; cursor: pointer;">
-          <label for="svc_${service.id_servicio || service.IDServicio}" 
-                 class="service-label ${isSelected ? 'selected' : ''}"
-                 style="display: flex; flex-direction: column; cursor: pointer; border-radius: 16px; overflow: hidden; background: ${isSelected ? 'rgba(31, 106, 77, 0.05)' : 'white'}; border: 1px solid ${isSelected ? 'var(--brand)' : 'rgba(0,0,0,0.08)'}; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease; height: 100%;">
-            <div class="service-image" style="height: 120px; position: relative;">
-              <img src="${serviceImg}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'">
-              ${isSelected ? '<div style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>' : ''}
+        <div class="service-checkbox modern-service" data-svc-id="${svcId}">
+          <div style="display:flex; flex-direction:column; border-radius:16px; overflow:hidden;
+                      background:${isSelected ? 'rgba(31,106,77,0.05)' : 'white'};
+                      border:1px solid ${isSelected ? 'var(--brand)' : 'rgba(0,0,0,0.08)'};
+                      box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:all 0.3s ease; height:100%;">
+
+            <!-- Imagen -->
+            <div class="service-image" style="height:120px; position:relative;">
+              <img src="${serviceImg}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'">
+              ${isSelected ? '<div class="checkmark" style="position:absolute; top:10px; right:10px; background:var(--brand); color:white; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 2px 6px rgba(0,0,0,.2);">✓</div>' : ''}
             </div>
-            <div class="service-info" style="padding: 15px; display: flex; flex-direction: column; flex-grow: 1;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                <h4 style="margin: 0; font-size: 1.1rem; color: var(--brand-deep); line-height: 1.2;">${displayTitle}</h4>
-              </div>
-              <p style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
+
+            <!-- Contenido -->
+            <div style="padding:14px; display:flex; flex-direction:column; flex-grow:1; gap:8px;">
+              <h4 style="margin:0; font-size:1rem; color:var(--brand-deep); line-height:1.2;">${displayTitle}</h4>
+              <p style="margin:0; font-size:0.8rem; color:var(--muted); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.4;">
                 ${service.descripcion || service.Descripcion || 'Servicio adicional para complementar tu estadía.'}
               </p>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
-                <span class="service-price" style="font-weight: 700; color: var(--brand); font-size: 1.1rem;">$${this.formatCurrency(service.precio || service.Precio || service.Costo || 0)}</span>
-                <span style="font-size: 0.8rem; background: var(--paper); padding: 4px 10px; border-radius: 20px; color: var(--muted);">Servicio</span>
+
+              <!-- Precio por persona -->
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; color:var(--muted); margin-top:auto; padding-top:8px; border-top:1px solid rgba(0,0,0,.06);">
+                <span>Precio/persona</span>
+                <span style="font-weight:700; color:var(--brand);">$${this.formatCurrency(unitPrice)}</span>
+              </div>
+
+              <!-- Selección y contador de personas -->
+              <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                <!-- Toggle selección -->
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; flex:1;">
+                  <input type="checkbox"
+                    class="service-check-input"
+                    data-service-id="${svcId}"
+                    ${isSelected ? 'checked' : ''}
+                    style="width:16px; height:16px; accent-color:var(--brand); cursor:pointer; flex-shrink:0;">
+                  <span style="font-size:0.82rem; font-weight:600; color:var(--brand-deep);">Agregar</span>
+                </label>
+
+                <!-- Contador personas (solo activo si está seleccionado) -->
+                <div class="svc-counter" data-svc-id="${svcId}"
+                     style="display:${isSelected ? 'flex' : 'none'}; align-items:center; gap:4px;">
+                  <button type="button" class="svc-dec"
+                    data-svc-id="${svcId}"
+                    style="width:28px; height:28px; border-radius:8px; border:1px solid rgba(0,0,0,.12); background:#f8fafc; font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--brand-deep);">−</button>
+                  <span class="svc-count-display" data-svc-id="${svcId}"
+                    style="min-width:28px; text-align:center; font-weight:700; font-size:0.95rem; color:var(--brand-deep);">${personas}</span>
+                  <button type="button" class="svc-inc"
+                    data-svc-id="${svcId}"
+                    style="width:28px; height:28px; border-radius:8px; border:1px solid rgba(0,0,0,.12); background:#f8fafc; font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--brand-deep);">+</button>
+                </div>
+              </div>
+
+              <!-- Subtotal del servicio -->
+              <div class="svc-subtotal-row" data-svc-id="${svcId}"
+                   style="display:${isSelected ? 'flex' : 'none'}; justify-content:space-between; align-items:center;
+                          background:rgba(31,106,77,.06); border-radius:10px; padding:6px 10px; margin-top:2px;">
+                <span style="font-size:0.78rem; color:var(--muted);">${personas} persona${personas !== 1 ? 's' : ''}</span>
+                <strong style="font-size:0.9rem; color:var(--brand);">$${this.formatCurrency(subtotalSvc)}</strong>
               </div>
             </div>
-          </label>
+          </div>
         </div>
       `;
     }).join('');
 
-    // Remove the old manual row click handlers since we now use labels with standard checkboxes
-    // Add change handlers for the inputs
+    // ─── Eventos checkbox de servicio ──────────────────────────
     this.container.querySelectorAll('.service-check-input').forEach(checkbox => {
       checkbox.addEventListener('change', () => {
         const svcId = checkbox.dataset.serviceId;
         const service = activeServices.find(s => (s.id_servicio || s.IDServicio) == svcId);
-        
         if (checkbox.checked && service) {
           if (!this.currentData.selectedServices.find(s => (s.id_servicio || s.IDServicio) == svcId)) {
-            this.currentData.selectedServices.push(service);
+            this.currentData.selectedServices.push({ ...service, _personas: 1 });
+          }
+          // Mostrar contador y subtotal
+          const counter = this.refs.servicesGrid.querySelector(`.svc-counter[data-svc-id="${svcId}"]`);
+          const subtotalRow = this.refs.servicesGrid.querySelector(`.svc-subtotal-row[data-svc-id="${svcId}"]`);
+          if (counter) counter.style.display = 'flex';
+          if (subtotalRow) subtotalRow.style.display = 'flex';
+          // Actualizar visual del card
+          const card = checkbox.closest('[data-svc-id] > div');
+          if (card) { card.style.background = 'rgba(31,106,77,0.05)'; card.style.borderColor = 'var(--brand)'; }
+          const imgDiv = checkbox.closest('[data-svc-id]')?.querySelector('.service-image');
+          if (imgDiv && !imgDiv.querySelector('.checkmark')) {
+            imgDiv.insertAdjacentHTML('beforeend', '<div class="checkmark" style="position:absolute;top:10px;right:10px;background:var(--brand);color:white;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;">✓</div>');
           }
         } else {
           this.currentData.selectedServices = this.currentData.selectedServices.filter(s => (s.id_servicio || s.IDServicio) != svcId);
+          // Ocultar contador y subtotal
+          const counter = this.refs.servicesGrid.querySelector(`.svc-counter[data-svc-id="${svcId}"]`);
+          const subtotalRow = this.refs.servicesGrid.querySelector(`.svc-subtotal-row[data-svc-id="${svcId}"]`);
+          if (counter) counter.style.display = 'none';
+          if (subtotalRow) subtotalRow.style.display = 'none';
+          const countEl = this.refs.servicesGrid.querySelector(`.svc-count-display[data-svc-id="${svcId}"]`);
+          if (countEl) countEl.textContent = '1';
+          const card = checkbox.closest('[data-svc-id] > div');
+          if (card) { card.style.background = 'white'; card.style.borderColor = 'rgba(0,0,0,0.08)'; }
+          const checkmark = checkbox.closest('[data-svc-id]')?.querySelector('.checkmark');
+          if (checkmark) checkmark.remove();
         }
-        
-        // Visual feedback on the label card
-        const label = checkbox.nextElementSibling;
-        if (label) {
-          if (checkbox.checked) {
-              label.classList.add('selected');
-              label.style.background = 'rgba(31, 106, 77, 0.05)';
-              label.style.borderColor = 'var(--brand)';
-              // Add checkmark dynamically if not present
-              const imgContainer = label.querySelector('.service-image');
-              if (imgContainer && !imgContainer.querySelector('.checkmark')) {
-                  imgContainer.insertAdjacentHTML('beforeend', '<div class="checkmark" style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>');
-              }
-          } else {
-              label.classList.remove('selected');
-              label.style.background = 'white';
-              label.style.borderColor = 'rgba(0,0,0,0.08)';
-              const checkmark = label.querySelector('.checkmark');
-              if (checkmark) checkmark.remove();
-          }
-        }
-
         this.calculateTotal();
       });
+    });
+
+    // ─── Botones +/- de personas ────────────────────────────────
+    this.refs.servicesGrid.addEventListener('click', (e) => {
+      const btn = e.target.closest('.svc-inc, .svc-dec');
+      if (!btn) return;
+      const svcId = btn.dataset.svcId;
+      const selected = this.currentData.selectedServices.find(s => (s.id_servicio || s.IDServicio) == svcId);
+      if (!selected) return;
+
+      const isInc = btn.classList.contains('svc-inc');
+      const maxPersonas = Number(selected.CapacidadMaxima || selected.CantidadMaximaPersonas || selected.capacidadMaxima || 20);
+      if (isInc) {
+        selected._personas = Math.min((selected._personas || 1) + 1, maxPersonas);
+      } else {
+        selected._personas = Math.max((selected._personas || 1) - 1, 1);
+      }
+
+      // Actualizar display sin re-renderizar todo
+      const countEl = this.refs.servicesGrid.querySelector(`.svc-count-display[data-svc-id="${svcId}"]`);
+      if (countEl) countEl.textContent = selected._personas;
+
+      const unitPrice = Number(selected.precio || selected.Precio || selected.Costo || 0);
+      const subtotalRow = this.refs.servicesGrid.querySelector(`.svc-subtotal-row[data-svc-id="${svcId}"]`);
+      if (subtotalRow) {
+        subtotalRow.querySelector('span').textContent = `${selected._personas} persona${selected._personas !== 1 ? 's' : ''}`;
+        subtotalRow.querySelector('strong').textContent = `$${this.formatCurrency(unitPrice * selected._personas)}`;
+      }
+      this.calculateTotal();
     });
   }
 
@@ -673,12 +721,13 @@ export class ReservasAdminModule {
               <!-- Switch de Estado (ON = Activa, OFF = Cancelada/Pendiente) -->
               <label class="relative inline-block w-11 h-6 m-0 cursor-pointer shrink-0" data-tooltip="Alternar entre Activa y Cancelada">
                 <input type="checkbox" class="sr-only peer" ${String(status) === '1' ? 'checked' : ''} 
+                       ${(String(status) === '4' || String(status) === '5' || String(status) === '3') ? 'disabled' : ''}
                        onchange="window.reservasModule.changeStatusFromTable(${resId}, this.checked ? '1' : '2')">
-                <span class="absolute inset-0 rounded-full bg-slate-200 peer-checked:bg-emerald-500 transition-colors duration-300 before:content-[''] before:absolute before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:rounded-full before:transition-transform before:duration-300 peer-checked:before:translate-x-5"></span>
+                <span class="absolute inset-0 rounded-full ${(String(status) === '4' || String(status) === '5' || String(status) === '3') ? 'bg-slate-300' : 'bg-slate-200'} peer-checked:bg-emerald-500 transition-colors duration-300 before:content-[''] before:absolute before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:rounded-full before:transition-transform before:duration-300 peer-checked:before:translate-x-5"></span>
               </label>
               <!-- Badge Semántico Visual -->
-              <span class="${this.getStatusClass(status)}">
-                ${this.getStatusText(status)}
+              <span class="${getStatusClass(status)}">
+                ${getStatusText(status)}
               </span>
             </div>
         </td>
@@ -740,8 +789,11 @@ export class ReservasAdminModule {
 
   // Update metrics
   updateMetrics() {
-    const today = new Date().toISOString().split('T')[0];
-    const todayReservations = this.currentData.reservas.filter(r => r.fecha_inicio === today);
+    const today = this._todayLocal();
+    const todayReservations = this.currentData.reservas.filter(r => {
+      const d = this._normDate(r.fecha_inicio || r.FechaInicio || '');
+      return d === today;
+    });
     const activeReservations = this.currentData.reservas.filter(r => this._extractStatusId(r) === '1');
     const monthlyIncome = this.currentData.reservas.reduce((sum, r) => sum + Number(r.total || 0), 0);
 
@@ -768,7 +820,7 @@ export class ReservasAdminModule {
     let isValidDate = true;
     
     if (startDateVal && endDateVal) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = this._todayLocal();
       if (startDateVal < today) {
         isValidDate = false;
         fechasStr = `<p style="font-size: 0.85rem; color: #dc2626; font-weight: bold; margin: 4px 0;">⚠️ La fecha de entrada no puede ser pasada.</p>`;
@@ -776,10 +828,12 @@ export class ReservasAdminModule {
         isValidDate = false;
         fechasStr = `<p style="font-size: 0.85rem; color: #dc2626; font-weight: bold; margin: 4px 0;">⚠️ La salida debe ser posterior a la entrada.</p>`;
       } else {
-        const d1 = new Date(startDateVal);
-        const d2 = new Date(endDateVal);
-        const diffTime = d2 - d1;
-        noches = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        // Calcular noches usando split en partes para evitar UTC shift
+        const [y1, m1, d1] = startDateVal.split('-').map(Number);
+        const [y2, m2, d2] = endDateVal.split('-').map(Number);
+        const dateA = new Date(y1, m1 - 1, d1);
+        const dateB = new Date(y2, m2 - 1, d2);
+        noches = Math.round((dateB - dateA) / (1000 * 60 * 60 * 24));
         fechasStr = `<p style="font-size: 0.8rem; color: var(--brand); margin: 4px 0;">Entrada: <strong>${startDateVal}</strong> | Salida: <strong>${endDateVal}</strong><br>Total noches: <strong>${noches}</strong></p>`;
       }
     }
@@ -897,42 +951,31 @@ export class ReservasAdminModule {
       }
     }
     
-    // Service prices
+    // Service prices — precio × personas
     if (this.currentData.selectedServices.length > 0) {
       let svcHtml = '';
       this.currentData.selectedServices.forEach(service => {
-        if (service) {
-          const svcPrice = Number(service.precio || service.Precio || service.Costo || service.costo || 0);
-          subtotal += svcPrice;
-          
-          // Determine title for summary
-          let svcTitle = service.nombre || service.Nombre || 'Servicio';
-          if (svcTitle.toLowerCase() === 'servicio') {
-            const fullText = `${svcTitle} ${service.descripcion || service.Descripcion || ''}`.toLowerCase();
-            if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relajacion')) svcTitle = 'Spa & Relajación';
-            else if (fullText.includes('caballo') || fullText.includes('cabalgata')) svcTitle = 'Cabalgata Guiada';
-            else if (fullText.includes('caminata') || fullText.includes('guiado') || fullText.includes('recorrido')) svcTitle = 'Caminata Ecológica';
-          }
-          svcHtml += `
-            <div class="summary-item" style="padding: 8px 12px; margin-bottom: 6px; background: rgba(0,0,0,0.02); border-radius: 10px;">
-              <div class="summary-item-details" style="width: 100%;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 0.9rem; font-weight: 500; color: var(--brand-deep);">${svcTitle}</span>
-                  <span style="font-weight: 700; font-size: 0.9rem; color: var(--brand);">$${this.formatCurrency(svcPrice)}</span>
-                </div>
-                <p style="font-size: 0.75rem; color: var(--muted); margin: 2px 0 0 0;">
-                  ${service.descripcion || service.Descripcion || 'Servicio adicional seleccionado.'}
-                </p>
-              </div>
+        if (!service) return;
+        const unitPrice = Number(service.precio || service.Precio || service.Costo || service.costo || 0);
+        const personas = Number(service._personas || 1);
+        const svcTotal = unitPrice * personas;
+        subtotal += svcTotal;
+        const svcTitle = this._resolveServiceTitle(service);
+        svcHtml += `
+          <div class="summary-item" style="padding:8px 12px; margin-bottom:6px; background:rgba(0,0,0,0.02); border-radius:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.9rem; font-weight:600; color:var(--brand-deep);">${svcTitle}</span>
+              <span style="font-weight:700; font-size:0.9rem; color:var(--brand);">$${this.formatCurrency(svcTotal)}</span>
             </div>
-          `;
-        }
+            <p style="font-size:0.75rem; color:var(--muted); margin:3px 0 0 0;">
+              $${this.formatCurrency(unitPrice)} × ${personas} persona${personas !== 1 ? 's' : ''}
+            </p>
+          </div>
+        `;
       });
       if (summaryServices) summaryServices.innerHTML = svcHtml;
     } else {
-      if (summaryServices) {
-        summaryServices.innerHTML = '<p class="empty-state-small">Ningún servicio seleccionado</p>';
-      }
+      if (summaryServices) summaryServices.innerHTML = '<p class="empty-state-small">Ningún servicio seleccionado</p>';
     }
     
     if (this.refs.subtotal) this.refs.subtotal.textContent = `$${this.formatCurrency(subtotal)}`;
@@ -962,64 +1005,78 @@ export class ReservasAdminModule {
     this.calculateTotal();
   }
 
-  // Init Flatpickr
+  // ─── Init Flatpickr ────────────────────────────────────────────
+  // Configuración robusta con locale español (el script l10n/es.js
+  // ya está cargado en el HTML → flatpickr.l10ns.es disponible).
   initFlatpickr() {
     if (!window.flatpickr) return;
-    
-    // Configuración base de Flatpickr
-    const commonOpts = {
-        locale: 'es',
-        dateFormat: 'Y-m-d',
-        minDate: 'today',
-        onChange: () => this.calculateTotal()
-    };
-    
-    if (this.refs.fechaInicio && this.refs.fechaFin) {
-        // Inicializar Fecha Inicio
-        this.fpInicio = flatpickr(this.refs.fechaInicio, {
-            ...commonOpts,
-            onChange: (selectedDates, dateStr) => {
-                if (selectedDates.length > 0) {
-                    // La fecha mínima de salida es al menos 1 día después de la entrada
-                    const nextDay = new Date(selectedDates[0].getTime() + 86400000);
-                    if (this.fpFin) {
-                        this.fpFin.set("minDate", nextDay);
-                        // Limpiar la fecha fin si es menor a la nueva fecha mínima
-                        const currentEndDate = this.fpFin.selectedDates[0];
-                        if (currentEndDate && currentEndDate < nextDay) {
-                            this.fpFin.clear();
-                        }
-                        // Abrir automáticamente el calendario de fin
-                        setTimeout(() => this.fpFin.open(), 100);
-                    }
-                }
-                this.calculateTotal();
-            }
-        });
 
-        // Inicializar Fecha Fin
-        this.fpFin = flatpickr(this.refs.fechaFin, {
-            ...commonOpts,
-            minDate: new Date(new Date().getTime() + 86400000) // Mañana por defecto
-        });
+    const todayLocal = this._todayLocal();
+    // Usar locale español si está disponible (cargado vía l10n/es.js)
+    const esLocale = (window.flatpickr.l10ns && window.flatpickr.l10ns.es) || undefined;
+
+    const commonOpts = {
+      dateFormat: 'Y-m-d',
+      minDate: todayLocal,
+      disableMobile: false,
+      ...(esLocale ? { locale: esLocale } : {})
+    };
+
+    if (this.refs.fechaInicio && this.refs.fechaFin) {
+      this.fpInicio = flatpickr(this.refs.fechaInicio, {
+        ...commonOpts,
+        onChange: (selectedDates, dateStr) => {
+          if (dateStr) {
+            const minEnd = this._addDays(dateStr, 1);
+            if (this.fpFin) {
+              this.fpFin.set('minDate', minEnd);
+              const curEnd = this.fpFin.selectedDates[0];
+              if (curEnd) {
+                // Comparamos en zona local
+                const curEndStr = [
+                  curEnd.getFullYear(),
+                  String(curEnd.getMonth() + 1).padStart(2, '0'),
+                  String(curEnd.getDate()).padStart(2, '0')
+                ].join('-');
+                if (curEndStr <= dateStr) this.fpFin.clear();
+              }
+              setTimeout(() => this.fpFin.open(), 80);
+            }
+          }
+          this.calculateTotal();
+        }
+      });
+
+      this.fpFin = flatpickr(this.refs.fechaFin, {
+        ...commonOpts,
+        minDate: this._addDays(todayLocal, 1),
+        onChange: () => this.calculateTotal()
+      });
     }
   }
 
-  // Nuevo método para bloquear fechas cuando se selecciona una habitación
+
+  // Bloquear fechas ocupadas para la habitación seleccionada.
+  // Excluye reservas canceladas (estado 2) y anuladas (estado 3).
   bloquearFechasOcupadas(idHabitacion) {
     if (!this.fpInicio || !this.fpFin || !this.currentData.reservas) return;
-    
-    // Filtrar reservas de esta habitación que estén activas (estado 1)
+
+    const CANCELLED = new Set(['2', '3', 'cancelada', 'cancelado', 'anulada', 'anulado']);
+
     const fechasOcupadas = this.currentData.reservas
       .filter(r => {
-        const idHab = r.id_habitacion || (r.habitacion ? r.habitacion.id : null);
-        const estado = r.id_estado_reserva || r.Estado || r.estado || 1;
-        return String(idHab) === String(idHabitacion) && String(estado) === '1';
+        const estado = String(
+          r.id_estado_reserva || r.Estado || r.estado || '1'
+        ).toLowerCase();
+        if (CANCELLED.has(estado)) return false;
+        const idHab = r.id_habitacion || r.IDHabitacion || (r.habitacion ? r.habitacion.id : null);
+        return String(idHab) === String(idHabitacion);
       })
       .map(r => ({
-        from: r.fecha_inicio || r.FechaInicio,
-        to: r.fecha_fin || r.FechaFin
-      }));
+        from: this._normDate(r.fecha_inicio || r.FechaInicio || r.fecha_reserva),
+        to:   this._normDate(r.fecha_fin   || r.FechaFin   || r.fecha_salida)
+      }))
+      .filter(range => range.from && range.to);
 
     this.fpInicio.set('disable', fechasOcupadas);
     this.fpFin.set('disable', fechasOcupadas);
@@ -1097,14 +1154,15 @@ export class ReservasAdminModule {
   });
 
   // 2. Status Distribution (Pie Chart)
-  const statusCounts = { '1': 0, '2': 0, '3': 0 };
+  const statusCounts = { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 };
   this.currentData.reservas.forEach(r => {
     const status = this._extractStatusId(r);
     if (statusCounts[status] !== undefined) statusCounts[status]++;
+    else statusCounts['1']++;
   });
-  const statusLabels = ['Activa', 'Cancelada', 'Finalizada'];
-  const statusData = [statusCounts['1'], statusCounts['2'], statusCounts['3']];
-  const statusColors = ['rgba(16,185,129,0.6)', 'rgba(239,68,68,0.6)', 'rgba(59,130,246,0.6)'];
+  const statusLabels = ['Activa', 'Cancelada', 'Finalizada', 'Rechazada', 'Pendiente'];
+  const statusData = [statusCounts['1'], statusCounts['2'], statusCounts['3'], statusCounts['4'], statusCounts['5']];
+  const statusColors = ['rgba(16,185,129,0.6)', 'rgba(239,68,68,0.6)', 'rgba(59,130,246,0.6)', 'rgba(99,102,241,0.6)', 'rgba(245,158,11,0.6)'];
   this.charts.statusChart = new Chart(chartStatusCanvas, {
     type: 'pie',
     data: {
@@ -1251,7 +1309,7 @@ if (this.refs.reservationForm) {
           }
       }
 
-      const totalAmount = Number(this.refs.totalAmount.textContent.replace(/[^0-9.-]+/g, ''));
+      const totalAmount = Number(this.refs.totalAmount.textContent.replace(/\D/g, ''));
       const conf = await Swal.fire({
          title: 'Resumen de la Reserva',
          html: `
@@ -1381,40 +1439,7 @@ if (this.refs.reservationForm) {
 
   // Helper functions
   formatCurrency(value) {
-    return Number(value || 0).toLocaleString("es-CO");
-  }
-
-  getStatusClass(estado) {
-    const statusMap = {
-      '1': 'reserva-badge badge-pendiente', // Activa/Pendiente
-      '2': 'reserva-badge badge-cancelada', // Cancelada
-      '3': 'reserva-badge badge-finalizada', // Finalizada
-      '4': 'reserva-badge badge-pagada',    // Asumiendo 4=Pagada o para uso futuro
-      'activo': 'reserva-badge badge-pendiente',
-      'completada': 'reserva-badge badge-finalizada',
-      'cancelada': 'reserva-badge badge-cancelada',
-      'finalizada': 'reserva-badge badge-finalizada',
-      'pagada': 'reserva-badge badge-pagada',
-      'pendiente': 'reserva-badge badge-pendiente',
-      'pendiente de pago': 'reserva-badge badge-pendiente'
-    };
-    return statusMap[String(estado).toLowerCase()] || 'reserva-badge badge-finalizada';
-  }
-
-  getStatusText(estado) {
-    const statusMap = {
-      '1': 'PENDIENTE',
-      '2': 'CANCELADA',
-      '3': 'FINALIZADA',
-      '4': 'PAGADA',
-      'activo': 'PENDIENTE',
-      'completada': 'FINALIZADA',
-      'finalizada': 'FINALIZADA',
-      'cancelada': 'CANCELADA',
-      'pagada': 'PAGADA',
-      'pendiente': 'PENDIENTE'
-    };
-    return statusMap[String(estado).toLowerCase()] || String(estado).toUpperCase() || 'DESCONOCIDO';
+    return formatCurrency(value);
   }
 
   // Change status directly from table
@@ -1554,14 +1579,27 @@ if (this.refs.reservationForm) {
     // Status badge
     const badge = document.getElementById('detResEstadoBadge');
     if (badge) {
-      badge.textContent = this.getStatusText(status);
-      badge.className = 'inline-block px-3 py-1 rounded-full text-xs font-bold mt-1';
-      if (status === '1') {
-        badge.classList.add('bg-emerald-100', 'text-emerald-800');
-      } else if (status === '2') {
-        badge.classList.add('bg-red-100', 'text-red-800');
+      const badgeColors = {
+        '1': ['bg-emerald-100', 'text-emerald-800'],
+        '2': ['bg-red-100', 'text-red-800'],
+        '3': ['bg-blue-100', 'text-blue-800'],
+        '4': ['bg-indigo-100', 'text-indigo-800'],
+        '5': ['bg-amber-100', 'text-amber-800']
+      };
+      const colors = badgeColors[status] || ['bg-gray-100', 'text-gray-800'];
+      badge.classList.add(...colors);
+    }
+
+    // Motivo de cancelación (si aplica)
+    const motivoElem = document.getElementById('detResMotivoCancelacion');
+    const motivoContainer = document.getElementById('detResMotivoCancelacionContainer');
+    if (motivoContainer) {
+      const motivo = reserva.motivo_cancelacion;
+      if (motivo && status === '2') {
+        motivoContainer.style.display = 'block';
+        if (motivoElem) motivoElem.textContent = motivo;
       } else {
-        badge.classList.add('bg-gray-100', 'text-gray-800');
+        motivoContainer.style.display = 'none';
       }
     }
 
@@ -1603,18 +1641,21 @@ if (this.refs.reservationForm) {
       : (reserva.habitacion ? reserva.habitacion.nombre : 'Sin habitación');
 
     // Estado como texto
-    const estadoTextoMap = { '1': 'Pendiente', '2': 'Cancelada', '3': 'Finalizada' };
+    const estadoTextoMap = { '1': 'Activa', '2': 'Cancelada', '3': 'Finalizada', '4': 'Rechazada', '5': 'Pendiente' };
     const estadoColorMap = {
-      '1': 'background:#fef3c7;color:#92400e;border:1px solid #fde68a',
+      '1': 'background:#d1fae5;color:#065f46;border:1px solid #a7f3d0',
       '2': 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5',
-      '3': 'background:#d1fae5;color:#065f46;border:1px solid #a7f3d0'
+      '3': 'background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe',
+      '4': 'background:#fef2f2;color:#b91c1c;border:1px solid #fecaca',
+      '5': 'background:#fef3c7;color:#92400e;border:1px solid #fde68a'
     };
     const estadoTexto = estadoTextoMap[idEstado] || 'Desconocido';
     const estadoColor = estadoColorMap[idEstado] || 'background:#f3f4f6;color:#374151';
 
-    const isCancelada = idEstado === '2';
+    // Solo bloquear edición de paquetes si está CANCELADA o RECHAZADA
+    const isCancelada = idEstado === '2' || idEstado === '4' || idEstado === '3';
     const isActiva = idEstado === '1';
-    const isPendiente = !isCancelada && !isActiva;
+    const isPendiente = idEstado === '5';
 
     // Paquetes y servicios actuales
     const paquetesActuales = Array.isArray(reserva.paquetes) ? reserva.paquetes : [];
@@ -1665,26 +1706,35 @@ if (this.refs.reservationForm) {
 
     const paquetesCheckboxes = paquetesActiveOptions.map(p => {
       const pid = String(p.id_paquete || p.IDPaquete || '');
-      const precio = Number(p.precio || p.Precio || 0);
+      // Precio del detalle guardado o del catálogo
+      const paqEnReserva = paquetesActuales.find(pr => String(pr.id_paquete || pr.IDPaquete || pr.id || '') === pid);
+      const precio = Number(
+        (paqEnReserva && (paqEnReserva.precio || paqEnReserva.total)) ||
+        p.precio || p.Precio || 0
+      );
       const checked = paqIds.includes(pid);
       const disabled = isCancelada ? 'disabled' : '';
       return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${isCancelada?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};transition:all .2s;">
-        <input type="checkbox" name="editPaquetes" value="${pid}" data-price="${precio}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
-        <span style="flex:1;font-size:0.9rem;font-weight:600;color:#173029;">${p.nombre || p.Nombre || 'Paquete'}</span>
+        <input type="checkbox" name="editPaquetes" value="${pid}" data-price="${precio}" data-name="${p.nombre || p.Nombre || p.NombrePaquete || 'Paquete'}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
+        <span style="flex:1;font-size:0.9rem;font-weight:600;color:#173029;">${p.nombre || p.Nombre || p.NombrePaquete || 'Paquete'}</span>
         <span style="font-size:0.85rem;color:#258a60;font-weight:700;">$${this.formatCurrency(precio)}</span>
       </label>`;
     }).join('');
 
     const serviciosCheckboxes = serviciosActiveOptions.map(s => {
       const sid = String(s.id_servicio || s.IDServicio || '');
-      const precio = Number(s.precio || s.Precio || 0);
+      // Usar precio correcto: primero el guardado en detalle de reserva, luego el costo del catálogo
+      const svcEnReserva = serviciosActuales.find(sr => String(sr.id_servicio || sr.IDServicio || sr.id || '') === sid);
+      const precio = Number(
+        (svcEnReserva && (svcEnReserva.precioGuardado || svcEnReserva.costo || svcEnReserva.Precio)) ||
+        s.precio || s.Precio || s.Costo || 0
+      );
       const checked = svcIds.includes(sid);
-      // Activa: solo se puede agregar servicios (no quitar), Cancelada: todo bloqueado
       const disabled = isCancelada ? 'disabled' : '';
       return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${isCancelada?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};transition:all .2s;">
-        <input type="checkbox" name="editServicios" value="${sid}" data-price="${precio}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
-        <span style="flex:1;font-size:0.9rem;font-weight:600;color:#173029;">${s.nombre || s.Nombre || 'Servicio'}</span>
-        <span style="font-size:0.85rem;color:#258a60;font-weight:700;">$${this.formatCurrency(precio)}</span>
+        <input type="checkbox" name="editServicios" value="${sid}" data-price="${precio}" data-name="${s.nombre || s.Nombre || s.NombreServicio || 'Servicio'}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
+        <span style="flex:1;font-size:0.9rem;font-weight:600;color:#173029;">${s.nombre || s.Nombre || s.NombreServicio || 'Servicio'}</span>
+        <span style="font-size:0.85rem;color:#258a60;font-weight:700;">$${this.formatCurrency(precio)}/pers.</span>
       </label>`;
     }).join('');
 
@@ -1756,7 +1806,6 @@ if (this.refs.reservationForm) {
               ✏️ Sección 2: Modificar Reserva
             </h3>
 
-            ${!isCancelada ? `
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
               ${!isActiva ? `
               <div>
@@ -1779,8 +1828,10 @@ if (this.refs.reservationForm) {
               <div>
                 <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Estado</label>
                 <select id="editEstadoReserva" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:#f9fafb;font-size:0.9rem;font-weight:600;color:#173029;">
-                  <option value="1" ${idEstado=='1'?'selected':''}>Pendiente</option>
+                  <option value="1" ${idEstado=='1'?'selected':''}>Activa</option>
+                  <option value="4" ${idEstado=='4'?'selected':''}>Rechazada</option>
                   <option value="3" ${idEstado=='3'?'selected':''}>Finalizada</option>
+                  <option value="5" ${idEstado=='5'?'selected':''}>Pendiente</option>
                   <option value="2" ${idEstado=='2'?'selected':''}>Cancelada</option>
                 </select>
               </div>
@@ -1832,7 +1883,7 @@ if (this.refs.reservationForm) {
                 ${serviciosCheckboxes || '<p style="color:#6b7280;font-size:0.85rem;">No hay servicios disponibles.</p>'}
               </div>
             </div>
-            ` : `<p style="color:#6b7280;font-style:italic;text-align:center;padding:20px;">Esta reserva está cancelada. No es posible realizar modificaciones.</p>`}
+            </div>
           </div>
 
           <!-- SECCIÓN 3: Resumen dinámico de precios -->
@@ -1846,7 +1897,6 @@ if (this.refs.reservationForm) {
           </div>
 
           <!-- SECCIÓN 4: Acciones -->
-          ${!isCancelada ? `
           <div style="background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:20px 24px;display:flex;flex-wrap:wrap;gap:12px;justify-content:flex-end;">
             <h3 style="width:100%;margin:0 0 14px;color:#173029;font-size:1rem;font-weight:800;">⚡ Sección 4: Acciones</h3>
             <button type="button" onclick="window.reservasModule.showReservationsList()"
@@ -1864,13 +1914,6 @@ if (this.refs.reservationForm) {
               💾 Guardar cambios
             </button>
           </div>
-          ` : `
-          <div style="display:flex;justify-content:flex-end;">
-            <button type="button" onclick="window.reservasModule.showReservationsList()"
-              style="padding:12px 24px;border-radius:10px;border:1px solid #d1d5db;background:#fff;color:#373737;font-weight:700;cursor:pointer;">
-              Volver a la lista
-            </button>
-          </div>`}
 
         </form>
       </div>
@@ -1934,8 +1977,12 @@ if (this.refs.reservationForm) {
 
     let noches = 0;
     if (startVal && endVal && endVal > startVal) {
-      const d1 = new Date(startVal), d2 = new Date(endVal);
-      noches = Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24));
+      // Usar constructor por partes para evitar UTC off-by-one en zona UTC-5
+      const [y1, m1, d1] = startVal.split('-').map(Number);
+      const [y2, m2, d2] = endVal.split('-').map(Number);
+      const dateA = new Date(y1, m1 - 1, d1);
+      const dateB = new Date(y2, m2 - 1, d2);
+      noches = Math.round((dateB - dateA) / (1000 * 60 * 60 * 24));
     }
 
     // Precio habitación
@@ -1956,13 +2003,21 @@ if (this.refs.reservationForm) {
 
     // Paquetes seleccionados
     let totalPaq = 0;
+    let descPaq = '';
     const paqChecks = container.querySelectorAll('input[name="editPaquetes"]:checked');
-    paqChecks.forEach(cb => { totalPaq += Number(cb.getAttribute('data-price') || 0); });
+    paqChecks.forEach(cb => { 
+      totalPaq += Number(cb.getAttribute('data-price') || 0); 
+      descPaq += `<div style="font-size:0.8rem;color:#6b7280;margin-left:12px;">• ${cb.getAttribute('data-name')} ($${this.formatCurrency(cb.getAttribute('data-price') || 0)})</div>`;
+    });
 
     // Servicios seleccionados
     let totalSvc = 0;
+    let descSvc = '';
     const svcChecks = container.querySelectorAll('input[name="editServicios"]:checked');
-    svcChecks.forEach(cb => { totalSvc += Number(cb.getAttribute('data-price') || 0); });
+    svcChecks.forEach(cb => { 
+      totalSvc += Number(cb.getAttribute('data-price') || 0); 
+      descSvc += `<div style="font-size:0.8rem;color:#6b7280;margin-left:12px;">• ${cb.getAttribute('data-name')} ($${this.formatCurrency(cb.getAttribute('data-price') || 0)})</div>`;
+    });
 
     const totalNuevo = totalHab + totalPaq + totalSvc;
     const totalAnterior = this._editTotalAnterior || 0;
@@ -2007,13 +2062,19 @@ if (this.refs.reservationForm) {
             <span style="font-size:0.85rem;color:#6b7280;">🛏 Habitación (${noches} noche${noches!==1?'s':''} × $${this.formatCurrency(precioHab)}):</span>
             <span style="font-weight:700;color:#173029;">$${this.formatCurrency(totalHab)}</span>
           </div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
-            <span style="font-size:0.85rem;color:#6b7280;">🎁 Paquetes (${paqChecks.length}):</span>
-            <span style="font-weight:700;color:#173029;">$${this.formatCurrency(totalPaq)}</span>
+          <div style="display:flex;flex-direction:column;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+            <div style="display:flex;justify-content:space-between;">
+              <span style="font-size:0.85rem;color:#6b7280;">🎁 Paquetes (${paqChecks.length}):</span>
+              <span style="font-weight:700;color:#173029;">$${this.formatCurrency(totalPaq)}</span>
+            </div>
+            ${descPaq}
           </div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
-            <span style="font-size:0.85rem;color:#6b7280;">🔧 Servicios extra (${svcChecks.length}):</span>
-            <span style="font-weight:700;color:#173029;">$${this.formatCurrency(totalSvc)}</span>
+          <div style="display:flex;flex-direction:column;padding:8px 0;border-bottom:1px solid #f3f4f6;">
+            <div style="display:flex;justify-content:space-between;">
+              <span style="font-size:0.85rem;color:#6b7280;">🔧 Servicios extra (${svcChecks.length}):</span>
+              <span style="font-weight:700;color:#173029;">$${this.formatCurrency(totalSvc)}</span>
+            </div>
+            ${descSvc}
           </div>
           <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;">
             <strong style="color:#173029;font-size:1rem;">TOTAL NUEVO:</strong>
@@ -2032,9 +2093,10 @@ if (this.refs.reservationForm) {
     // Recoger habitación (puede estar deshabilitada si es Activa)
     const habSel = editContainer.querySelector('#editHabitacionSelect');
     const original = this._editReservaOriginal;
+    const originalHabId = original?.id_habitacion || original?.IDHabitacion || (original?.habitacion ? original.habitacion.id : null);
     const idHabitacion = habSel
-      ? parseInt(habSel.value)
-      : parseInt(original?.id_habitacion || original?.IDHabitacion);
+      ? parseInt(habSel.value) || parseInt(originalHabId)
+      : parseInt(originalHabId);
 
     // Paquetes y servicios seleccionados
     const paquetesSeleccionados = [...editContainer.querySelectorAll('input[name="editPaquetes"]:checked')]
@@ -2172,74 +2234,8 @@ if (this.refs.reservationForm) {
       `;
     }
   }
-
-  // Datos de ejemplo para fallback
-  getClientesEjemplo() {
-    return [
-      { IDCliente: '1', NombreCompleto: 'Juan Pérez', Nombres: 'Juan', Apellidos: 'Pérez', NroDocumento: '1234567890', Estado: '1' },
-      { IDCliente: '2', NombreCompleto: 'María García', Nombres: 'María', Apellidos: 'García', NroDocumento: '0987654321', Estado: '1' }
-    ];
-  }
-
-  getHabitacionesEjemplo() {
-    return [
-      { 
-        IDHabitacion: '1', 
-        id_habitacion: 1, 
-        Numero: '101', 
-        Tipo: 'Familiar', 
-        Estado: '1', 
-        Precio: 350000,
-        descripcion: 'Habitación amplia con múltiples camas, ideal para familias. Incluye aire acondicionado y TV.',
-        imagen: getAppUrl('assets/images/rooms/familiar.png'),
-        capacidad: 5
-      },
-      { 
-        IDHabitacion: '2', 
-        id_habitacion: 2, 
-        Numero: '201', 
-        Tipo: 'Parejas', 
-        Estado: '1', 
-        Precio: 250000,
-        descripcion: 'Habitación moderna con cama doble, perfecta para parejas. Diseño elegante y confortable.',
-        imagen: getAppUrl('assets/images/rooms/parejas.png'),
-        capacidad: 2
-      },
-      { 
-        IDHabitacion: '3', 
-        id_habitacion: 3, 
-        Numero: '301', 
-        Tipo: 'Individual', 
-        Estado: '1', 
-        Precio: 120000,
-        descripcion: 'Habitación sencilla y acogedora para una persona. Ideal para viajeros solitarios.',
-        imagen: getAppUrl('assets/images/rooms/individual.png'),
-        capacidad: 1
-      }
-    ];
-  }
-
-  getPaquetesEjemplo() {
-    return [
-      { IDPaquete: '1', Nombre: 'Romántico', Descripcion: 'Cena y desayuno', Estado: '1', Precio: 250 },
-      { IDPaquete: '2', Nombre: 'Familiar', Descripcion: 'Actividades para niños', Estado: '1', Precio: 400 }
-    ];
-  }
-
-  getServiciosEjemplo() {
-    return [
-      { IDServicio: '1', Nombre: 'Spa', Descripcion: 'Tratamientos de spa', Estado: '1', Precio: 100 },
-      { IDServicio: '2', Nombre: 'Restaurante', Descripcion: 'Comida gourmet', Estado: '1', Precio: 80 }
-    ];
-  }
-
-  getReservasEjemplo() {
-    return [
-      { IDReserva: '1', IDCliente: '1', IDHabitacion: '1', FechaInicio: '2025-01-15', FechaFin: '2025-01-17', Estado: '1', Total: 300 },
-      { IDReserva: '2', IDCliente: '2', IDHabitacion: '2', FechaInicio: '2025-01-20', FechaFin: '2025-01-22', Estado: '1', Total: 400 }
-    ];
-  }
 }
+
 
 // Export function for SPA integration
 export async function renderReservas(container, options = {}) {
