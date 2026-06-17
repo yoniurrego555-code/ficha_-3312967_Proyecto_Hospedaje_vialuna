@@ -1,4 +1,5 @@
 const db = require("../config/db");
+const bcrypt = require("bcryptjs");
 
 let userColumnsPromise = null;
 
@@ -63,8 +64,10 @@ async function buildSelect(whereClause = "", params = []) {
     columns.has("TipoDocumento") ? "u.TipoDocumento" : "NULL AS TipoDocumento",
     columns.has("NumeroDocumento") ? "u.NumeroDocumento" : "NULL AS NumeroDocumento",
     columns.has("Pais") ? "u.Pais" : "NULL AS Pais",
+    columns.has("Departamento") ? "u.Departamento" : "NULL AS Departamento",
     columns.has("Direccion") ? "u.Direccion" : "NULL AS Direccion",
     columns.has("IDRol") ? "u.IDRol" : "NULL AS IDRol",
+    columns.has("AvatarUsuario") ? "u.AvatarUsuario" : "NULL AS AvatarUsuario",
     "r.Nombre AS NombreRol"
   ];
 
@@ -100,9 +103,11 @@ async function buildWritePayload(data) {
     TipoDocumento: columns.has("TipoDocumento") ? data.TipoDocumento || null : undefined,
     NumeroDocumento: columns.has("NumeroDocumento") ? data.NumeroDocumento || null : undefined,
     Pais: columns.has("Pais") ? data.Pais || null : undefined,
+    Departamento: columns.has("Departamento") ? data.Departamento || null : undefined,
     Direccion: columns.has("Direccion") ? data.Direccion || null : undefined,
     Estado: columns.has("Estado") ? Number(data.Estado ?? 1) : undefined,
-    IDRol: columns.has("IDRol") ? data.IDRol : undefined
+    IDRol: columns.has("IDRol") ? data.IDRol : undefined,
+    AvatarUsuario: columns.has("AvatarUsuario") ? data.AvatarUsuario || null : undefined
   };
 }
 
@@ -122,8 +127,8 @@ const obtenerPorEmail = async (email) => {
 };
 
 const obtenerPorCredenciales = async (credenciales) => {
-  const identificador = String(credenciales.Email || credenciales.Username || "").trim();
-  const clave = String(credenciales.Password || credenciales.Contrasena || "").trim();
+  const identificador = String(credenciales.Email || credenciales.Username || credenciales.email || credenciales.username || "").trim();
+  const clave = String(credenciales.Password || credenciales.Contrasena || credenciales.password || credenciales.contrasena || "").trim();
   const base = await buildSelect();
 
   if (!base.passwordColumn) {
@@ -140,21 +145,18 @@ const obtenerPorCredenciales = async (credenciales) => {
   }
 
   const whereParts = [
-    `WHERE (${usernameChecks.join(" OR ")})`,
-    `AND COALESCE(u.${escapeIdentifier(base.passwordColumn)}, '') = ?`
+    `WHERE (${usernameChecks.join(" OR ")})`
   ];
 
   if (base.estadoColumn) {
     whereParts.push(`AND COALESCE(u.${escapeIdentifier(base.estadoColumn)}, 1) = 1`);
   }
 
-  whereParts.push("AND COALESCE(r.Estado, 1) = 1");
+  whereParts.push("AND COALESCE(r.Estado, '1') IN ('1', 'activo', 'Activo', 'ACTIVO')");
   whereParts.push("LIMIT 1");
 
   const params = usernameChecks.map(() => identificador);
-  params.push(clave);
-
-  return db.query(
+  const [rows] = await db.query(
     `
       SELECT
         ${base.selectFields.join(",\n        ")}
@@ -163,10 +165,22 @@ const obtenerPorCredenciales = async (credenciales) => {
       ${whereParts.join("\n      ")}
     `,
     params
-  ).then(([rows]) => rows[0]);
-};
+  );
 
-// 🔍 VALIDAR EMAIL DUPLICADO ANTES DE INSERTAR
+  const usuario = rows[0];
+  if (!usuario) {
+    return null;
+  }
+
+  const storedPassword = String(usuario.Password || "");
+  const isHash = /^\$2[aby]\$/i.test(storedPassword);
+  const passwordOk = isHash
+    ? await bcrypt.compare(clave, storedPassword)
+    : storedPassword === clave;
+
+  return passwordOk ? usuario : null;
+};
+// VALIDAR EMAIL DUPLICADO ANTES DE INSERTAR
 const validarEmailUnico = async (email) => {
   const [clientesResult] = await db.query(
     "SELECT Email FROM clientes WHERE LOWER(Email) = LOWER(?) LIMIT 1",
@@ -182,10 +196,10 @@ const validarEmailUnico = async (email) => {
 };
 
 const crear = async (data) => {
-  // 🔐 VALIDAR EMAIL DUPLICADO
+  // ???? VALIDAR EMAIL DUPLICADO
   const emailUnico = await validarEmailUnico(data.Email);
   if (!emailUnico) {
-    const error = new Error("El correo ya está registrado");
+    const error = new Error("El correo ya est?? registrado");
     error.code = "ER_DUP_ENTRY";
     error.status = 409;
     throw error;
@@ -216,7 +230,17 @@ const actualizarPassword = async (id, password) => {
   ).then(([result]) => result);
 };
 
-const eliminar = (id) => {
+const eliminar = async (id) => {
+  const query = await buildSelect("WHERE u.IDUsuario = ?", [id]);
+  const [rows] = await db.query(query.sql, query.params);
+  const usuario = rows[0];
+  if (usuario) {
+    const unameLowerDel = String(usuario.Username || usuario.Nombre || '').toLowerCase();
+    if (unameLowerDel === 'yoni' || unameLowerDel === 'zury' || unameLowerDel.includes('yoni') || unameLowerDel.includes('zury')) {
+      throw new Error("No se puede eliminar a un Súper Admin protegido del sistema.");
+    }
+  }
+
   return db.query(
     "DELETE FROM usuarios WHERE IDUsuario = ?",
     [id]
@@ -234,3 +258,5 @@ module.exports = {
   actualizarPassword,
   eliminar
 };
+
+

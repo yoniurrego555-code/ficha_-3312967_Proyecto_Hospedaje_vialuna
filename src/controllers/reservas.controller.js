@@ -41,6 +41,9 @@ exports.obtenerPorUsuario = async (req, res) => {
 
 exports.crear = async (req, res) => {
   try {
+    if (req.auth && String(req.auth.rol).toLowerCase() === 'cliente') {
+      req.body.id_cliente = req.auth.sub || req.auth.id_cliente || req.auth.id || req.auth.IDCliente;
+    }
     const reserva = await service.crear(req.body);
     res.status(201).json({
       mensaje: "Reserva creada correctamente",
@@ -53,6 +56,10 @@ exports.crear = async (req, res) => {
 
 exports.actualizar = async (req, res) => {
   try {
+    // PROTECCIÓN: Si el usuario es cliente, forzar el id_cliente desde el token
+    if (req.auth && String(req.auth.rol).toLowerCase() === 'cliente') {
+      req.body.id_cliente = req.auth.sub || req.auth.id_cliente || req.auth.id || req.auth.IDCliente;
+    }
     const reserva = await service.actualizar(req.params.id, req.body);
     res.json({
       mensaje: "Reserva actualizada correctamente",
@@ -65,7 +72,8 @@ exports.actualizar = async (req, res) => {
 
 exports.eliminar = async (req, res) => {
   try {
-    const result = await service.eliminar(req.params.id);
+    const motivo = req.body ? req.body.motivo_cancelacion : null;
+    const result = await service.eliminar(req.params.id, motivo);
 
     if (!result.affectedRows) {
       return res.status(404).json({

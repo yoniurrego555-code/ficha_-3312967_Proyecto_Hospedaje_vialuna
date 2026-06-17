@@ -22,6 +22,21 @@ exports.obtener = (req, res) => {
 
 // 🔹 CREAR
 exports.crear = (req, res) => {
+  console.log("📥 Crear Servicio - Body:", req.body);
+  if (req.file) {
+    console.log("🖼️ Crear Servicio - File:", req.file);
+    const host = req.get("host") || "localhost:3000";
+    req.body.ImagenUrl = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+  }
+
+  // Validaciones
+  if (req.body.CantidadMaximaPersonas && Number(req.body.CantidadMaximaPersonas) < 1) {
+    return res.status(400).json({ error: "CantidadMáximaPersonas debe ser mayor o igual a 1" });
+  }
+  if (req.body.EdadMinima && req.body.EdadMaxima && Number(req.body.EdadMinima) > Number(req.body.EdadMaxima)) {
+    return res.status(400).json({ error: "EdadMínima no puede ser mayor que EdadMáxima" });
+  }
+
   service.crear(req.body)
     .then(result => res.json({
       mensaje: "Creado correctamente",
@@ -35,6 +50,21 @@ exports.crear = (req, res) => {
 
 // 🔹 ACTUALIZAR
 exports.actualizar = (req, res) => {
+  console.log("📥 Actualizar Servicio - Body:", req.body);
+  if (req.file) {
+    console.log("🖼️ Actualizar Servicio - File:", req.file);
+    const host = req.get("host") || "localhost:3000";
+    req.body.ImagenUrl = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+  }
+
+  // Validaciones
+  if (req.body.CantidadMaximaPersonas && Number(req.body.CantidadMaximaPersonas) < 1) {
+    return res.status(400).json({ error: "CantidadMáximaPersonas debe ser mayor o igual a 1" });
+  }
+  if (req.body.EdadMinima && req.body.EdadMaxima && Number(req.body.EdadMinima) > Number(req.body.EdadMaxima)) {
+    return res.status(400).json({ error: "EdadMínima no puede ser mayor que EdadMáxima" });
+  }
+
   service.actualizar(req.params.id, req.body)
     .then(() => res.json({ mensaje: "Actualizado" }))
     .catch(err => {
@@ -49,6 +79,9 @@ exports.eliminar = (req, res) => {
     .then(() => res.json({ mensaje: "Eliminado" }))
     .catch(err => {
       console.error(err);
+      if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+        return res.status(400).json({ error: "No se puede eliminar el servicio porque está referenciado en otras tablas (ej. reservas o paquetes)." });
+      }
       res.status(500).json({ error: "Error al eliminar" });
     });
 };

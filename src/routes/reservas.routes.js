@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("../controllers/reservas.controller");
-const { authenticateToken } = require("../middlewares/auth.Middleware");
+const { authenticateToken } = require("../middlewares/auth.middleware");
 
 router.get("/", authenticateToken, controller.listar);
 router.get("/usuario/:id", authenticateToken, controller.obtenerPorUsuario);

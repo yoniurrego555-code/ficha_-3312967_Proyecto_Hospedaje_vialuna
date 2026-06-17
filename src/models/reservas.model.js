@@ -18,7 +18,14 @@ function normalizeDate(value) {
 }
 
 function getTodayDateString() {
-  return new Date().toISOString().slice(0, 10);
+  // Usar fecha LOCAL del servidor para evitar discrepancias de zona horaria.
+  // new Date().toISOString() devuelve UTC, lo que puede dar una fecha
+  // diferente a la local si son las 11pm-5am en horarios UTC-X.
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm   = String(now.getMonth() + 1).padStart(2, '0');
+  const dd   = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 function normalizeIds(items) {
@@ -54,6 +61,7 @@ async function obtenerReservasBase(connection, whereClause = "", params = []) {
   const reservationColumns = await getReservationColumns();
   const hasHoraEntrada = reservationColumns.has("hora_entrada");
   const hasHoraSalida = reservationColumns.has("hora_salida");
+  const hasMotivoCancelacion = reservationColumns.has("motivo_cancelacion");
   const [rows] = await connection.query(
     `
       SELECT
@@ -78,7 +86,8 @@ async function obtenerReservasBase(connection, whereClause = "", params = []) {
         c.Nombre AS ClienteNombre,
         c.Apellido AS ClienteApellido,
         c.Email AS ClienteEmail,
-        c.Telefono AS ClienteTelefono
+        c.Telefono AS ClienteTelefono,
+        ${hasMotivoCancelacion ? "r.motivo_cancelacion" : "NULL AS motivo_cancelacion"}
       FROM reservas r
       LEFT JOIN clientes c
         ON CAST(c.NroDocumento AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci =
@@ -227,10 +236,14 @@ async function hidratarReservas(connection, rows) {
     hora_entrada: normalizeTime(row.hora_entrada),
     hora_salida: normalizeTime(row.hora_salida),
     total: Number(row.total || 0),
+    motivo_cancelacion: row.motivo_cancelacion || null,
     estado: {
       id: row.id_estado_reserva,
       nombre: row.NombreEstadoReserva || "Sin estado"
     },
+    id_estado_reserva: row.id_estado_reserva,
+    id_metodo_pago: row.id_metodo_pago,
+    id_habitacion: row.id_habitacion,
     metodoPago: {
       id: row.id_metodo_pago,
       nombre: row.NomMetodoPago || "Sin metodo"
@@ -238,9 +251,14 @@ async function hidratarReservas(connection, rows) {
     habitacion: row.id_habitacion
       ? {
           id: row.id_habitacion,
+          id_habitacion: row.id_habitacion,
+          IDHabitacion: row.id_habitacion,
           nombre: row.NombreHabitacion,
+          NombreHabitacion: row.NombreHabitacion,
           descripcion: row.DescripcionHabitacion,
-          costo: Number(row.CostoHabitacion || 0)
+          costo: Number(row.CostoHabitacion || 0),
+          precio: Number(row.CostoHabitacion || 0),
+          Costo: Number(row.CostoHabitacion || 0)
         }
       : null,
     cliente: {
@@ -301,20 +319,56 @@ async function validarReserva(connection, data, options = {}) {
     throw buildError("La hora de salida no es valida");
   }
 
-  const fechaInicio = new Date(data.fecha_inicio);
-  const fechaFin = new Date(data.fecha_fin);
-  const fechaHoy = new Date(`${getTodayDateString()}T00:00:00`);
+  // ── Comparación de fechas segura en zona horaria ─────────────────────────
+  // new Date("YYYY-MM-DD") parsea como UTC midnight.
+  // new Date("YYYY-MM-DDT00:00:00") (sin Z) parsea como hora LOCAL.
+  // Mezclar ambos provoca falsos positivos de "fechas pasadas".
+  // Solución: comparar como cadenas YYYY-MM-DD (lexicográficamente equivalente).
+  const fechaInicioStr = String(data.fecha_inicio || '').slice(0, 10);
+  const fechaFinStr    = String(data.fecha_fin    || '').slice(0, 10);
+  const fechaHoyStr    = getTodayDateString(); // fecha local del servidor
+
+  // Crear Date objects a mediodía para cálculo de noches (evita problemas de DST)
+  const fechaInicio = new Date(`${fechaInicioStr}T12:00:00`);
+  const fechaFin    = new Date(`${fechaFinStr}T12:00:00`);
+
+
 
   if (Number.isNaN(fechaInicio.getTime()) || Number.isNaN(fechaFin.getTime())) {
     throw buildError("Las fechas de la reserva no son validas");
   }
 
-  if (fechaInicio < fechaHoy) {
+  // Comparación como string YYYY-MM-DD: '2026-06-05' < '2026-06-10' → true
+  if (!options.isUpdate && fechaInicioStr < fechaHoyStr) {
     throw buildError("No se pueden crear reservas en fechas pasadas");
   }
 
-  if (fechaFin <= fechaInicio) {
+  if (fechaFinStr <= fechaInicioStr) {
     throw buildError("La fecha final debe ser mayor a la fecha inicial");
+  }
+
+  // VALIDACIÓN DE CONFLICTOS DE HABITACIÓN
+  if (idEstadoReserva === 1 || idEstadoReserva === 5) {
+    let queryConflictos = `
+      SELECT id_reserva
+      FROM reservas
+      WHERE id_habitacion = ?
+        AND id_estado_reserva IN (1, 5)
+        AND fecha_inicio < ?
+        AND fecha_fin > ?
+    `;
+    let paramsConflictos = [idHabitacion, fechaFinStr, fechaInicioStr];
+
+    if (options.isUpdate && options.reservationId) {
+      queryConflictos += " AND id_reserva != ?";
+      paramsConflictos.push(options.reservationId);
+    }
+
+    const [conflictosRows] = await connection.query(queryConflictos, paramsConflictos);
+
+    if (conflictosRows.length > 0) {
+      throw buildError("La habitacion no esta disponible para las fechas seleccionadas");
+    }
   }
 
   const [
@@ -545,6 +599,7 @@ async function crear(data) {
     const payload = await validarReserva(connection, data);
     const hasHoraEntrada = reservationColumns.has("hora_entrada");
     const hasHoraSalida = reservationColumns.has("hora_salida");
+    const hasAceptaTerminos = reservationColumns.has("acepta_terminos");
     const insertColumns = [
       "id_cliente",
       "nr_documento",
@@ -556,7 +611,8 @@ async function crear(data) {
       "id_estado_reserva",
       "total",
       "id_metodo_pago",
-      "id_habitacion"
+      "id_habitacion",
+      ...(hasAceptaTerminos ? ["acepta_terminos"] : [])
     ];
     const insertValues = [
       payload.reserva.id_cliente,
@@ -569,7 +625,8 @@ async function crear(data) {
       payload.reserva.id_estado_reserva,
       payload.reserva.total,
       payload.reserva.id_metodo_pago,
-      payload.reserva.id_habitacion
+      payload.reserva.id_habitacion,
+      ...(hasAceptaTerminos ? [data.acepta_terminos || 0] : [])
     ];
     const [result] = await connection.query(
       `
@@ -608,10 +665,13 @@ async function actualizar(id, data) {
     }
 
     const payload = await validarReserva(connection, data, {
-      fechaReserva: normalizeDate(existingRows[0].fecha_reserva)
+      fechaReserva: normalizeDate(existingRows[0].fecha_reserva),
+      isUpdate: true,
+      reservationId: id
     });
     const hasHoraEntrada = reservationColumns.has("hora_entrada");
     const hasHoraSalida = reservationColumns.has("hora_salida");
+    const hasAceptaTerminos = reservationColumns.has("acepta_terminos");
     const updateParts = [
       "id_cliente = ?",
       "nr_documento = ?",
@@ -623,7 +683,8 @@ async function actualizar(id, data) {
       "id_estado_reserva = ?",
       "total = ?",
       "id_metodo_pago = ?",
-      "id_habitacion = ?"
+      "id_habitacion = ?",
+      ...(hasAceptaTerminos && data.acepta_terminos !== undefined ? ["acepta_terminos = ?"] : [])
     ];
     const updateValues = [
       payload.reserva.id_cliente,
@@ -637,6 +698,7 @@ async function actualizar(id, data) {
       payload.reserva.total,
       payload.reserva.id_metodo_pago,
       payload.reserva.id_habitacion,
+      ...(hasAceptaTerminos && data.acepta_terminos !== undefined ? [data.acepta_terminos || 0] : []),
       id
     ];
 
@@ -664,17 +726,37 @@ async function actualizar(id, data) {
   }
 }
 
-async function eliminar(id) {
-  const [result] = await db.query(
-    `
-      UPDATE reservas
-      SET id_estado_reserva = ?
-      WHERE id_reserva = ?
-    `,
-    [ESTADO_CANCELADA, id]
-  );
-
-  return result;
+async function eliminar(id, motivo = null) {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    
+    const reservationColumns = await getReservationColumns();
+    const hasMotivoCancelacion = reservationColumns.has("motivo_cancelacion");
+    
+    // Soft delete: actualizar el estado a 2 (Cancelada) y guardar el motivo
+    let updateQuery;
+    let updateParams;
+    
+    // Intentaremos guardar el motivo si la base de datos lo soporta, o simplemente actualizamos el estado.
+    if (motivo && hasMotivoCancelacion) {
+      updateQuery = "UPDATE reservas SET id_estado_reserva = 2, motivo_cancelacion = ? WHERE id_reserva = ?";
+      updateParams = [motivo, id];
+    } else {
+      updateQuery = "UPDATE reservas SET id_estado_reserva = 2 WHERE id_reserva = ?";
+      updateParams = [id];
+    }
+    
+    const [result] = await connection.query(updateQuery, updateParams);
+    
+    await connection.commit();
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 module.exports = {

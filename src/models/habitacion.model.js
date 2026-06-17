@@ -37,11 +37,12 @@ const obtener = () => {
     `SELECT
       IDHabitacion,
       NombreHabitacion,
-      ImagenHabitacion,
       ImagenUrl,
       Descripcion,
       Costo,
       CapacidadMaximaPersonas,
+      cantidad_camas,
+      tipo_camas,
       Estado,
       CASE Estado
         WHEN 1 THEN 'disponible'
@@ -53,7 +54,23 @@ const obtener = () => {
     FROM habitacion
     ORDER BY Costo DESC`
   )
-    .then(([rows]) => rows);
+    .then(async ([rows]) => {
+      if (!rows || rows.length === 0) return rows;
+
+      return rows.map(r => ({
+        ...r,
+        // Aliases normalizados para compatibilidad con frontend
+        id_habitacion: r.IDHabitacion,
+        IDHabitacion: r.IDHabitacion,
+        nombre: r.NombreHabitacion,
+        NombreHabitacion: r.NombreHabitacion,
+        precio: Number(r.Costo || 0),
+        costo: Number(r.Costo || 0),
+        Costo: Number(r.Costo || 0),
+        capacidad: r.CapacidadMaximaPersonas,
+        imagenes: r.ImagenUrl ? [r.ImagenUrl] : []
+      }));
+    });
 };
 
 const obtenerPorId = (id) => {
@@ -61,11 +78,12 @@ const obtenerPorId = (id) => {
     `SELECT
       IDHabitacion,
       NombreHabitacion,
-      ImagenHabitacion,
       ImagenUrl,
       Descripcion,
       Costo,
       CapacidadMaximaPersonas,
+      cantidad_camas,
+      tipo_camas,
       Estado,
       CASE Estado
         WHEN 1 THEN 'disponible'
@@ -78,21 +96,31 @@ const obtenerPorId = (id) => {
     WHERE IDHabitacion = ?`,
     [id]
   )
-  .then(([rows]) => rows[0]);
+  .then(async ([rows]) => {
+    const row = rows[0];
+    if (!row) return null;
+
+    return {
+      ...row,
+      imagenes: row.ImagenUrl ? [row.ImagenUrl] : []
+    };
+  });
 };
 
 const crear = (data) => {
   return db.query(
     `INSERT INTO habitacion
-    (NombreHabitacion, ImagenHabitacion, Descripcion, Costo, CapacidadMaximaPersonas, Estado)
-    VALUES (?, ?, ?, ?, ?, ?)`,
+    (NombreHabitacion, Descripcion, Costo, CapacidadMaximaPersonas, Estado, cantidad_camas, tipo_camas, ImagenUrl)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.NombreHabitacion,
-      data.ImagenHabitacion || null,
       data.Descripcion,
       data.Costo,
       normalizeCapacidad(data),
-      normalizeEstado(data.Estado)
+      normalizeEstado(data.Estado),
+      data.cantidad_camas || null,
+      data.tipo_camas || null,
+      data.ImagenUrl || null
     ]
   )
   .then(([result]) => result);
@@ -101,15 +129,18 @@ const crear = (data) => {
 const actualizar = (id, data) => {
   return db.query(
     `UPDATE habitacion SET 
-    NombreHabitacion = ?, ImagenHabitacion = ?, Descripcion = ?, Costo = ?, CapacidadMaximaPersonas = ?, Estado = ?
+    NombreHabitacion = ?, Descripcion = ?, Costo = ?, CapacidadMaximaPersonas = ?, Estado = ?,
+    cantidad_camas = ?, tipo_camas = ?, ImagenUrl = ?
     WHERE IDHabitacion = ?`,
     [
       data.NombreHabitacion,
-      data.ImagenHabitacion || null,
       data.Descripcion,
       data.Costo,
       normalizeCapacidad(data),
       normalizeEstado(data.Estado),
+      data.cantidad_camas || null,
+      data.tipo_camas || null,
+      data.ImagenUrl || null,
       id
     ]
   )

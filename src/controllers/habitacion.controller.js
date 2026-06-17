@@ -18,6 +18,17 @@ exports.listar = (req, res) => {
 
 // 🔹 CREAR
 exports.crear = (req, res) => {
+    console.log("📥 Crear Habitación - Body:", req.body);
+    if (req.file) {
+        console.log("🖼️ Crear Habitación - File:", req.file);
+        const baseUrl = req.protocol + "://" + req.get("host");
+        req.body.ImagenUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    }
+
+    if (req.body.cantidad_camas && Number(req.body.cantidad_camas) < 1) {
+        return res.status(400).json({ error: "La cantidad de camas debe ser mayor o igual a 1" });
+    }
+
     service.crear(req.body)
         .then(() => res.json({ mensaje: "Creado correctamente" }))
         .catch(error => {
@@ -28,6 +39,17 @@ exports.crear = (req, res) => {
 
 // 🔹 ACTUALIZAR
 exports.actualizar = (req, res) => {
+    console.log("📥 Actualizar Habitación - Body:", req.body);
+    if (req.file) {
+        console.log("🖼️ Actualizar Habitación - File:", req.file);
+        const baseUrl = req.protocol + "://" + req.get("host");
+        req.body.ImagenUrl = `${baseUrl}/uploads/${req.file.filename}`;
+    }
+
+    if (req.body.cantidad_camas && Number(req.body.cantidad_camas) < 1) {
+        return res.status(400).json({ error: "La cantidad de camas debe ser mayor o igual a 1" });
+    }
+
     service.actualizar(req.params.id, req.body)
         .then(() => res.json({ mensaje: "Actualizado correctamente" }))
         .catch(error => {
@@ -49,12 +71,28 @@ exports.obtener = (req, res) => {
         });
 };
 
-// 🔹 ELIMINAR
-exports.eliminar = (req, res) => {
-    service.eliminar(req.params.id)
-        .then(() => res.json({ mensaje: "Eliminado correctamente" }))
-        .catch(error => {
-            console.error("❌ ERROR ELIMINAR:", error);
-            res.status(400).json(error);
-        });
+// 🔹 ELIMINAR (mejorado)
+const db = require('../config/db');
+
+exports.eliminar = async (req, res) => {
+    const id = req.params.id;
+    try {
+        // 1) Verificar si existen reservas activas que referencien la habitación
+        const [resCountRows] = await db.query('SELECT COUNT(*) AS cnt FROM reservas WHERE id_habitacion = ?', [id]);
+        const reservasCount = resCountRows && resCountRows[0] ? Number(resCountRows[0].cnt || 0) : 0;
+        if (reservasCount > 0) {
+            return res.status(400).json({ error: `No se puede eliminar: existen ${reservasCount} reserva(s) que referencian esta habitación. Elimina o reasigna esas reservas primero.` });
+        }
+
+        // 2) Eliminar paquetes relacionados con esta habitación (si los hay)
+        await db.query('DELETE FROM paquetes WHERE IDHabitacion = ?', [id]);
+
+        // 3) Eliminar la habitación
+        await service.eliminar(id);
+
+        return res.json({ mensaje: 'Eliminado correctamente' });
+    } catch (error) {
+        console.error('❌ ERROR ELIMINAR (mejorado):', error);
+        return res.status(500).json({ error: 'Error al intentar eliminar la habitación', detalle: error.message });
+    }
 };

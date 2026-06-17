@@ -20,32 +20,19 @@ exports.obtener = (req, res) => {
     });
 };
 
-// 🔹 CREAR
+// 🔹 LOGIN - DESHABILITADO POR SEGURIDAD
 exports.login = (req, res) => {
-  const { Email, Username, Password, Contrasena } = req.body;
-
-  if ((!Email && !Username) || (!Password && !Contrasena)) {
-    return res.status(400).json({ error: "Usuario o correo y clave son obligatorios" });
-  }
-
-  service.login(req.body)
-    .then(usuario => {
-      if (!usuario) {
-        return res.status(401).json({ error: "Credenciales invalidas" });
-      }
-
-      res.json({
-        mensaje: "Login exitoso",
-        usuario
-      });
-    })
-    .catch(err => {
-      console.error(err);
-      res.status(500).json({ error: "Error al iniciar sesion" });
-    });
+  res.status(403).json({
+    error: "Endpoint deshabilitado por seguridad. Utilice /api/auth/login."
+  });
 };
 
 exports.crear = (req, res) => {
+  if (req.file) {
+    const host = req.get("host") || "localhost:3000";
+    req.body.AvatarUsuario = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+  }
+
   service.crear(req.body)
     .then(result => res.json({
       mensaje: "Creado correctamente",
@@ -67,6 +54,11 @@ exports.crear = (req, res) => {
 
 // 🔹 ACTUALIZAR
 exports.actualizar = (req, res) => {
+  if (req.file) {
+    const host = req.get("host") || "localhost:3000";
+    req.body.AvatarUsuario = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+  }
+
   service.actualizar(req.params.id, req.body)
     .then(() => res.json({ mensaje: "Actualizado" }))
     .catch(err => {

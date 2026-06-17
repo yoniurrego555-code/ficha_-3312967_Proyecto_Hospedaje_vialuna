@@ -16,25 +16,8 @@ const obtenerPorId = (id) => {
 const crear = (data) => {
   return db.query(
     `INSERT INTO servicios 
-    (NombreServicio, Descripcion, Duracion, CantidadMaximaPersonas, Costo, Estado)
-    VALUES (?, ?, ?, ?, ?, ?)`,
-    [
-      data.NombreServicio,
-      data.Descripcion,
-      data.Duracion,
-      data.CantidadMaximaPersonas,
-      data.Costo,
-      data.Estado
-    ]
-  )
-  .then(([result]) => result);
-};
-
-const actualizar = (id, data) => {
-  return db.query(
-    `UPDATE servicios SET 
-    NombreServicio = ?, Descripcion = ?, Duracion = ?, CantidadMaximaPersonas = ?, Costo = ?, Estado = ?
-    WHERE IDServicio = ?`,
+    (NombreServicio, Descripcion, Duracion, CantidadMaximaPersonas, Costo, Estado, EdadMinima, EdadMaxima, ImagenServicio, ImagenUrl)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.NombreServicio,
       data.Descripcion,
@@ -42,8 +25,43 @@ const actualizar = (id, data) => {
       data.CantidadMaximaPersonas,
       data.Costo,
       data.Estado,
-      id
+      data.EdadMinima || null,
+      data.EdadMaxima || null,
+      data.ImagenServicio || null,
+      data.ImagenUrl || null
     ]
+  )
+  .then(([result]) => result);
+};
+
+const actualizar = (id, data) => {
+  let fieldsToUpdate = [
+    "NombreServicio = ?", "Descripcion = ?", "Duracion = ?", 
+    "CantidadMaximaPersonas = ?", "Costo = ?", "Estado = ?",
+    "EdadMinima = ?", "EdadMaxima = ?"
+  ];
+  
+  let queryParams = [
+    data.NombreServicio,
+    data.Descripcion,
+    data.Duracion,
+    data.CantidadMaximaPersonas,
+    data.Costo,
+    data.Estado,
+    data.EdadMinima || null,
+    data.EdadMaxima || null
+  ];
+
+  if (data.ImagenUrl !== undefined && data.ImagenUrl !== null) {
+    fieldsToUpdate.push("ImagenUrl = ?");
+    queryParams.push(data.ImagenUrl);
+  }
+
+  queryParams.push(id);
+
+  return db.query(
+    `UPDATE servicios SET ${fieldsToUpdate.join(", ")} WHERE IDServicio = ?`,
+    queryParams
   )
   .then(([result]) => result);
 };

@@ -22,6 +22,13 @@ exports.obtener = (req, res) => {
 
 // 🔹 CREAR
 exports.crear = (req, res) => {
+  console.log("📥 Crear Paquete - Body:", req.body);
+  if (req.file) {
+    console.log("🖼️ Crear Paquete - File:", req.file);
+    const host = req.get("host") || "localhost:3000";
+    req.body.ImagenUrl = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+  }
+
   service.crear(req.body)
     .then(result => res.json({
       mensaje: "Creado correctamente",
@@ -35,6 +42,13 @@ exports.crear = (req, res) => {
 
 // 🔹 ACTUALIZAR
 exports.actualizar = (req, res) => {
+  console.log("📥 Actualizar Paquete - Body:", req.body);
+  if (req.file) {
+    console.log("🖼️ Actualizar Paquete - File:", req.file);
+    const host = req.get("host") || "localhost:3000";
+    req.body.ImagenUrl = `${req.protocol}://${host}/uploads/${req.file.filename}`;
+  }
+
   service.actualizar(req.params.id, req.body)
     .then(() => res.json({ mensaje: "Actualizado" }))
     .catch(err => {
@@ -49,6 +63,9 @@ exports.eliminar = (req, res) => {
     .then(() => res.json({ mensaje: "Eliminado" }))
     .catch(err => {
       console.error(err);
+      if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+        return res.status(400).json({ error: "No se puede eliminar el paquete porque está referenciado en otras tablas (ej. reservas)." });
+      }
       res.status(500).json({ error: "Error al eliminar" });
     });
 };

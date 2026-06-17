@@ -79,8 +79,8 @@ const crear = async (data) => {
 
   return db.query(
     `INSERT INTO clientes
-      (NroDocumento, TipoDocumento, Nombre, Apellido, Direccion, Email, Telefono, Contrasena, Estado, IDRol)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (NroDocumento, TipoDocumento, Nombre, Apellido, Direccion, Email, Telefono, Contrasena, Estado, IDRol, Pais, Departamento)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.NroDocumento,
       data.TipoDocumento || "CC",
@@ -91,35 +91,57 @@ const crear = async (data) => {
       data.Telefono,
       data.Contrasena ?? null,
       data.Estado,
-      data.IDRol
+      data.IDRol,
+      data.Pais || "Colombia",
+      data.Departamento || null
     ]
   )
     .then(([result]) => result);
 };
 
 const actualizar = (id, data) => {
+  let fieldsToUpdate = [];
+  let queryParams = [];
+
+  const mappings = {
+    TipoDocumento: "TipoDocumento",
+    Nombre: "Nombre",
+    Apellido: "Apellido",
+    Direccion: "Direccion",
+    Email: "Email",
+    Telefono: "Telefono",
+    Estado: "Estado",
+    IDRol: "IDRol",
+    Pais: "Pais",
+    Departamento: "Departamento"
+  };
+
+  for (const [key, column] of Object.entries(mappings)) {
+    if (data[key] !== undefined) {
+      fieldsToUpdate.push(`${column} = ?`);
+      // Aplicar valores por defecto para campos opcionales solo si se enviaron explícitamente vacíos
+      if (key === 'TipoDocumento' && !data[key]) queryParams.push("CC");
+      else if (key === 'Pais' && !data[key]) queryParams.push("Colombia");
+      else queryParams.push(data[key]);
+    }
+  }
+
+  if (fieldsToUpdate.length === 0) {
+    return Promise.resolve({ affectedRows: 0 });
+  }
+
+  queryParams.push(id);
+
   return db.query(
-    `UPDATE clientes SET
-      TipoDocumento = ?, Nombre = ?, Apellido = ?, Direccion = ?, Email = ?, Telefono = ?, Estado = ?, IDRol = ?
-     WHERE NroDocumento = ?`,
-    [
-      data.TipoDocumento || "CC",
-      data.Nombre,
-      data.Apellido,
-      data.Direccion,
-      data.Email,
-      data.Telefono,
-      data.Estado,
-      data.IDRol,
-      id
-    ]
+    `UPDATE clientes SET ${fieldsToUpdate.join(", ")} WHERE NroDocumento = ?`,
+    queryParams
   )
     .then(([result]) => result);
 };
 
 const eliminar = (id) => {
   return db.query(
-    "DELETE FROM clientes WHERE NroDocumento = ?",
+    "UPDATE clientes SET Estado = 0 WHERE NroDocumento = ?",
     [id]
   )
     .then(([result]) => result);

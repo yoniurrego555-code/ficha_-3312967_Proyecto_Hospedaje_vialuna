@@ -4,10 +4,63 @@ const path = require("path");
 
 const app = express();
 
-app.use(cors());
+// =====================================
+// 🔥 CONFIGURACIÓN BASE
+// =====================================
+
+// Si estás detrás de Render / proxy
+app.set("trust proxy", 1);
+
+// =====================================
+// 🌐 CORS PRODUCCIÓN + DESARROLLO
+// =====================================
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://127.0.0.1:5500",
+  "http://127.0.0.1:5501"
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (
+      allowedOrigins.includes(origin) ||
+      origin.endsWith(".vercel.app")
+    ) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS bloqueado: ${origin}`));
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
+
+// =====================================
+// 📦 MIDDLEWARES
+// =====================================
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/frontend", express.static(path.resolve(__dirname, "../../frontend")));
+
+// =====================================
+// 📁 ARCHIVOS ESTÁTICOS
+// =====================================
+
+app.use(
+  "/uploads",
+  express.static(path.resolve(__dirname, "../public/uploads"))
+);
+
+// =====================================
+// 🛣️ RUTAS
+// =====================================
 
 app.use("/api/usuarios", require("./routes/usuarios.routes"));
 app.use("/api/clientes", require("./routes/clientes.routes"));
@@ -20,22 +73,37 @@ app.use("/api/rolespermisos", require("./routes/rolespermisos.routes"));
 
 app.use("/api/habitacion", require("./routes/habitacion.routes"));
 app.use("/api/habitaciones", require("./routes/habitacion.routes"));
+
 app.use("/api/servicios", require("./routes/servicios.routes"));
 app.use("/api/paquetes", require("./routes/paquetes.routes"));
 
 app.use("/api/reservas", require("./routes/reservas.routes"));
-app.use("/api/detallereservaservicio", require("./routes/detallereservaservicio.routes"));
-app.use("/api/detalledereservapaquetes", require("./routes/detalledereservapaquetes.routes"));
+app.use(
+  "/api/detallereservaservicio",
+  require("./routes/detallereservaservicio.routes")
+);
+app.use(
+  "/api/detalledereservapaquetes",
+  require("./routes/detalledereservapaquetes.routes")
+);
 
 app.use("/api/metodopago", require("./routes/metodopago.routes"));
 app.use("/api/estadosreserva", require("./routes/estadosreserva.routes"));
 
+// =====================================
+// 🧪 TEST API
+// =====================================
+
 app.get("/api", (req, res) => {
-  res.json({ mensaje: "API funcionando correctamente" });
+  res.json({ mensaje: "API funcionando correctamente 🚀" });
 });
 
+// =====================================
+// ❌ ERROR HANDLER
+// =====================================
+
 app.use((err, req, res, next) => {
-  console.error("ERROR:", err.stack);
+  console.error("ERROR:", err);
 
   res.status(500).json({
     mensaje: "Error interno del servidor",
