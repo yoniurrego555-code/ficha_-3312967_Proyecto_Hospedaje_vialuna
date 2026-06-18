@@ -54,13 +54,25 @@ async function cancelarReservasPendientesExpiradas() {
     for (const reserva of reservas) {
       const motivo = 'Cancelación automática: tiempo límite de confirmación excedido (30 min)';
       try {
-        await connection.query(
-          `UPDATE reservas
-           SET id_estado_reserva = 2,
-               motivo_cancelacion = ?
-           WHERE id_reserva = ? AND id_estado_reserva = 5`,
-          [motivo, reserva.id_reserva]
-        );
+        const [columnRows] = await connection.query("SHOW COLUMNS FROM reservas LIKE 'motivo_cancelacion'");
+        const hasMotivoCancelacion = columnRows.length > 0;
+
+        if (hasMotivoCancelacion) {
+          await connection.query(
+            `UPDATE reservas
+             SET id_estado_reserva = 2,
+                 motivo_cancelacion = ?
+             WHERE id_reserva = ? AND id_estado_reserva = 5`,
+            [motivo, reserva.id_reserva]
+          );
+        } else {
+          await connection.query(
+            `UPDATE reservas
+             SET id_estado_reserva = 2
+             WHERE id_reserva = ? AND id_estado_reserva = 5`,
+            [reserva.id_reserva]
+          );
+        }
 
         console.log(`[Cron] ✅ Reserva #${reserva.id_reserva} cancelada (doc: ${reserva.nr_documento}, hab: ${reserva.habitacion_nombre || 'N/A'}).`);
 

@@ -87,7 +87,7 @@ exports.eliminar = async (req, res) => {
         // 2) Eliminar paquetes relacionados con esta habitación (si los hay)
         await db.query('DELETE FROM paquetes WHERE IDHabitacion = ?', [id]);
 
-        // 3) Eliminar la habitación (imagenes_habitacion tiene FK ON DELETE CASCADE)
+        // 3) Eliminar la habitación
         await service.eliminar(id);
 
         return res.json({ mensaje: 'Eliminado correctamente' });

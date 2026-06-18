@@ -473,44 +473,49 @@
             return;
           }
 
-          const totalStr = formatMoney(r.total || 0);
-          let estadoColor = 'bg-gray-100 text-gray-800';
-          const estadoId = String(r.estado?.id || '');
-          const estadoNombreLow = (r.estado?.nombre || '').toLowerCase();
-          if (estadoId === '1' || estadoNombreLow.includes('activ') || estadoNombreLow.includes('confirm')) {
-            estadoColor = 'bg-emerald-100 text-emerald-800';
-          } else if (estadoId === '2' || estadoNombreLow.includes('cancel')) {
-            estadoColor = 'bg-red-100 text-red-800';
-          } else if (estadoId === '3' || estadoNombreLow.includes('finaliz')) {
-            estadoColor = 'bg-blue-100 text-blue-800';
-          } else if (estadoId === '4' || estadoNombreLow.includes('aceptad')) {
-            estadoColor = 'bg-indigo-100 text-indigo-800';
-          } else if (estadoId === '5' || estadoNombreLow.includes('rechaz')) {
-            estadoColor = 'bg-amber-100 text-amber-800';
-          }
+          tableBody.innerHTML = pageItems.map(r => {
+            const cliente = r.cliente?.nombreCompleto || '—';
+            const habitacion = r.habitacion?.nombre || '—';
+            const fechaInicio = r.fecha_inicio || '—';
+            const fechaFin = r.fecha_fin || '—';
+            const totalStr = formatMoney(r.total || 0);
+            let estadoColor = 'bg-gray-100 text-gray-800';
+            const estadoId = String(r.estado?.id || '');
+            const estadoNombreLow = (r.estado?.nombre || '').toLowerCase();
+            if (estadoId === '1' || estadoNombreLow.includes('activ') || estadoNombreLow.includes('confirm')) {
+              estadoColor = 'bg-emerald-100 text-emerald-800';
+            } else if (estadoId === '2' || estadoNombreLow.includes('cancel')) {
+              estadoColor = 'bg-red-100 text-red-800';
+            } else if (estadoId === '3' || estadoNombreLow.includes('finaliz')) {
+              estadoColor = 'bg-blue-100 text-blue-800';
+            } else if (estadoId === '4' || estadoNombreLow.includes('aceptad')) {
+              estadoColor = 'bg-indigo-100 text-indigo-800';
+            } else if (estadoId === '5' || estadoNombreLow.includes('rechaz')) {
+              estadoColor = 'bg-amber-100 text-amber-800';
+            }
 
-          return `
-            <tr class="hover:bg-gray-50/50 transition-all duration-200">
-              <td class="px-6 py-4 font-semibold text-brand-deep">#${r.id_reserva}</td>
-              <td class="px-6 py-4 font-semibold text-gray-700">${cliente}</td>
-              <td class="px-6 py-4 font-semibold text-brand-deep">${habitacion}</td>
-              <td class="px-6 py-4 text-xs text-muted font-medium">${fechaInicio}</td>
-              <td class="px-6 py-4 text-xs text-muted font-medium">${fechaFin}</td>
-              <td class="px-6 py-4">
-                <span class="px-3 py-1 rounded-full text-[11px] font-bold ${estadoColor}">
-                  ${r.estado?.nombre || '—'}
-                </span>
-              </td>
-              <td class="px-6 py-4 font-bold text-brand-deep">${totalStr}</td>
-              <td class="px-6 py-4">
-                <div class="action-group-modern justify-center">
-                  <button class="btn-action-modern view" data-id="${r.id_reserva}" title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
-                  <button class="btn-action-modern edit" data-id="${r.id_reserva}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                  <button class="btn-action-modern delete" data-id="${r.id_reserva}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-                </div>
-              </td>
-            </tr>`;
-        }).join('');
+            return `
+              <tr class="hover:bg-gray-50/50 transition-all duration-200">
+                <td class="px-6 py-4 font-semibold text-brand-deep">#${r.id_reserva}</td>
+                <td class="px-6 py-4 font-semibold text-gray-700">${cliente}</td>
+                <td class="px-6 py-4 font-semibold text-brand-deep">${habitacion}</td>
+                <td class="px-6 py-4 text-xs text-muted font-medium">${fechaInicio}</td>
+                <td class="px-6 py-4 text-xs text-muted font-medium">${fechaFin}</td>
+                <td class="px-6 py-4">
+                  <span class="px-3 py-1 rounded-full text-[11px] font-bold ${estadoColor}">
+                    ${r.estado?.nombre || '—'}
+                  </span>
+                </td>
+                <td class="px-6 py-4 font-bold text-brand-deep">${totalStr}</td>
+                <td class="px-6 py-4">
+                  <div class="action-group-modern justify-center">
+                    <button class="btn-action-modern view" data-id="${r.id_reserva}" title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
+                    <button class="btn-action-modern edit" data-id="${r.id_reserva}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-action-modern delete" data-id="${r.id_reserva}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                  </div>
+                </td>
+              </tr>`;
+          }).join('');
 
         // Renderizar controles de paginación reutilizando helper común
         renderPremiumPagination('paginationContainer', statePagination, total, 'reservasPublicModule');

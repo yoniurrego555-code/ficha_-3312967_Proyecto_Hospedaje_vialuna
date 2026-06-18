@@ -61,6 +61,7 @@ async function obtenerReservasBase(connection, whereClause = "", params = []) {
   const reservationColumns = await getReservationColumns();
   const hasHoraEntrada = reservationColumns.has("hora_entrada");
   const hasHoraSalida = reservationColumns.has("hora_salida");
+  const hasMotivoCancelacion = reservationColumns.has("motivo_cancelacion");
   const [rows] = await connection.query(
     `
       SELECT
@@ -86,7 +87,7 @@ async function obtenerReservasBase(connection, whereClause = "", params = []) {
         c.Apellido AS ClienteApellido,
         c.Email AS ClienteEmail,
         c.Telefono AS ClienteTelefono,
-        r.motivo_cancelacion
+        ${hasMotivoCancelacion ? "r.motivo_cancelacion" : "NULL AS motivo_cancelacion"}
       FROM reservas r
       LEFT JOIN clientes c
         ON CAST(c.NroDocumento AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci =
@@ -730,12 +731,15 @@ async function eliminar(id, motivo = null) {
   try {
     await connection.beginTransaction();
     
+    const reservationColumns = await getReservationColumns();
+    const hasMotivoCancelacion = reservationColumns.has("motivo_cancelacion");
+    
     // Soft delete: actualizar el estado a 2 (Cancelada) y guardar el motivo
     let updateQuery;
     let updateParams;
     
     // Intentaremos guardar el motivo si la base de datos lo soporta, o simplemente actualizamos el estado.
-    if (motivo) {
+    if (motivo && hasMotivoCancelacion) {
       updateQuery = "UPDATE reservas SET id_estado_reserva = 2, motivo_cancelacion = ? WHERE id_reserva = ?";
       updateParams = [motivo, id];
     } else {

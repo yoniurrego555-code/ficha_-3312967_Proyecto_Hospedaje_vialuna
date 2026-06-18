@@ -56,23 +56,6 @@ const obtener = () => {
   )
     .then(async ([rows]) => {
       if (!rows || rows.length === 0) return rows;
-      const ids = rows.map(r => r.IDHabitacion);
-      let imgs = [];
-      try {
-        const [result] = await db.query(
-          `SELECT id, habitacion_id, url_imagen FROM imagenes_habitacion WHERE habitacion_id IN (${ids.map(() => '?').join(',')}) ORDER BY fecha_creacion ASC`,
-          ids
-        );
-        imgs = result;
-      } catch (err) {
-        console.warn("⚠️ Tabla imagenes_habitacion no encontrada u ocurrió un error. Usando ImagenUrl.");
-      }
-
-      const map = {};
-      imgs.forEach(i => {
-        map[i.habitacion_id] = map[i.habitacion_id] || [];
-        map[i.habitacion_id].push(i.url_imagen);
-      });
 
       return rows.map(r => ({
         ...r,
@@ -85,7 +68,7 @@ const obtener = () => {
         costo: Number(r.Costo || 0),
         Costo: Number(r.Costo || 0),
         capacidad: r.CapacidadMaximaPersonas,
-        imagenes: map[r.IDHabitacion] || (r.ImagenUrl ? [r.ImagenUrl] : [])
+        imagenes: r.ImagenUrl ? [r.ImagenUrl] : []
       }));
     });
 };
@@ -116,20 +99,10 @@ const obtenerPorId = (id) => {
   .then(async ([rows]) => {
     const row = rows[0];
     if (!row) return null;
-    let imgs = [];
-    try {
-      const [result] = await db.query(
-        `SELECT url_imagen FROM imagenes_habitacion WHERE habitacion_id = ? ORDER BY fecha_creacion ASC`,
-        [id]
-      );
-      imgs = result;
-    } catch (err) {
-      console.warn("⚠️ Tabla imagenes_habitacion no encontrada u ocurrió un error. Usando ImagenUrl.");
-    }
 
     return {
       ...row,
-      imagenes: imgs.map(i => i.url_imagen).length ? imgs.map(i => i.url_imagen) : (row.ImagenUrl ? [row.ImagenUrl] : [])
+      imagenes: row.ImagenUrl ? [row.ImagenUrl] : []
     };
   });
 };
