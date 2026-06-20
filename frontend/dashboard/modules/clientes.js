@@ -309,9 +309,9 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
     
     // Lookup country info for the detail view (presentational only)
     const countryCode = cliente.PaisCode || 'CO';
-    const countryInfo = findCountry(countryCode) || { flag: '🌎', name: cliente.Pais || 'Colombia', dial: '' };
+    const countryInfo = findCountry(countryCode) || { name: cliente.Pais || 'Colombia', dial: '' };
     const phoneDisplay = countryInfo.dial
-      ? `<span class="text-muted text-xs mr-1">${countryInfo.flag} ${countryInfo.dial}</span>${cliente.Telefono || ''}`
+      ? `<span class="text-muted text-xs mr-1">🌎 ${countryInfo.dial}</span>${cliente.Telefono || ''}`
       : (cliente.Telefono || 'No especificado');
 
     this.container.innerHTML = `
@@ -351,7 +351,7 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
               </div>
               <div class="flex flex-col gap-1 sm:col-span-2">
                 <span class="text-xs text-muted font-semibold uppercase tracking-wide">País:</span>
-                <span class="font-bold text-brand-deep">${countryInfo.flag} ${countryInfo.name}${cliente.Departamento ? ` · ${cliente.Departamento}` : ''}</span>
+                <span class="font-bold text-brand-deep">🌎 ${countryInfo.name}${cliente.Departamento ? ` · ${cliente.Departamento}` : ''}</span>
               </div>
               <div class="flex flex-col gap-1 sm:col-span-2 mt-2 pt-2 border-t border-gray-200/50">
                 <span class="text-xs text-muted font-semibold uppercase tracking-wide">Estado Cuenta:</span>

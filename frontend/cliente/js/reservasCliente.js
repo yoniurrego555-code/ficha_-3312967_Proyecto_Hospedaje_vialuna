@@ -207,7 +207,8 @@ window.verDetalle = (id) => {
 
     // Poblar datos del modal
     document.getElementById('detailModalId').textContent = getReservaId(reserva);
-    document.getElementById('detailModalHabitacion').textContent = getHabitacionName(reserva);
+    const habPrecio = reserva.habitacion ? Number(reserva.habitacion.precio || reserva.habitacion.Costo || 0) : 0;
+    document.getElementById('detailModalHabitacion').innerHTML = `${getHabitacionName(reserva)} <br><span style="font-size:0.85rem;color:#6b7280;">(${formatMoney(habPrecio)} / noche)</span>`;
     document.getElementById('detailModalEntrada').textContent = formatDate(getStartDate(reserva));
     document.getElementById('detailModalSalida').textContent = formatDate(getEndDate(reserva));
     document.getElementById('detailModalEstado').textContent = getStatusText(getEstadoValue(reserva), reserva);
@@ -215,13 +216,13 @@ window.verDetalle = (id) => {
 
     // Extras (paquetes y servicios)
     const paquetes = Array.isArray(reserva.paquetes) && reserva.paquetes.length
-        ? reserva.paquetes.map((item) => item.nombre).join(", ")
+        ? reserva.paquetes.map((item) => `<div>• ${item.nombre} <span style="color:#258a60;font-size:0.85em;">(${formatMoney(item.precio || item.total)})</span></div>`).join("")
         : "";
     const servicios = Array.isArray(reserva.servicios) && reserva.servicios.length
-        ? reserva.servicios.map((item) => item.nombre).join(", ")
+        ? reserva.servicios.map((item) => `<div>• ${item.nombre} <span style="color:#258a60;font-size:0.85em;">(${formatMoney(item.costo || item.precioGuardado || item.Precio)})</span></div>`).join("")
         : "";
-    const extrasText = paquetes || servicios ? `${paquetes}${paquetes && servicios ? ", " : ""}${servicios}` : "Sin extras";
-    document.getElementById('detailModalExtras').textContent = extrasText;
+    const extrasHtml = paquetes || servicios ? `<div style="display:flex;flex-direction:column;gap:4px;">${paquetes}${servicios}</div>` : "Sin extras";
+    document.getElementById('detailModalExtras').innerHTML = extrasHtml;
 
     // Mostrar motivo de cancelación si aplica
     const motivoContainer = document.getElementById('detailModalMotivoContainer');
@@ -418,7 +419,7 @@ window.editarReserva = async (id) => {
             const serviciosArr = Array.from(document.querySelectorAll('input[name="clientEditServicios"]:checked')).map(cb => parseInt(cb.value));
 
             const payload = {
-                id_cliente: reserva.id_cliente || reserva.IDCliente || (reserva.cliente ? reserva.cliente.id : null),
+                id_cliente: String(reserva.nr_documento || reserva.cliente?.nroDocumento || reserva.cliente?.NroDocumento || reserva.id_cliente || reserva.IDCliente || (reserva.cliente ? reserva.cliente.id : null)),
                 id_habitacion: parseInt(document.getElementById('editClientHabitacionId').value),
                 fecha_inicio: fi.value,
                 fecha_fin: ff.value,
@@ -531,6 +532,15 @@ function getStatusClass(estado, reserva = null) {
 
 function getStatusText(estado, reserva = null) {
     const s = String(estado || "").toLowerCase();
+    
+    // Auto-completar si la fecha ya pasó
+    if (reserva && (["1", "activa", "activo", "confirmada", "confirmado", "reservada", "0", "5", "pendiente", "por confirmar"].includes(s))) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const end = new Date(getEndDate(reserva));
+        if (end < today) return "Finalizada";
+    }
+
     if (["2", "cancelada", "cancelado"].includes(s)) return "Cancelada";
     if (["4", "rechazada", "rechazado"].includes(s)) return "Rechazada";
     if (["3", "finalizada", "completada", "completado", "finalizado"].includes(s)) return "Finalizada";

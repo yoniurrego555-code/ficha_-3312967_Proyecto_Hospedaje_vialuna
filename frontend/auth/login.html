@@ -120,6 +120,7 @@
                             placeholder="Tu nombre"
                             required maxlength="50"
                             pattern="[A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00E1\u00E9\u00ED\u00F3\u00FA\u00D1\u00F1\s]+"
+                            oninput="this.value = this.value.replace(/[^A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00E1\u00E9\u00ED\u00F3\u00FA\u00D1\u00F1\s]/g, '')"
                             autocomplete="given-name">
                     </div>
                     <div class="reg-field">
@@ -128,6 +129,7 @@
                             placeholder="Tu apellido"
                             required maxlength="50"
                             pattern="[A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00E1\u00E9\u00ED\u00F3\u00FA\u00D1\u00F1\s]+"
+                            oninput="this.value = this.value.replace(/[^A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00E1\u00E9\u00ED\u00F3\u00FA\u00D1\u00F1\s]/g, '')"
                             autocomplete="family-name">
                     </div>
                 </div>
@@ -149,6 +151,7 @@
                             placeholder="Solo números"
                             required minlength="5" maxlength="15"
                             pattern="[0-9]+"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                             inputmode="numeric"
                             autocomplete="off">
                     </div>
@@ -171,6 +174,7 @@
                             placeholder="Número sin código"
                             required minlength="7" maxlength="15"
                             pattern="[0-9]+"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                             inputmode="numeric"
                             autocomplete="tel"
                             style="flex:1;">
@@ -186,6 +190,7 @@
                             placeholder="Ej. Antioquia"
                             maxlength="50"
                             pattern="[A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00E1\u00E9\u00ED\u00F3\u00FA\u00D1\u00F1\s]+"
+                            oninput="this.value = this.value.replace(/[^A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00E1\u00E9\u00ED\u00F3\u00FA\u00D1\u00F1\s]/g, '')"
                             autocomplete="address-level1">
                     </div>
                     <div class="reg-field">

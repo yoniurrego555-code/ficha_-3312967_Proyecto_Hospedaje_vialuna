@@ -1554,7 +1554,7 @@ if (this.refs.reservationForm) {
                 <span>🔧</span>
                 <div>
                   <span class="block font-bold">${svc.nombre || svc.Nombre || 'Servicio'}</span>
-                  <span class="block text-[10px] text-emerald-600 mt-0.5">$${this.formatCurrency(svc.precio || svc.Precio || 0)}</span>
+                  <span class="block text-[10px] text-emerald-600 mt-0.5">$${this.formatCurrency(svc.costo || svc.precioGuardado || svc.precio || svc.Precio || 0)}</span>
                 </div>
               </div>
             `;
@@ -1713,8 +1713,8 @@ if (this.refs.reservationForm) {
         p.precio || p.Precio || 0
       );
       const checked = paqIds.includes(pid);
-      const disabled = isCancelada ? 'disabled' : '';
-      return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${isCancelada?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};transition:all .2s;">
+      const disabled = isCancelada || paqEnReserva ? 'disabled' : '';
+      return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${disabled?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};transition:all .2s;">
         <input type="checkbox" name="editPaquetes" value="${pid}" data-price="${precio}" data-name="${p.nombre || p.Nombre || p.NombrePaquete || 'Paquete'}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
         <span style="flex:1;font-size:0.9rem;font-weight:600;color:#173029;">${p.nombre || p.Nombre || p.NombrePaquete || 'Paquete'}</span>
         <span style="font-size:0.85rem;color:#258a60;font-weight:700;">$${this.formatCurrency(precio)}</span>
@@ -1730,8 +1730,8 @@ if (this.refs.reservationForm) {
         s.precio || s.Precio || s.Costo || 0
       );
       const checked = svcIds.includes(sid);
-      const disabled = isCancelada ? 'disabled' : '';
-      return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${isCancelada?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};transition:all .2s;">
+      const disabled = isCancelada || svcEnReserva ? 'disabled' : '';
+      return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${disabled?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};transition:all .2s;">
         <input type="checkbox" name="editServicios" value="${sid}" data-price="${precio}" data-name="${s.nombre || s.Nombre || s.NombreServicio || 'Servicio'}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
         <span style="flex:1;font-size:0.9rem;font-weight:600;color:#173029;">${s.nombre || s.Nombre || s.NombreServicio || 'Servicio'}</span>
         <span style="font-size:0.85rem;color:#258a60;font-weight:700;">$${this.formatCurrency(precio)}/pers.</span>
@@ -2120,9 +2120,9 @@ if (this.refs.reservationForm) {
       observaciones
     };
 
-    // Preservar id_cliente del original
-    const idCliente = original?.id_cliente || original?.IDCliente || (original?.cliente ? original.cliente.id : null);
-    if (idCliente) formData.id_cliente = parseInt(idCliente);
+    // Enviar el NroDocumento porque el backend lo espera en validarReserva
+    const idCliente = original?.nr_documento || original?.cliente?.nroDocumento || original?.cliente?.NroDocumento || original?.id_cliente || original?.IDCliente || (original?.cliente ? original.cliente.id : null);
+    if (idCliente) formData.id_cliente = String(idCliente);
     
     try {
       console.log('Actualizando reserva:', formData);

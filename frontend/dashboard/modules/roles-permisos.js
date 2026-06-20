@@ -454,11 +454,11 @@ export class RolesPermisosModule {
           <form id="newRoleForm" class="flex flex-col gap-4 m-0 p-0">
             <div class="flex flex-col gap-1.5">
               <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Nombre del Rol *</label>
-              <input type="text" id="roleName" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Ej: Recepcionista">
+              <input type="text" id="roleName" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Ej: Recepcionista">
             </div>
             <div class="flex flex-col gap-1.5">
               <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Descripción del Rol *</label>
-              <textarea id="roleDesc" rows="3" class="w-full min-h-[100px] p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all resize-y" placeholder="Breve resumen de atribuciones..."></textarea>
+              <textarea id="roleDesc" rows="3" maxlength="150" class="w-full min-h-[100px] p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all resize-y" placeholder="Breve resumen de atribuciones..."></textarea>
             </div>
             <div class="flex flex-col gap-1.5">
               <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Estado Inicial</label>
@@ -528,11 +528,11 @@ export class RolesPermisosModule {
           <form id="newPermForm" class="flex flex-col gap-4 m-0 p-0">
             <div class="flex flex-col gap-1.5">
               <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Nombre del Permiso *</label>
-              <input type="text" id="permName" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Ej: Consultar facturas" required>
+              <input type="text" id="permName" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" placeholder="Ej: Consultar facturas" required>
             </div>
             <div class="flex flex-col gap-1.5">
               <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Descripción del Permiso *</label>
-              <textarea id="permDesc" rows="3" class="w-full min-h-[100px] p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all resize-y" placeholder="Explique qué privilegios otorga..." required></textarea>
+              <textarea id="permDesc" rows="3" maxlength="150" class="w-full min-h-[100px] p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all resize-y" placeholder="Explique qué privilegios otorga..." required></textarea>
             </div>
             <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-gray-100">
               <button type="button" onclick="document.getElementById('permModalOverlay').remove()" class="px-4 py-2 border border-gray-200 bg-white rounded-lg font-bold text-[11px] text-muted hover:bg-gray-50 cursor-pointer">Cancelar</button>
@@ -592,11 +592,11 @@ export class RolesPermisosModule {
           <form id="editRoleForm" class="flex flex-col gap-4 m-0 p-0">
             <div class="flex flex-col gap-1.5">
               <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Nombre del Rol *</label>
-              <input type="text" id="editRoleName" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" value="${rol.Nombre}">
+              <input type="text" id="editRoleName" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all" value="${rol.Nombre}">
             </div>
             <div class="flex flex-col gap-1.5">
               <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Descripción del Rol *</label>
-              <textarea id="editRoleDesc" rows="3" class="w-full min-h-[100px] p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all resize-y">${rol.Descripcion || ''}</textarea>
+              <textarea id="editRoleDesc" rows="3" maxlength="150" class="w-full min-h-[100px] p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all resize-y">${rol.Descripcion || ''}</textarea>
             </div>
             <div class="flex flex-col gap-1.5">
               <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Estado</label>

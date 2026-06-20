@@ -24,8 +24,14 @@ export function validateRegisterPayload(payload) {
   if (!nombre || nombre.trim().length < 2) {
     return { ok: false, error: 'El nombre debe tener al menos 2 caracteres.' };
   }
+  if (!/^[A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00E1\u00E9\u00ED\u00F3\u00FA\u00D1\u00F1\s]+$/.test(nombre.trim())) {
+    return { ok: false, error: 'El nombre solo puede contener letras.' };
+  }
   if (!apellido || apellido.trim().length < 2) {
     return { ok: false, error: 'El apellido debe tener al menos 2 caracteres.' };
+  }
+  if (!/^[A-Za-z\u00C1\u00C9\u00CD\u00D3\u00DA\u00E1\u00E9\u00ED\u00F3\u00FA\u00D1\u00F1\s]+$/.test(apellido.trim())) {
+    return { ok: false, error: 'El apellido solo puede contener letras.' };
   }
   if (!documento || documento.trim().length < 5) {
     return { ok: false, error: 'El número de documento debe tener al menos 5 caracteres.' };
@@ -35,6 +41,9 @@ export function validateRegisterPayload(payload) {
   }
   if (!telefono || telefono.trim().length < 7) {
     return { ok: false, error: 'El teléfono debe tener al menos 7 dígitos.' };
+  }
+  if (!/^\d+$/.test(telefono.trim())) {
+    return { ok: false, error: 'El teléfono solo debe contener dígitos.' };
   }
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     return { ok: false, error: 'Ingresa un correo electrónico válido.' };

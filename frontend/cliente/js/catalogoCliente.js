@@ -137,8 +137,8 @@ export async function renderServicios() {
 
             return `
                 <article class="service-item">
-                    <span class="service-icon">${icons[index % icons.length]}</span>
-                    <div class="service-content">
+                    <img src="${resolveServiceImage(service)}" alt="${title}" class="service-img" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-radius: 18px 18px 0 0;" />
+                    <div class="service-content" style="padding: 20px;">
                         <h3>${title}</h3>
                         <p>${description}</p>
                         <small>${[duration, persons].filter(Boolean).join(" · ")}</small>

@@ -1648,3 +1648,20 @@ button, input, select, textarea { font: inherit; }
 .flatpickr-weeks { overflow: visible !important; }
 .dayContainer { width: max-content !important; min-width: 290px !important; }
 .flatpickr-day:not(.disabled):not(.selected):not(.inRange):hover { background: #34d399 !important; color: white !important; }
+
+/* --- GLOBAL SCROLLBAR (Clean & Professional) --- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}

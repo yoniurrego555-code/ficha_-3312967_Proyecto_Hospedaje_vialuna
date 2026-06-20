@@ -46,6 +46,7 @@ const crud = createCrudModule({
             ImagenUrl: String(formData.get('imagenUrl') || '').trim() || null
         };
     },
+    searchText: (item) => String(item.nombre || item.NombrePaquete || '').toLowerCase(),
     fillForm: (item) => {
         document.getElementById('paqueteId').value = item.id || item.IDPaquete;
         document.getElementById('nombre').value = item.nombre || item.NombrePaquete || '';
@@ -256,6 +257,12 @@ export function renderPaquetes(container) {
         crud.elements.btnCancelarEdicion.onclick = closeModal;
     }
 
+    if (crud.elements.buscador) {
+        crud.elements.buscador.addEventListener('input', () => {
+            crud.onRender(crud.state.items);
+        });
+    }
+
     if (crud.elements.filtroEstado) {
         crud.elements.filtroEstado.onchange = () => {
             crud.onRender(crud.state.items);
@@ -350,6 +357,28 @@ export function renderPaquetes(container) {
         changeStatusFromCard: async (id, nuevoEstado) => {
             const item = crud.findById(id);
             if (!item) return;
+
+            if (nuevoEstado === 0) {
+                try {
+                    const { getReservas } = await import('../core/api.js');
+                    const reservas = await getReservas();
+                    const isReserved = reservas.some(r => {
+                        const noTerminada = String(r.EstadoReserva || r.estado).toLowerCase() !== 'completado' && String(r.EstadoReserva || r.estado).toLowerCase() !== 'cancelado';
+                        if (!noTerminada) return false;
+                        if (Array.isArray(r.paquetes)) {
+                            return r.paquetes.some(p => (p.id_paquete || p.IDPaquete || p.id) == id);
+                        }
+                        return false; // Depende de la API
+                    });
+                    if (isReserved) {
+                        showAlert('Advertencia', 'No se puede desactivar el paquete porque está incluido en una reserva activa.', 'warning');
+                        crud.onRender(crud.state.items);
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Error verificando reservas', e);
+                }
+            }
 
             try {
                 const payload = {

@@ -1,5 +1,5 @@
 import { logout, isClientSession, isAdminSession, getSession } from "../../dashboard/core/authGuard.js";
-import { filterActive, sanitizeRoom, formatPrice, attachTooltip } from "../../dashboard/modules/ui-utils.js";
+import { filterActive, sanitizeRoom, formatPrice, attachTooltip, resolveServiceImage } from "../../dashboard/modules/ui-utils.js";
 import { getReservas, getHabitaciones, getPaquetes, getServicios } from "../../dashboard/core/api.js";
 
 const fallbackRoomImage = "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1100&q=85";
@@ -247,7 +247,7 @@ async function cargarHabitaciones() {
             return `
                 <article class="room-card">
                     <div class="room-media">
-                        <img src="${room.ImagenUrl || fallbackRoomImage}" alt="${title}" loading="lazy" />
+                        <img src="${imageForRoom(room)}" alt="${title}" loading="lazy" />
                         ${index === 0 ? '<span class="room-badge">Mas popular</span>' : ""}
                     </div>
                     <div class="room-content">
@@ -293,7 +293,7 @@ async function cargarPaquetes() {
             const price = pack.Precio || 0;
             return `
                 <article class="package-item">
-                    <img src="${pack.ImagenUrl || fallbackPackageImage}" alt="${title}" loading="lazy" />
+                    <img src="${imageForPackage(pack)}" alt="${title}" loading="lazy" />
                     <div class="package-copy">
                         <h3>${title}</h3>
                         <p>${description}</p>
@@ -318,8 +318,7 @@ async function cargarServicios() {
         serviciosCache = filterActive(servicios).map(sanitizeRoom);
         const visibles = serviciosCache.slice(0, 3);
         const icons = ["SPA", "Tour", "VIP"];
-
-        if (!visibles.length) {
+        if (!visibles.length) {
             grid.innerHTML = '<div class="empty-state">No hay servicios disponibles por ahora.</div>';
             return;
         }
@@ -333,8 +332,8 @@ async function cargarServicios() {
             const persons = service.CantidadMaximaPersonas ? `Max ${service.CantidadMaximaPersonas} personas` : "";
             return `
                 <article class="service-item">
-                    <span class="service-icon">${icons[index % icons.length]}</span>
-                    <div class="service-content">
+                    <img src="${resolveServiceImage(service)}" alt="${title}" class="service-img" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-radius: 18px 18px 0 0;" />
+                    <div class="service-content" style="padding: 20px;">
                         <h3>${title}</h3>
                         <p>${description}</p>
                         <small>${[duration, persons].filter(Boolean).join(" · ")}</small>
@@ -349,7 +348,6 @@ async function cargarServicios() {
         grid.innerHTML = '<div class="empty-state">No fue posible cargar servicios.</div>';
     }
 }
-
 function detailItem(label, value) {
     if (value === undefined || value === null || value === "") return "";
     return `

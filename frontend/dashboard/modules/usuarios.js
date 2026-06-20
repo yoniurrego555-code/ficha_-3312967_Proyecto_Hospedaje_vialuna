@@ -154,9 +154,9 @@ class UsuariosModule {
 
   // Registrar eventos de filtros y búsquedas
   setupEventListeners() {
-    const searchElem = this.container.querySelector("#searchUsuarios");
-    const filterRolElem = this.container.querySelector("#filterRol");
-    const filterEstadoElem = this.container.querySelector("#filterEstado");
+    const searchElem = document.getElementById("searchUsuarios");
+    const filterRolElem = document.getElementById("filterRol");
+    const filterEstadoElem = document.getElementById("filterEstado");
 
     if (searchElem) {
       searchElem.addEventListener("input", () => this.filterData());
@@ -235,7 +235,7 @@ class UsuariosModule {
             <div class="action-group-modern justify-center">
               <button class="btn-action-modern view" onclick="window.usuariosModule.viewDetails('${id}')" title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
               <button class="btn-action-modern edit" onclick="window.usuariosModule.showEditModal('${id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn-action-modern delete" onclick="window.usuariosModule.deleteUser('${id}')" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+              <button class="btn-action-modern delete" onclick="window.usuariosModule.deleteUser('${id}')" title="Anular"><i class="fa-solid fa-ban"></i></button>
             </div>
           `;
 
@@ -282,8 +282,8 @@ class UsuariosModule {
               <button class="btn-action-modern edit" onclick='window.usuariosModule.showEditModal(${JSON.stringify(id)})' title="Editar">
                 <i class="fa-solid fa-pen"></i>
               </button>
-              <button class="btn-action-modern delete" onclick='window.usuariosModule.deleteUser(${JSON.stringify(id)})' title="Eliminar">
-                <i class="fa-solid fa-trash"></i>
+              <button class="btn-action-modern delete" onclick='window.usuariosModule.deleteUser(${JSON.stringify(id)})' title="Anular">
+                <i class="fa-solid fa-ban"></i>
               </button>
             </div>
           </td>
@@ -375,9 +375,9 @@ class UsuariosModule {
 
   // Filtrar los datos reactivamente en la vista
   filterData() {
-    const searchVal = this.container.querySelector("#searchUsuarios").value.toLowerCase();
-    const filterRol = this.container.querySelector("#filterRol").value;
-    const filterEstado = this.container.querySelector("#filterEstado").value;
+    const searchVal = document.getElementById("searchUsuarios") ? document.getElementById("searchUsuarios").value.toLowerCase() : "";
+    const filterRol = document.getElementById("filterRol") ? document.getElementById("filterRol").value : "";
+    const filterEstado = document.getElementById("filterEstado") ? document.getElementById("filterEstado").value : "";
 
     const filtered = this.usuarios.filter(u => {
       const nombreUsuario = u.NombreUsuario || u.Nombre || '';
@@ -457,11 +457,11 @@ class UsuariosModule {
 
     const nombreCompleto = `${usuario.NombreUsuario || usuario.Nombre || ''} ${usuario.Apellido || ''}`.trim();
     const confirmRes = await Swal.fire({
-      title: '¿Eliminar Usuario?',
-      text: `¿Está seguro de eliminar de forma permanente al usuario "${nombreCompleto}"? Esta acción no se puede deshacer.`,
+      title: '¿Anular Registro?',
+      text: `¿Está seguro de anular de forma permanente al usuario "${nombreCompleto}"? Esta acción no se puede deshacer.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
+      confirmButtonText: 'Sí, anular',
       cancelButtonText: 'Cancelar'
     });
     if (!confirmRes.isConfirmed) {
@@ -470,7 +470,7 @@ class UsuariosModule {
 
     try {
       await deleteUsuario(id);
-      showAlert('Información', 'Usuario eliminado correctamente.', 'success');
+      showAlert('Información', 'Usuario anulado correctamente.', 'success');
       await this.loadData();
       this.render();
     } catch (error) {

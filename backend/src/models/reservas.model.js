@@ -371,29 +371,22 @@ async function validarReserva(connection, data, options = {}) {
     }
   }
 
-  const [
-    [clientes],
-    [habitaciones],
-    [metodosPago],
-    [estadosReserva]
-  ] = await Promise.all([
-    connection.query(
-      "SELECT * FROM clientes WHERE NroDocumento = ? AND Estado = 1 LIMIT 1",
-      [String(idCliente)]
-    ),
-    connection.query(
-      "SELECT * FROM habitacion WHERE IDHabitacion = ? AND Estado = 1 LIMIT 1",
-      [idHabitacion]
-    ),
-    connection.query(
-      "SELECT * FROM metodopago WHERE IdMetodoPago = ? LIMIT 1",
-      [idMetodoPago]
-    ),
-    connection.query(
-      "SELECT * FROM estadosreserva WHERE IdEstadoReserva = ? LIMIT 1",
-      [idEstadoReserva]
-    )
-  ]);
+  const [clientes] = await connection.query(
+    "SELECT * FROM clientes WHERE NroDocumento = ? AND Estado = 1 LIMIT 1",
+    [String(idCliente)]
+  );
+  const [habitaciones] = await connection.query(
+    "SELECT * FROM habitacion WHERE IDHabitacion = ? AND Estado = 1 LIMIT 1",
+    [idHabitacion]
+  );
+  const [metodosPago] = await connection.query(
+    "SELECT * FROM metodopago WHERE IdMetodoPago = ? LIMIT 1",
+    [idMetodoPago]
+  );
+  const [estadosReserva] = await connection.query(
+    "SELECT * FROM estadosreserva WHERE IdEstadoReserva = ? LIMIT 1",
+    [idEstadoReserva]
+  );
 
   const cliente = clientes[0];
   const habitacion = habitaciones[0];
@@ -439,7 +432,6 @@ async function validarReserva(connection, data, options = {}) {
         LEFT JOIN servicios s
           ON s.IDServicio = p.IDServicio
         WHERE p.IDPaquete IN (${placeholders})
-          AND p.Estado = 1
       `,
       paquetesIds
     );
@@ -448,11 +440,17 @@ async function validarReserva(connection, data, options = {}) {
       throw buildError("Uno o mas paquetes seleccionados no existen", 404);
     }
 
+    let prevPaqMap = new Map();
+    if (options.isUpdate && options.reservationId) {
+      const [prev] = await connection.query(`SELECT IDPaquete, sub_total, cantidad FROM detalledereservapaquetes WHERE id_reserva = ?`, [options.reservationId]);
+      prev.forEach(p => prevPaqMap.set(p.IDPaquete, Number(p.sub_total) / (Number(p.cantidad) || 1)));
+    }
+
     paquetes = rows.map((row) => ({
       id: row.IDPaquete,
       nombre: row.NombrePaquete,
       descripcion: row.Descripcion,
-      precio: Number(row.Precio || 0),
+      precio: prevPaqMap.has(row.IDPaquete) ? prevPaqMap.get(row.IDPaquete) : Number(row.Precio || 0),
       servicioIncluido: row.ServicioIncluidoId
         ? {
             id: row.ServicioIncluidoId,
@@ -471,7 +469,6 @@ async function validarReserva(connection, data, options = {}) {
         SELECT *
         FROM servicios
         WHERE IDServicio IN (${placeholders})
-          AND Estado = 1
       `,
       serviciosIds
     );
@@ -480,13 +477,19 @@ async function validarReserva(connection, data, options = {}) {
       throw buildError("Uno o mas servicios seleccionados no existen", 404);
     }
 
+    let prevSvcMap = new Map();
+    if (options.isUpdate && options.reservationId) {
+      const [prev] = await connection.query(`SELECT IDServicio, Precio FROM detallereservaservicio WHERE IDReserva = ?`, [options.reservationId]);
+      prev.forEach(s => prevSvcMap.set(s.IDServicio, Number(s.Precio)));
+    }
+
     servicios = rows.map((row) => ({
       id: row.IDServicio,
       nombre: row.NombreServicio,
       descripcion: row.Descripcion,
       duracion: row.Duracion,
       cantidadMaximaPersonas: row.CantidadMaximaPersonas,
-      costo: Number(row.Costo || 0)
+      costo: prevSvcMap.has(row.IDServicio) ? prevSvcMap.get(row.IDServicio) : Number(row.Costo || 0)
     }));
 
     const servicioInvalido = servicios.find(
@@ -503,9 +506,10 @@ async function validarReserva(connection, data, options = {}) {
   }
 
   const noches = Math.ceil((fechaFin - fechaInicio) / (1000 * 60 * 60 * 24));
-  const totalHabitacion = noches * Number(habitacion.Costo || 0);
+  const totalHabitacion = noches > 0 ? (noches * Number(habitacion.Costo || 0)) : 0;
   const totalPaquetes = paquetes.reduce((acc, paquete) => acc + paquete.precio, 0);
   const totalServicios = servicios.reduce((acc, servicio) => acc + servicio.costo, 0);
+  const totalCalculado = totalHabitacion + totalPaquetes + totalServicios;
 
   return {
     reserva: {
@@ -519,7 +523,7 @@ async function validarReserva(connection, data, options = {}) {
       id_estado_reserva: idEstadoReserva,
       id_metodo_pago: idMetodoPago,
       id_habitacion: idHabitacion,
-      total: totalHabitacion + totalPaquetes + totalServicios
+      total: data.total !== undefined ? Number(data.total) : totalCalculado
     },
     paquetes,
     servicios
@@ -528,33 +532,29 @@ async function validarReserva(connection, data, options = {}) {
 
 async function guardarDetalles(connection, reservationId, paquetes, servicios) {
   if (paquetes.length) {
-    await Promise.all(
-      paquetes.map((paquete) =>
-        connection.query(
-          `
-            INSERT INTO detalledereservapaquetes
-              (sub_total, id_reserva, cantidad, IDPaquete)
-            VALUES (?, ?, ?, ?)
-          `,
-          [paquete.precio, reservationId, 1, paquete.id]
-        )
-      )
-    );
+    for (const paquete of paquetes) {
+      await connection.query(
+        `
+          INSERT INTO detalledereservapaquetes
+            (sub_total, id_reserva, cantidad, IDPaquete)
+          VALUES (?, ?, ?, ?)
+        `,
+        [paquete.precio, reservationId, 1, paquete.id]
+      );
+    }
   }
 
   if (servicios.length) {
-    await Promise.all(
-      servicios.map((servicio) =>
-        connection.query(
-          `
-            INSERT INTO detallereservaservicio
-              (IDReserva, Cantidad, Precio, Estado, IDServicio, NombreServicio)
-            VALUES (?, ?, ?, ?, ?, ?)
-          `,
-          [reservationId, 1, servicio.costo, "Activo", servicio.id, servicio.nombre]
-        )
-      )
-    );
+    for (const servicio of servicios) {
+      await connection.query(
+        `
+          INSERT INTO detallereservaservicio
+            (IDReserva, Cantidad, Precio, Estado, IDServicio, NombreServicio)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        [reservationId, 1, servicio.costo, "Activo", servicio.id, servicio.nombre]
+      );
+    }
   }
 }
 

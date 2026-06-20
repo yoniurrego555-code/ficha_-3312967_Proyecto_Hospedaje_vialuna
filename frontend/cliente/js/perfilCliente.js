@@ -66,7 +66,7 @@ function habilitarEdicion() {
     if (!form) return;
 
     form.classList.add('is-editing');
-    ['nombre', 'apellido', 'telefono', 'fechaNacimiento', 'departamento', 'direccion'].forEach((id) => {
+    ['nombre', 'apellido', 'telefono', 'fechaNacimiento', 'departamento', 'direccion', 'email'].forEach((id) => {
         const input = document.getElementById(id);
         if (input) input.removeAttribute('readonly');
     });
@@ -100,7 +100,7 @@ async function actualizarPerfil(e) {
         Nombre: raw.nombre || base.Nombre || base.nombre || '',
         Apellido: raw.apellido || base.Apellido || base.apellido || '',
         Direccion: raw.direccion || base.Direccion || base.direccion || '',
-        Email: base.Email || base.email || '',
+        Email: raw.email || base.Email || base.email || '',
         Telefono: raw.telefono || '',
         FechaNacimiento: raw.fecha_nacimiento || base.FechaNacimiento || base.fecha_nacimiento || '',
         Pais: paisName,
