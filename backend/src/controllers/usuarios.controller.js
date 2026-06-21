@@ -1,4 +1,8 @@
 const service = require("../services/usuarios.auth.service");
+const jwt = require("jsonwebtoken");
+const emailService = require("../services/email.service");
+
+const JWT_SECRET = process.env.JWT_SECRET || "vialuna-jwt-secret";
 
 // 🔹 LISTAR
 exports.listar = (req, res) => {
@@ -34,10 +38,52 @@ exports.crear = (req, res) => {
   }
 
   service.crear(req.body)
-    .then(result => res.json({
-      mensaje: "Creado correctamente",
-      resultado: result
-    }))
+    .then(result => {
+      // 1. Obtener email y nombre del usuario creado
+      const email = req.body.Email || req.body.email;
+      const nombre = req.body.Nombre || req.body.NombreUsuario || "Usuario";
+
+      // 2. Si hay email, generar token de configuración de clave y enviar correo
+      if (email) {
+        // Obtenemos el ID del resultado de la inserción
+        const newUserId = result.insertId || result.id || "";
+        
+        // Generar token para set-password válido por 24 horas
+        const resetToken = jwt.sign(
+          { sub: newUserId, email: email, type: "password_reset" },
+          JWT_SECRET,
+          { expiresIn: "24h" }
+        );
+
+        // Generar la URL correcta del frontend
+        let baseURL = process.env.FRONTEND_URL || "https://hospedajevialuna.website";
+        const origin = req.get("origin") || req.get("referer") || "";
+        
+        // Si estamos en entorno local de VS Code (Live Server)
+        if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+          const parsedUrl = new URL(origin);
+          baseURL = parsedUrl.origin; // e.g. http://127.0.0.1:5500
+          
+          if (origin.includes("/frontend")) {
+             baseURL += "/frontend";
+          } else if (!origin.includes("5173") && !origin.includes("3000")) {
+             baseURL += "/frontend";
+          }
+        } else if (origin.includes("hospedajevialuna.website")) {
+          baseURL = "https://hospedajevialuna.website";
+        }
+        
+        // Utilizamos la nueva vista de creación de contraseña
+        const setPasswordUrl = `${baseURL}/auth/set-password.html?token=${resetToken}`;
+
+        emailService.enviarBienvenida(email, nombre, setPasswordUrl).catch(err => console.error("Error enviando bienvenida:", err));
+      }
+
+      res.json({
+        mensaje: "Creado correctamente",
+        resultado: result
+      });
+    })
     .catch(err => {
       console.error("❌ ERROR:", err);
       

@@ -230,9 +230,26 @@ exports.forgotPassword = async (req, res) => {
       { expiresIn: "15m" }
     );
 
-    // Frontend host
-    const host = req.get("origin") || req.get("referer") || "http://localhost:3000";
-    const baseURL = host.split("/auth")[0]; // Obtener URL base
+    // Generar la URL correcta del frontend
+    let baseURL = process.env.FRONTEND_URL || "https://hospedajevialuna.website";
+    const origin = req.get("origin") || req.get("referer") || "";
+    
+    // Si estamos en entorno local de VS Code (Live Server)
+    if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+      const parsedUrl = new URL(origin);
+      baseURL = parsedUrl.origin; // e.g. http://127.0.0.1:5500
+      
+      // En local (Live Server desde la raiz), la carpeta 'frontend' es parte de la ruta
+      if (origin.includes("/frontend")) {
+         baseURL += "/frontend";
+      } else if (!origin.includes("5173") && !origin.includes("3000")) {
+         // Si es Live Server pero la URL raíz no tiene /frontend explícito, forzamos /frontend
+         baseURL += "/frontend";
+      }
+    } else if (origin.includes("hospedajevialuna.website")) {
+      baseURL = "https://hospedajevialuna.website";
+    }
+    
     const resetUrl = `${baseURL}/auth/reset-password.html?token=${resetToken}`;
 
     // Enviamos el correo

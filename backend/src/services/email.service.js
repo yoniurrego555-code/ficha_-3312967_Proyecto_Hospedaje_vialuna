@@ -190,11 +190,25 @@ async function enviarCorreoRecuperacion(email, resetUrl, userName = "Usuario") {
 /**
  * Genera y envía el correo de bienvenida a nuevos usuarios
  */
-async function enviarBienvenida(email, userName = "Usuario") {
+async function enviarBienvenida(email, userName = "Usuario", setPasswordUrl = null) {
   const fromEmail = process.env.EMAIL_FROM;
   if (!fromEmail) return;
   
   const subject = "¡Bienvenido a Via Luna Hospedaje!";
+  
+  let linkSection = "";
+  if (setPasswordUrl) {
+    linkSection = `
+      <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #02634f;">
+        <p style="margin-top: 0; font-size: 15px;">Para empezar a usar tu cuenta, por favor crea una contraseña segura haciendo clic en el siguiente botón:</p>
+        <div style="text-align: center; margin: 25px 0;">
+          <a href="${setPasswordUrl}" style="background-color: #258a60; color: #ffffff !important; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-size: 16px; font-weight: bold; display: inline-block;">Crear mi Contraseña</a>
+        </div>
+        <p style="font-size: 13px; color: #666; margin-bottom: 0;">Este enlace es seguro y expirará en 24 horas por razones de seguridad.</p>
+      </div>
+    `;
+  }
+
   const html = `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff;">
       <div style="text-align: center; margin-bottom: 20px;">
@@ -203,10 +217,12 @@ async function enviarBienvenida(email, userName = "Usuario") {
       </div>
       
       <p style="font-size: 16px; color: #333;">Estamos muy felices de que te unas a nosotros.</p>
-      <p style="font-size: 16px; color: #333; line-height: 1.6;">Desde ahora puedes empezar a realizar tus reservas y disfrutar de la mejor experiencia en nuestro hospedaje.</p>
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">Desde ahora puedes disfrutar de la mejor experiencia en nuestro hospedaje.</p>
+      
+      ${linkSection}
       
       <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 30px 0;">
-      <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">© 2026 Via Luna Hospedaje. Todos los derechos reservados.</p>
+      <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">© ${new Date().getFullYear()} Via Luna Hospedaje. Todos los derechos reservados.</p>
     </div>
   `;
 
@@ -272,9 +288,63 @@ async function enviarCancelacionReserva(reserva, motivo = "Sin motivo especifica
   }
 }
 
+/**
+ * Genera y envía el correo de confirmación de pago de reserva
+ */
+async function enviarConfirmacionPago(reserva) {
+  const fromEmail = process.env.EMAIL_FROM;
+  if (!fromEmail) return;
+  
+  const clienteEmail = reserva.cliente?.email;
+  const nombreCliente = reserva.cliente?.nombreCompleto || reserva.cliente?.Nombres || "Huésped";
+  const habitacionNombre = reserva.habitacion?.nombre || reserva.habitacion?.NombreHabitacion || "Habitación reservada";
+  
+  if (!clienteEmail) return;
+
+  const total = reserva.total ? `$${Number(reserva.total).toLocaleString('es-CO')}` : "Por definir";
+  const idReserva = reserva.id_reserva || reserva.IDReserva;
+
+  const subject = "Confirmación de Pago de Reserva - Via Luna Hospedaje";
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h1 style="color: #258a60; margin: 0;">¡Pago Confirmado!</h1>
+        <p style="color: #666; font-size: 16px;">Via Luna Hospedaje</p>
+      </div>
+      
+      <p style="font-size: 16px; color: #333;">Hola <strong>${nombreCliente}</strong>,</p>
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">Hemos registrado exitosamente el pago para tu reserva de la habitación <strong>${habitacionNombre}</strong>.</p>
+      
+      <div style="background-color: #f4fdf8; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #258a60;">
+        <p style="margin: 8px 0; font-size: 15px;"><strong>Código de Reserva:</strong> #${idReserva}</p>
+        <p style="margin: 8px 0; font-size: 15px;"><strong>Estado:</strong> Pagada / Aceptada</p>
+        <p style="margin: 8px 0; font-size: 15px;"><strong>Monto Pagado:</strong> ${total}</p>
+      </div>
+      
+      <p style="font-size: 16px; color: #333; line-height: 1.6;">¡Todo está listo para tu llegada! Si tienes alguna consulta adicional, no dudes en contactarnos.</p>
+      
+      <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 30px 0;">
+      <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">© ${new Date().getFullYear()} Via Luna Hospedaje. Todos los derechos reservados.</p>
+    </div>
+  `;
+
+  try {
+    await resend.emails.send({
+      from: fromEmail,
+      to: clienteEmail,
+      subject: subject,
+      html: html,
+    });
+    console.log(`[EmailService] ✅ Correo de confirmación de pago enviado a: ${clienteEmail}`);
+  } catch (error) {
+    console.error(`[EmailService] ❌ Error enviando confirmación de pago a ${clienteEmail}:`, error.message);
+  }
+}
+
 module.exports = {
   enviarConfirmacionReserva,
   enviarCorreoRecuperacion,
   enviarBienvenida,
   enviarCancelacionReserva,
+  enviarConfirmacionPago,
 };

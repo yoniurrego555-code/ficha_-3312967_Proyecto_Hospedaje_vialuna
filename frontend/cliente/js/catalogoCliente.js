@@ -136,15 +136,22 @@ export async function renderServicios() {
             const persons = service.CantidadMaximaPersonas ? `Max ${service.CantidadMaximaPersonas} personas` : "";
 
             return `
-                <article class="service-item">
-                    <img src="${resolveServiceImage(service)}" alt="${title}" class="service-img" loading="lazy" style="width: 100%; height: 200px; object-fit: cover; border-radius: 18px 18px 0 0;" />
-                    <div class="service-content" style="padding: 20px;">
+                <article class="room-card">
+                    <div class="room-media">
+                        <img src="${resolveServiceImage(service)}" alt="${title}" loading="lazy" />
+                    </div>
+                    <div class="room-content">
                         <h3>${title}</h3>
                         <p>${description}</p>
-                        <small>${[duration, persons].filter(Boolean).join(" · ")}</small>
-                        <strong>${price ? formatPrice(price) : "Incluido"}</strong>
+                        <div class="room-tags">
+                            ${duration ? `<span data-tooltip="Duración">${duration}</span>` : ""}
+                            ${persons ? `<span data-tooltip="Capacidad Max">${persons}</span>` : ""}
+                        </div>
+                        <div class="room-footer" style="margin-top:auto; padding-top:15px;">
+                            <div class="room-price"><strong>${price ? formatPrice(price) : "Incluido"}</strong></div>
+                            <button class="room-btn" type="button" onclick="window.verDetalleCatalogo('servicio', '${service.IDServicio || service.id}')">Ver detalle</button>
+                        </div>
                     </div>
-                    <button class="package-btn" type="button" onclick="window.verDetalleCatalogo('servicio', '${service.IDServicio || service.id}')">Ver detalle</button>
                 </article>
             `;
         }).join("");
