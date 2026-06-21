@@ -16,23 +16,33 @@ app.set("trust proxy", 1);
 // =====================================
 
 const allowedOrigins = [
-  "http://localhost:3000",
-  "http://127.0.0.1:5500",
-  "http://127.0.0.1:5501"
+  "https://hospedajevialuna.website",
+  "https://www.hospedajevialuna.website"
 ];
+
+// Solo permitir orígenes locales (localhost) en desarrollo
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push(
+    "http://localhost:3000",
+    "http://127.0.0.1:5500",
+    "http://127.0.0.1:5501",
+    "http://localhost:5173" // Vite default
+  );
+}
 
 const corsOptions = {
   origin: function (origin, callback) {
+    // Permitir requests sin origen (como Postman o curl) o herramientas de la misma IP
     if (!origin) return callback(null, true);
 
     if (
       allowedOrigins.includes(origin) ||
-      origin.endsWith(".vercel.app")
+      (process.env.NODE_ENV !== 'production' && origin.endsWith(".vercel.app"))
     ) {
       return callback(null, true);
     }
 
-    return callback(new Error(`CORS bloqueado: ${origin}`));
+    return callback(new Error(`CORS bloqueado: origen ${origin} no autorizado`));
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],

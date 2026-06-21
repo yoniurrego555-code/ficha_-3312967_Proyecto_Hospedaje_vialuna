@@ -126,7 +126,7 @@ class UsuariosModule {
   // Recargar y mostrar la lista principal
   async showList() {
     try {
-      const response = await fetch('../public/usuarios.html');
+      const response = await fetch('../admin/usuarios.html');
       const html = await response.text();
       this.container.innerHTML = html;
       await this.loadData();

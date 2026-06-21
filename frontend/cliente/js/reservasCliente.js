@@ -291,14 +291,28 @@ function calcularNuevoTotal(reserva) {
     if (breakdownEl) {
         let diffHtml = '';
         if (diferencia > 0) {
-            diffHtml = `<div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px dashed #e5e7eb;margin-top:6px;">
-                <span style="font-size:0.85rem;color:#b45309;font-weight:700;">Diferencia a pagar:</span>
+            diffHtml = `<div style="display:flex;justify-content:space-between;padding:6px 0;">
+                <span style="font-size:0.85rem;color:#b45309;font-weight:700;">⚠️ Diferencia a pagar:</span>
                 <span style="font-weight:800;color:#b45309;">+${formatMoney(diferencia)}</span>
+            </div>`;
+        } else if (diferencia < 0) {
+            diffHtml = `<div style="display:flex;justify-content:space-between;padding:6px 0;">
+                <span style="font-size:0.85rem;color:#065f46;font-weight:700;">✅ Saldo a favor del cliente:</span>
+                <span style="font-weight:800;color:#065f46;">${formatMoney(Math.abs(diferencia))}</span>
             </div>`;
         }
 
+        let anteriorHtml = totalAnterior > 0 ? `
+            <div style="display:flex;justify-content:space-between;padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:10px;border:1px solid #e2e8f0;">
+                <span style="font-size:0.95rem;color:#475569;font-weight:700;">Total pagado / anterior:</span>
+                <span style="font-weight:800;color:#475569;">${formatMoney(totalAnterior)}</span>
+            </div>
+            <div style="font-size:0.85rem;font-weight:700;color:#173029;margin-bottom:6px;">Detalle de la Reserva Actualizada:</div>
+        ` : '';
+
         breakdownEl.innerHTML = `
             <div style="display:flex;flex-direction:column;gap:6px;">
+                ${anteriorHtml}
                 <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6;">
                     <span style="font-size:0.85rem;color:#6b7280;">🛏 Habitación (${noches} noches × ${formatMoney(precioHab)}):</span>
                     <span style="font-weight:700;color:#173029;">${formatMoney(totalHab)}</span>
@@ -317,13 +331,9 @@ function calcularNuevoTotal(reserva) {
                     </div>
                     ${svcHtml}
                 </div>
-                <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;">
+                <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;border-bottom:1px dashed #e5e7eb;">
                     <strong style="color:#173029;font-size:1rem;">TOTAL NUEVO:</strong>
                     <strong style="color:#258a60;font-size:1.25rem;">${formatMoney(totalNuevo)}</strong>
-                </div>
-                <div style="display:flex;justify-content:space-between;padding:6px 0;">
-                    <span style="font-size:0.85rem;color:#6b7280;">Total pagado/anterior:</span>
-                    <span style="font-weight:700;color:#6b7280;">${formatMoney(totalAnterior)}</span>
                 </div>
                 ${diffHtml}
             </div>
