@@ -4,7 +4,7 @@ import { getSession } from "../dashboard/core/api.js";
 // Verificar autenticación al cargar
 function verificarAutenticacion() {
   const session = getSession();
-  const token = localStorage.getItem('vialuna_token');
+  const token = sessionStorage.getItem('vialuna_token');
 
   if (!session) {
     window.location.href = '../auth/login.html';

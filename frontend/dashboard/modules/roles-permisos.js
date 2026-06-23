@@ -338,7 +338,7 @@ export class RolesPermisosModule {
   }
 
   // Activar/desactivar todos los permisos de un módulo modular
-  toggleModulePermissions(moduloName, isChecked) {
+  async toggleModulePermissions(moduloName, isChecked) {
     if (isChecked) {
       this.enabledModules.add(moduloName);
     } else {
@@ -357,6 +357,43 @@ export class RolesPermisosModule {
       }
     });
     this.renderPermissionsPanel();
+    
+    // Auto-save visual feedback
+    Swal.fire({
+      title: 'Guardando...',
+      text: 'Actualizando privilegios',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading() }
+    });
+    try {
+      await this.saveCurrentAssignmentsSilently();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Permisos actualizados',
+        showConfirmButton: false,
+        timer: 2000
+      });
+    } catch(err) {
+      // Revertir
+      if (isChecked) { this.enabledModules.delete(moduloName); } else { this.enabledModules.add(moduloName); }
+      this.selectRole(this.currentRoleId); // Reset UI
+      Swal.fire('Error', 'No se pudieron guardar los cambios: ' + (err.message || ''), 'error');
+    }
+  }
+
+  async saveCurrentAssignmentsSilently() {
+    if (!this.currentRoleId) return;
+    const guardados = this.originalAsignaciones.filter(rel => Number(rel.IDRol || rel.rol_id) === Number(this.currentRoleId));
+    const guardadosPermIds = guardados.map(g => g.IDPermiso || g.permiso_id);
+    const aEliminar = guardados.filter(g => !this.tempSelectedPermisos.has(g.IDPermiso || g.permiso_id));
+    const aCrear = Array.from(this.tempSelectedPermisos).filter(id => !guardadosPermIds.includes(id));
+    
+    await Promise.all(aEliminar.map(rel => deleteRolPermiso(rel.IDRolPermiso || rel.id)));
+    await Promise.all(aCrear.map(permId => createRolPermiso({ IDRol: this.currentRoleId, IDPermiso: permId })));
+    await this.loadData();
+    // this.renderPermissionsPanel(); // optionally refresh just the panel
   }
 
   // Activar/desactivar todos los permisos del panel (global)
@@ -460,6 +497,18 @@ export class RolesPermisosModule {
               <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Descripción del Rol *</label>
               <textarea id="roleDesc" rows="3" maxlength="150" class="w-full min-h-[100px] p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all resize-y" placeholder="Breve resumen de atribuciones..."></textarea>
             </div>
+            
+            <div class="flex flex-col gap-1.5 mt-2">
+              <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Permisos Iniciales (Opcional)</label>
+              <div class="grid grid-cols-2 gap-2 mt-1">
+                ${['Dashboard', 'Clientes', 'Reservas', 'Habitaciones', 'Servicios', 'Paquetes', 'Usuarios', 'Roles & Permisos'].map(mod => 
+                  `<label class="flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer">
+                    <input type="checkbox" name="newRolePerms" value="${mod}" class="rounded border-gray-300 text-brand focus:ring-brand"> ${mod}
+                  </label>`
+                ).join('')}
+              </div>
+            </div>
+
             <div class="flex flex-col gap-1.5">
               <label class="text-[10px] font-bold text-brand-deep uppercase tracking-wider">Estado Inicial</label>
               <select id="roleStatus" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all cursor-pointer">
@@ -504,11 +553,28 @@ export class RolesPermisosModule {
 
       try {
         console.log('Enviando creación de rol:', payload);
-        await createRol(payload);
-        this.showSuccess('Rol creado exitosamente.');
+        const createdRol = await createRol(payload);
+        const newRoleId = createdRol.IDRol || createdRol.insertId || createdRol.id; // handle different return formats
+
+        // Capture checked permissions
+        const checkedModules = Array.from(document.querySelectorAll('input[name="newRolePerms"]:checked')).map(el => el.value);
+        if (newRoleId && checkedModules.length > 0) {
+           const permsToAssign = [];
+           this.permisos.forEach(p => {
+             const mod = this.getModuloPermiso(p.NombrePermisos || p.nombre);
+             if (checkedModules.includes(mod)) {
+               permsToAssign.push(p.IDPermiso || p.id);
+             }
+           });
+           
+           await Promise.all(permsToAssign.map(pId => createRolPermiso({ IDRol: newRoleId, IDPermiso: pId })));
+        }
+
+        this.showSuccess('Rol y permisos creados exitosamente.');
         document.getElementById('roleModalOverlay').remove();
         await this.loadData();
         this.render();
+        if (newRoleId) this.selectRole(newRoleId);
       } catch (err) {
         console.error('Error creando rol:', err);
         Swal.fire('Error', 'Error al crear el rol: ' + (err.message || 'Error en servidor'), 'error');

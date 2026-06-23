@@ -44,9 +44,7 @@ const SESSION_KEY = 'vialuna_usuario';
 
 function getAuthToken() {
     const storedToken =
-        localStorage.getItem(TOKEN_KEY) ||
         sessionStorage.getItem(TOKEN_KEY) ||
-        localStorage.getItem('token') ||
         sessionStorage.getItem('token') ||
         '';
 
@@ -55,9 +53,7 @@ function getAuthToken() {
     }
 
     try {
-        const session =
-            JSON.parse(localStorage.getItem(SESSION_KEY) || 'null') ||
-            JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+        const session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
         return session?.token || '';
     } catch {
         return '';

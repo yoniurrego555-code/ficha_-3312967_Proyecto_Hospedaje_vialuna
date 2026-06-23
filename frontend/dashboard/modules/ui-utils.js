@@ -173,13 +173,13 @@ export function attachTooltip() {
     return el;
   }
 
-  document.addEventListener('mouseenter', (e) => {
+  document.addEventListener('mouseover', (e) => {
     const el = closestTooltipElement(e.target);
     if (!el) return;
     show(e, el);
   }, true);
 
-  document.addEventListener('mouseleave', (e) => {
+  document.addEventListener('mouseout', (e) => {
     const el = closestTooltipElement(e.target);
     if (!el) return;
     hide();

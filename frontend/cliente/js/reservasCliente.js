@@ -69,7 +69,7 @@ function getEndDate(reserva) {
 async function init() {
     try {
         const session = getSession();
-        const token = localStorage.getItem("vialuna_token");
+        const token = sessionStorage.getItem("vialuna_token");
 
         if (!session || !token || !isClientSession(session)) {
             window.location.href = "../auth/login.html";
@@ -279,29 +279,26 @@ function calcularNuevoTotal(reserva) {
     let svcHtml = '';
     const svcChecks = document.querySelectorAll('input[name="clientEditServicios"]:checked');
     svcChecks.forEach(cb => {
-        totalSvc += Number(cb.getAttribute('data-price') || 0);
-        svcHtml += `<div style="font-size:0.8rem;color:#6b7280;margin-left:12px;">• ${cb.getAttribute('data-name')} (${formatMoney(cb.getAttribute('data-price') || 0)})</div>`;
+        const svcId = cb.value;
+        const countEl = document.querySelector(`.svc-count-display-client-edit[data-svc-id="${svcId}"]`);
+        const qty = countEl ? parseInt(countEl.textContent, 10) : 1;
+        const unitPrice = Number(cb.getAttribute('data-price') || 0);
+        const subSvc = unitPrice * qty;
+        
+        totalSvc += subSvc;
+        svcHtml += `<div style="font-size:0.8rem;color:#6b7280;margin-left:12px;">• ${cb.getAttribute('data-name')} (${qty} persona${qty>1?'s':''} × ${formatMoney(unitPrice)}) = ${formatMoney(subSvc)}</div>`;
     });
 
     const totalNuevo = totalHab + totalPaq + totalSvc;
+    if (window._clientInitialTotalNuevo === undefined) {
+        window._clientInitialTotalNuevo = totalNuevo;
+    }
+    const costoAdicional = Math.max(0, totalNuevo - window._clientInitialTotalNuevo);
     const totalAnterior = Number(reserva.total || reserva.Total || reserva.TotalPagado || 0);
     const diferencia = totalNuevo - totalAnterior;
 
     const breakdownEl = document.getElementById('editClientBreakdown');
     if (breakdownEl) {
-        let diffHtml = '';
-        if (diferencia > 0) {
-            diffHtml = `<div style="display:flex;justify-content:space-between;padding:6px 0;">
-                <span style="font-size:0.85rem;color:#b45309;font-weight:700;">⚠️ Diferencia a pagar:</span>
-                <span style="font-weight:800;color:#b45309;">+${formatMoney(diferencia)}</span>
-            </div>`;
-        } else if (diferencia < 0) {
-            diffHtml = `<div style="display:flex;justify-content:space-between;padding:6px 0;">
-                <span style="font-size:0.85rem;color:#065f46;font-weight:700;">✅ Saldo a favor del cliente:</span>
-                <span style="font-weight:800;color:#065f46;">${formatMoney(Math.abs(diferencia))}</span>
-            </div>`;
-        }
-
         let anteriorHtml = totalAnterior > 0 ? `
             <div style="display:flex;justify-content:space-between;padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:10px;border:1px solid #e2e8f0;">
                 <span style="font-size:0.95rem;color:#475569;font-weight:700;">Total pagado / anterior:</span>
@@ -333,9 +330,8 @@ function calcularNuevoTotal(reserva) {
                 </div>
                 <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;border-bottom:1px dashed #e5e7eb;">
                     <strong style="color:#173029;font-size:1rem;">TOTAL NUEVO:</strong>
-                    <strong style="color:#258a60;font-size:1.25rem;">${formatMoney(totalNuevo)}</strong>
+                    <strong style="color:#258a60;font-size:1.25rem;">${formatMoney(costoAdicional)}</strong>
                 </div>
-                ${diffHtml}
             </div>
         `;
     }
@@ -346,6 +342,81 @@ function calcularNuevoTotal(reserva) {
 window.editarReserva = async (id) => {
     const reserva = allReservas.find((item) => String(getReservaId(item)) === String(id));
     if (!reserva) return;
+    
+    // Funciones globales de detalle
+    window.verDetallePaqueteClient = (pid) => {
+        const pkg = allPaquetesCatalog.find(p => (p.id_paquete || p.IDPaquete) == pid);
+        if (!pkg) return;
+        let imgSrc = pkg.ImagenUrl || pkg.imagenUrl || pkg.Imagen || pkg.imagen || pkg.ImagenPaquete || null;
+        if (imgSrc && typeof imgSrc === 'object' && imgSrc.type === 'Buffer') imgSrc = String.fromCharCode.apply(null, imgSrc.data);
+        if (imgSrc === 'null') imgSrc = null;
+        if (typeof imgSrc === 'string' && imgSrc.trim()) {
+            imgSrc = imgSrc.trim();
+            if (imgSrc.startsWith('/http')) imgSrc = imgSrc.substring(1);
+            if (!imgSrc.startsWith('http') && /^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(imgSrc)) imgSrc = `/uploads/${imgSrc}`;
+            else if (!imgSrc.startsWith('http') && imgSrc.toLowerCase().includes('uploads') && !imgSrc.startsWith('/')) imgSrc = `/${imgSrc}`;
+        }
+        Swal.fire({
+            title: `<h3 style="color:var(--brand-deep);margin:0;font-weight:800">${pkg.nombre || pkg.Nombre || pkg.NombrePaquete}</h3>`,
+            html: `
+                <div style="text-align:left;font-size:0.95rem;color:var(--muted);line-height:1.5;">
+                  ${imgSrc ? `<img src="${imgSrc}" style="width:100%;height:200px;object-fit:cover;border-radius:12px;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">` : ''}
+                  <p><strong>Descripción:</strong><br>${pkg.descripcion || pkg.Descripcion || 'Sin descripción'}</p>
+                  <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-top:16px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;">
+                    <span style="font-weight:700;">Precio del Paquete:</span>
+                    <span style="color:var(--brand);font-weight:800;font-size:1.1rem;">${formatMoney(pkg.precio || pkg.Precio || 0)}</span>
+                  </div>
+                </div>
+            `,
+            confirmButtonText: 'Cerrar',
+            confirmButtonColor: '#258a60'
+        });
+    };
+
+    window.verDetalleServicioClient = (sid) => {
+        const svc = allServiciosCatalog.find(s => (s.id_servicio || s.IDServicio) == sid);
+        if (!svc) return;
+        
+        let title = svc.nombre || svc.Nombre || svc.NombreServicio || 'Servicio';
+        let desc = svc.descripcion || svc.Descripcion || '';
+        let fullText = `${title} ${desc}`.toLowerCase();
+        let imgSrc = svc.ImagenUrl || svc.imagenUrl || svc.Imagen || svc.imagen || svc.ImagenServicio || null;
+        if (imgSrc && typeof imgSrc === 'object' && imgSrc.type === 'Buffer') imgSrc = String.fromCharCode.apply(null, imgSrc.data);
+        if (!imgSrc || imgSrc === 'null') {
+            if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relax')) imgSrc = '../assets/images/service/SPA.png';
+            else if (fullText.includes('caballo') || fullText.includes('cabalgata')) imgSrc = '../assets/images/service/cabalgata.png';
+            else if (fullText.includes('caminata') || fullText.includes('guiado') || fullText.includes('senderismo')) imgSrc = '../assets/images/service/caminata.png';
+            else imgSrc = '../assets/images/service/SPA.png';
+        }
+        if (typeof imgSrc === 'string' && imgSrc.trim()) {
+            imgSrc = imgSrc.trim();
+            if (imgSrc.startsWith('/http')) imgSrc = imgSrc.substring(1);
+            if (!imgSrc.startsWith('http') && /^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(imgSrc)) imgSrc = `/uploads/${imgSrc}`;
+            else if (!imgSrc.startsWith('http') && imgSrc.toLowerCase().includes('uploads') && !imgSrc.startsWith('/')) imgSrc = `/${imgSrc}`;
+        }
+        
+        if (title.toLowerCase() === 'servicio') {
+            if (fullText.includes('spa') || fullText.includes('masaje')) title = 'Spa & Relajación';
+            else if (fullText.includes('caballo') || fullText.includes('cabalgata')) title = 'Cabalgata Guiada';
+            else if (fullText.includes('caminata') || fullText.includes('guiado')) title = 'Caminata Ecológica';
+        }
+
+        Swal.fire({
+            title: `<h3 style="color:var(--brand-deep);margin:0;font-weight:800">${title}</h3>`,
+            html: `
+                <div style="text-align:left;font-size:0.95rem;color:var(--muted);line-height:1.5;">
+                  ${imgSrc ? `<img src="${imgSrc}" style="width:100%;height:200px;object-fit:cover;border-radius:12px;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">` : ''}
+                  <p><strong>Descripción:</strong><br>${desc || 'Sin descripción'}</p>
+                  <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-top:16px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;">
+                    <span style="font-weight:700;">Precio por Persona:</span>
+                    <span style="color:var(--brand);font-weight:800;font-size:1.1rem;">${formatMoney(svc.precio || svc.Precio || svc.Costo || 0)}</span>
+                  </div>
+                </div>
+            `,
+            confirmButtonText: 'Cerrar',
+            confirmButtonColor: '#258a60'
+        });
+    };
 
     const modal = document.getElementById('editModal');
     if (!modal) return;
@@ -376,43 +447,219 @@ window.editarReserva = async (id) => {
     const pqReservados = reserva.paquetes || [];
     const svReservados = reserva.servicios || [];
 
-    pkGrid.innerHTML = allPaquetesCatalog.filter(p => p.Estado == 1 || String(p.Estado).toLowerCase() === 'activo').map(p => {
-        const pid = String(p.id_paquete || p.IDPaquete || '');
+    pkGrid.innerHTML = allPaquetesCatalog.filter(p => Number(p.estado ?? p.Estado ?? 1) === 1).map(pkg => {
+        const pid = String(pkg.id_paquete || pkg.IDPaquete || '');
         const currentPq = pqReservados.find(pr => String(pr.id_paquete || pr.IDPaquete || pr.id || '') === pid);
-        const precio = Number((currentPq && (currentPq.precio || currentPq.total)) || p.precio || p.Precio || 0);
+        const precio = Number((currentPq && (currentPq.precio || currentPq.total)) || pkg.precio || pkg.Precio || 0);
         const checked = !!currentPq;
         const disabled = checked ? 'disabled' : '';
 
-        return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${checked?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};">
-            <input type="checkbox" name="clientEditPaquetes" value="${pid}" data-price="${precio}" data-name="${p.nombre || p.Nombre || p.NombrePaquete || 'Paquete'}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
-            <div style="flex:1;">
-                <div style="font-size:0.9rem;font-weight:600;color:#173029;">${p.nombre || p.Nombre || p.NombrePaquete}</div>
-                <div style="font-size:0.85rem;color:#258a60;font-weight:700;">${formatMoney(precio)}</div>
+        let imgSrc = pkg.ImagenUrl || pkg.imagenUrl || pkg.Imagen || pkg.imagen || pkg.ImagenPaquete || null;
+        if (imgSrc && typeof imgSrc === 'object' && imgSrc.type === 'Buffer') imgSrc = String.fromCharCode.apply(null, imgSrc.data);
+        if (imgSrc === 'null') imgSrc = null;
+        if (typeof imgSrc === 'string' && imgSrc.trim()) {
+            imgSrc = imgSrc.trim();
+            if (imgSrc.startsWith('/http')) imgSrc = imgSrc.substring(1);
+            if (!imgSrc.startsWith('http') && /^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(imgSrc)) imgSrc = `/uploads/${imgSrc}`;
+            else if (!imgSrc.startsWith('http') && imgSrc.toLowerCase().includes('uploads') && !imgSrc.startsWith('/')) imgSrc = `/${imgSrc}`;
+        }
+        const displayTitle = pkg.nombre || pkg.Nombre || pkg.NombrePaquete || 'Paquete';
+
+        return `
+        <div class="package-checkbox modern-package" style="position: relative;">
+          <input type="checkbox" id="client_edit_pkg_${pid}" name="clientEditPaquetes" value="${pid}" data-price="${precio}" data-name="${displayTitle}" ${checked?'checked':''} ${disabled} class="package-check-input" style="position: absolute; opacity: 0; cursor: ${disabled?'default':'pointer'};">
+          <label for="client_edit_pkg_${pid}" class="package-label ${checked ? 'selected' : ''}" style="display: flex; flex-direction: column; cursor: ${disabled?'default':'pointer'}; border-radius: 16px; overflow: hidden; background: ${checked ? 'rgba(31, 106, 77, 0.05)' : 'white'}; border: 1px solid ${checked ? 'var(--brand)' : 'rgba(0,0,0,0.08)'}; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease; height: 100%;">
+            
+            <div class="package-image" style="height: 120px; position: relative; background: #f9fafb;">
+              ${imgSrc ? `<img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.style.display='none';">` : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; opacity: 0.4;">🎁</div>`}
+              ${checked ? '<div class="checkmark" style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>' : ''}
+              
+              <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.verDetallePaqueteClient('${pid}')" style="position: absolute; bottom: 8px; right: 8px; background: rgba(255,255,255,0.9); border: none; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; color: var(--brand-deep); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 4px; backdrop-filter: blur(4px);">
+                <i class="fa-solid fa-eye"></i> Detalle
+              </button>
             </div>
-        </label>`;
+
+            <div class="package-info" style="padding: 15px; display: flex; flex-direction: column; flex-grow: 1;">
+              <h4 style="margin: 0 0 8px 0; font-size: 1.1rem; color: var(--brand-deep); line-height: 1.2;">${displayTitle}</h4>
+              <p style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
+                ${pkg.descripcion || pkg.Descripcion || 'Incluye servicios especiales para tu estadía.'}
+              </p>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                <span class="package-price" style="font-weight: 700; color: var(--brand); font-size: 1.1rem;">${formatMoney(precio)}</span>
+                <span style="font-size: 0.8rem; background: var(--paper); padding: 4px 10px; border-radius: 20px; color: var(--muted);">Paquete</span>
+              </div>
+            </div>
+          </label>
+        </div>
+        `;
     }).join("");
 
-    svGrid.innerHTML = allServiciosCatalog.filter(s => s.Estado == 1 || String(s.Estado).toLowerCase() === 'activo').map(s => {
-        const sid = String(s.id_servicio || s.IDServicio || '');
+    svGrid.innerHTML = allServiciosCatalog.filter(s => Number(s.estado ?? s.Estado ?? 1) === 1).map(service => {
+        const sid = String(service.id_servicio || service.IDServicio || '');
         const currentSv = svReservados.find(sr => String(sr.id_servicio || sr.IDServicio || sr.id || '') === sid);
-        const precio = Number((currentSv && (currentSv.precioGuardado || currentSv.costo || currentSv.Precio)) || s.precio || s.Precio || s.Costo || 0);
+        const precio = Number((currentSv && (currentSv.precioGuardado || currentSv.costo || currentSv.Precio)) || service.precio || service.Precio || service.Costo || 0);
         const checked = !!currentSv;
         const disabled = checked ? 'disabled' : '';
+        
+        const personas = currentSv ? (currentSv._personas || 1) : 1;
+        
+        let title = service.nombre || service.Nombre || service.NombreServicio || 'Servicio';
+        let desc = service.descripcion || service.Descripcion || '';
+        let fullText = `${title} ${desc}`.toLowerCase();
+        let serviceImg = service.ImagenUrl || service.imagenUrl || service.Imagen || service.imagen || service.ImagenServicio || null;
+        if (serviceImg && typeof serviceImg === 'object' && serviceImg.type === 'Buffer') serviceImg = String.fromCharCode.apply(null, serviceImg.data);
+        if (!serviceImg || serviceImg === 'null') {
+            if (fullText.includes('spa') || fullText.includes('masaje') || fullText.includes('relax')) serviceImg = '../assets/images/service/SPA.png';
+            else if (fullText.includes('caballo') || fullText.includes('cabalgata')) serviceImg = '../assets/images/service/cabalgata.png';
+            else if (fullText.includes('caminata') || fullText.includes('guiado') || fullText.includes('senderismo')) serviceImg = '../assets/images/service/caminata.png';
+            else serviceImg = '../assets/images/service/SPA.png';
+        }
+        if (typeof serviceImg === 'string' && serviceImg.trim()) {
+            serviceImg = serviceImg.trim();
+            if (serviceImg.startsWith('/http')) serviceImg = serviceImg.substring(1);
+            if (!serviceImg.startsWith('http') && /^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(serviceImg)) serviceImg = `/uploads/${serviceImg}`;
+            else if (!serviceImg.startsWith('http') && serviceImg.toLowerCase().includes('uploads') && !serviceImg.startsWith('/')) serviceImg = `/${serviceImg}`;
+        }
+        
+        if (title.toLowerCase() === 'servicio') {
+            if (fullText.includes('spa') || fullText.includes('masaje')) title = 'Spa & Relajación';
+            else if (fullText.includes('caballo') || fullText.includes('cabalgata')) title = 'Cabalgata Guiada';
+            else if (fullText.includes('caminata') || fullText.includes('guiado')) title = 'Caminata Ecológica';
+        }
 
-        return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${checked?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};">
-            <input type="checkbox" name="clientEditServicios" value="${sid}" data-price="${precio}" data-name="${s.nombre || s.Nombre || s.NombreServicio || 'Servicio'}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
-            <div style="flex:1;">
-                <div style="font-size:0.9rem;font-weight:600;color:#173029;">${s.nombre || s.Nombre || s.NombreServicio}</div>
-                <div style="font-size:0.85rem;color:#258a60;font-weight:700;">${formatMoney(precio)}</div>
+        return `
+        <div class="service-checkbox modern-service" data-svc-id="${sid}">
+          <div style="display:flex; flex-direction:column; border-radius:16px; overflow:hidden;
+                      background:${checked ? 'rgba(31,106,77,0.05)' : 'white'};
+                      border:1px solid ${checked ? 'var(--brand)' : 'rgba(0,0,0,0.08)'};
+                      box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:all 0.3s ease; height:100%;">
+
+            <!-- Imagen -->
+            <div class="service-image" style="height:120px; position:relative;">
+              <img src="${serviceImg}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'">
+              ${checked ? '<div class="checkmark" style="position:absolute; top:10px; right:10px; background:var(--brand); color:white; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 2px 6px rgba(0,0,0,.2);">✓</div>' : ''}
+              
+              <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.verDetalleServicioClient('${sid}')" style="position: absolute; bottom: 8px; right: 8px; background: rgba(255,255,255,0.9); border: none; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; color: var(--brand-deep); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 4px; backdrop-filter: blur(4px);">
+                <i class="fa-solid fa-eye"></i> Detalle
+              </button>
             </div>
-        </label>`;
+
+            <!-- Contenido -->
+            <div style="padding:14px; display:flex; flex-direction:column; flex-grow:1; gap:8px;">
+              <h4 style="margin:0; font-size:1rem; color:var(--brand-deep); line-height:1.2;">${title}</h4>
+              <p style="margin:0; font-size:0.8rem; color:var(--muted); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.4;">
+                ${desc || 'Servicio adicional para complementar tu estadía.'}
+              </p>
+
+              <!-- Precio por persona -->
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; color:var(--muted); margin-top:auto; padding-top:8px; border-top:1px solid rgba(0,0,0,.06);">
+                <span>Precio/persona</span>
+                <span style="font-weight:700; color:var(--brand);">${formatMoney(precio)}</span>
+              </div>
+
+              <!-- Selección y contador de personas -->
+              <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                <!-- Toggle selección -->
+                <label style="display:flex; align-items:center; gap:6px; cursor:${disabled?'default':'pointer'}; flex:1;">
+                  <input type="checkbox"
+                    name="clientEditServicios"
+                    value="${sid}"
+                    data-price="${precio}"
+                    data-name="${title}"
+                    class="service-check-input-client-edit"
+                    data-service-id="${sid}"
+                    ${checked ? 'checked' : ''}
+                    ${disabled}
+                    style="width:16px; height:16px; accent-color:var(--brand); cursor:${disabled?'default':'pointer'}; flex-shrink:0;">
+                  <span style="font-size:0.82rem; font-weight:600; color:var(--brand-deep);">Agregar</span>
+                </label>
+
+                <!-- Contador personas -->
+                <div class="svc-counter-client-edit" data-svc-id="${sid}"
+                     style="display:${checked ? 'flex' : 'none'}; align-items:center; gap:4px;">
+                  <button type="button" class="svc-dec-client-edit"
+                    data-svc-id="${sid}"
+                    ${disabled}
+                    style="width:28px; height:28px; border-radius:8px; border:1px solid rgba(0,0,0,.12); background:#f8fafc; font-size:1rem; font-weight:700; cursor:${disabled?'default':'pointer'}; display:flex; align-items:center; justify-content:center; color:var(--brand-deep);">−</button>
+                  <span class="svc-count-display-client-edit" data-svc-id="${sid}"
+                    style="min-width:28px; text-align:center; font-weight:700; font-size:0.95rem; color:var(--brand-deep);">${personas}</span>
+                  <button type="button" class="svc-inc-client-edit"
+                    data-svc-id="${sid}"
+                    ${disabled}
+                    style="width:28px; height:28px; border-radius:8px; border:1px solid rgba(0,0,0,.12); background:#f8fafc; font-size:1rem; font-weight:700; cursor:${disabled?'default':'pointer'}; display:flex; align-items:center; justify-content:center; color:var(--brand-deep);">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        `;
     }).join("");
 
+    window._clientInitialTotalNuevo = undefined;
     calcularNuevoTotal(reserva);
-
-    // Eventos
     const recalc = () => calcularNuevoTotal(reserva);
-    document.querySelectorAll('input[name="clientEditPaquetes"], input[name="clientEditServicios"]').forEach(el => el.addEventListener('change', recalc));
+
+    // Eventos visuales
+    document.querySelectorAll('input[name="clientEditPaquetes"], input[name="clientEditServicios"]').forEach(el => {
+        el.addEventListener('change', (e) => {
+            if(e.target.name === 'clientEditPaquetes') {
+                const label = e.target.closest('.modern-package').querySelector('.package-label');
+                if(label) {
+                    if(e.target.checked) {
+                        label.style.background = 'rgba(31, 106, 77, 0.05)';
+                        label.style.borderColor = 'var(--brand)';
+                        const imgDiv = label.querySelector('.package-image');
+                        if(imgDiv && !imgDiv.querySelector('.checkmark')) {
+                          imgDiv.insertAdjacentHTML('beforeend', '<div class="checkmark" style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>');
+                        }
+                    } else {
+                        label.style.background = 'white';
+                        label.style.borderColor = 'rgba(0,0,0,0.08)';
+                        const checkmark = label.querySelector('.checkmark');
+                        if(checkmark) checkmark.remove();
+                    }
+                }
+            }
+            if(e.target.name === 'clientEditServicios') {
+                const svcId = e.target.dataset.serviceId;
+                const card = e.target.closest('.modern-service').querySelector('div');
+                const counter = svGrid.querySelector(`.svc-counter-client-edit[data-svc-id="${svcId}"]`);
+                if(e.target.checked) {
+                    if(counter) counter.style.display = 'flex';
+                    if(card) { card.style.background = 'rgba(31,106,77,0.05)'; card.style.borderColor = 'var(--brand)'; }
+                    const imgDiv = card.querySelector('.service-image');
+                    if (imgDiv && !imgDiv.querySelector('.checkmark')) {
+                      imgDiv.insertAdjacentHTML('beforeend', '<div class="checkmark" style="position:absolute;top:10px;right:10px;background:var(--brand);color:white;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,.2);">✓</div>');
+                    }
+                } else {
+                    if(counter) counter.style.display = 'none';
+                    if(card) { card.style.background = 'white'; card.style.borderColor = 'rgba(0,0,0,0.08)'; }
+                    const checkmark = card.querySelector('.checkmark');
+                    if(checkmark) checkmark.remove();
+                    
+                    const countEl = svGrid.querySelector(`.svc-count-display-client-edit[data-svc-id="${svcId}"]`);
+                    if(countEl) countEl.textContent = '1';
+                }
+            }
+            recalc();
+        });
+    });
+    
+    // Contadores de servicios
+    svGrid.addEventListener('click', (e) => {
+        const btn = e.target.closest('.svc-inc-client-edit, .svc-dec-client-edit');
+        if (!btn || btn.hasAttribute('disabled')) return;
+        const svcId = btn.dataset.svcId;
+        const isInc = btn.classList.contains('svc-inc-client-edit');
+        const countEl = svGrid.querySelector(`.svc-count-display-client-edit[data-svc-id="${svcId}"]`);
+        if (!countEl) return;
+        let val = parseInt(countEl.textContent || '1', 10);
+        if (isInc) val = Math.min(val + 1, 20);
+        else val = Math.max(val - 1, 1);
+        countEl.textContent = val;
+        recalc();
+    });
+
     ff.addEventListener('change', recalc);
     fi.addEventListener('change', recalc);
 

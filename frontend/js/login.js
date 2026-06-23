@@ -1,4 +1,4 @@
-﻿import { loginUsuario } from './usuarios.js';
+import { loginUsuario } from './usuarios.js';
 
 const form = document.getElementById('loginForm');
 
@@ -73,17 +73,17 @@ if (form) {
 
             // GUARDAR SESIÓN
 
-            localStorage.setItem(
+            sessionStorage.setItem(
                 'vialuna_token',
                 res.token
             );
 
-            localStorage.setItem(
+            sessionStorage.setItem(
                 'vialuna_usuario',
                 JSON.stringify(usuario)
             );
 
-            localStorage.setItem(
+            sessionStorage.setItem(
                 'vialuna_rol',
                 usuario.rol || ''
             );

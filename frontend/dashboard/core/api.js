@@ -6,9 +6,7 @@ export const ROLE_KEY = "vialuna_rol";
 
 function getToken() {
   const storedToken =
-    localStorage.getItem(TOKEN_KEY) ||
     sessionStorage.getItem(TOKEN_KEY) ||
-    localStorage.getItem("token") ||
     sessionStorage.getItem("token") ||
     "";
 
@@ -17,9 +15,7 @@ function getToken() {
   }
 
   try {
-    const session =
-      JSON.parse(localStorage.getItem(SESSION_KEY) || "null") ||
-      JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
+    const session = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
     return session?.token || "";
   } catch {
     return "";
@@ -68,27 +64,27 @@ async function request(path, options = {}) {
 }
 
 export function saveSession(usuario) {
-  localStorage.setItem(SESSION_KEY, JSON.stringify(usuario));
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(usuario));
   if (usuario?.token) {
-    localStorage.setItem(TOKEN_KEY, usuario.token);
+    sessionStorage.setItem(TOKEN_KEY, usuario.token);
   }
   if (usuario?.rol) {
-    localStorage.setItem(ROLE_KEY, usuario.rol);
+    sessionStorage.setItem(ROLE_KEY, usuario.rol);
   }
 }
 
 export function getSession() {
   try {
-    return JSON.parse(localStorage.getItem(SESSION_KEY));
+    return JSON.parse(sessionStorage.getItem(SESSION_KEY));
   } catch {
     return null;
   }
 }
 
 export function clearSession() {
-  localStorage.removeItem(SESSION_KEY);
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(ROLE_KEY);
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(ROLE_KEY);
 }
 
 export function isAdminSession(session = getSession()) {

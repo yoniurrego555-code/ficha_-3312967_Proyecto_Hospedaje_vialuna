@@ -139,7 +139,9 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
     }
 
     const tableHTML = paginatedData.map((cliente, index) => {
-      const nombreCompleto = `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || 'Sin nombre';
+      const _n = (cliente.Nombre || cliente.Nombres || '').trim();
+      const _a = (cliente.Apellido || cliente.Apellidos || '').trim();
+      const nombreCompleto = (_n || _a) ? `${_n} ${_a}`.trim() : (cliente.Email || cliente.NroDocumento || cliente.nro_documento || 'Sin nombre');
       const docType = cliente.TipoDocumento || 'CC';
       const docNum = cliente.NroDocumento || cliente.nro_documento || 'N/A';
       const status = String(cliente.Estado);
@@ -305,7 +307,9 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
       return;
     }
 
-    const nombreCompleto = `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || 'Sin nombre';
+    const _n = (cliente.Nombre || cliente.Nombres || '').trim();
+      const _a = (cliente.Apellido || cliente.Apellidos || '').trim();
+      const nombreCompleto = (_n || _a) ? `${_n} ${_a}`.trim() : (cliente.Email || cliente.NroDocumento || cliente.nro_documento || 'Sin nombre');
     
     // Lookup country info for the detail view (presentational only)
     const countryCode = cliente.PaisCode || 'CO';
@@ -591,7 +595,9 @@ import { showAlert, ICONS, renderPremiumPagination } from "./ui-utils.js";
       return;
     }
 
-    const nombreCompleto = `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || 'Sin nombre';
+    const _n = (cliente.Nombre || cliente.Nombres || '').trim();
+      const _a = (cliente.Apellido || cliente.Apellidos || '').trim();
+      const nombreCompleto = (_n || _a) ? `${_n} ${_a}`.trim() : (cliente.Email || cliente.NroDocumento || cliente.nro_documento || 'Sin nombre');
     
     const confirmRes = await Swal.fire({
       title: '¿Anular Cliente?',

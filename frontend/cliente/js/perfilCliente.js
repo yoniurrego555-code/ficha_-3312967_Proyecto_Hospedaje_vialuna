@@ -130,7 +130,7 @@ async function actualizarPerfil(e) {
             email: data.Email,
             telefono: data.Telefono
         };
-        localStorage.setItem('vialuna_usuario', JSON.stringify(nuevaSesion));
+        sessionStorage.setItem('vialuna_usuario', JSON.stringify(nuevaSesion));
 
         showAlert('Éxito', 'Perfil actualizado correctamente.', 'success');
         setTimeout(() => location.reload(), 1200);

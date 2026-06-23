@@ -346,13 +346,15 @@ export class ReservasAdminModule {
             ${isSelected ? '<div style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>' : ''}
           </div>
           <div class="room-info" style="padding: 15px;">
-            <h4 style="margin: 0 0 5px 0; color: var(--brand-deep);">${hab.tipo || hab.Tipo || hab.NombreHabitacion || 'Habitación'}</h4>
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <h4 style="margin: 0 0 5px 0; color: var(--brand-deep);">${hab.tipo || hab.Tipo || hab.NombreHabitacion || 'Habitación'}</h4>
+              <span style="font-size: 0.8rem; background: var(--brand-light); padding: 2px 6px; border-radius: 8px; color: var(--brand); font-weight: bold; white-space: nowrap;">👤 ${ (String(hab.tipo || hab.Tipo || hab.NombreHabitacion || '').toLowerCase().includes('familiar')) ? 5 : (hab.capacidad || hab.Capacidad || 2) } Pers.</span>
+            </div>
             <p style="margin: 0 0 10px 0; font-size: 0.85rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
               ${hab.descripcion || hab.Descripcion || 'Habitación confortable con todos los servicios básicos.'}
             </p>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="text-align: right;">
               <span style="font-weight: 700; color: var(--brand); font-size: 1.1rem;">$${this.formatCurrency(hab.precio || hab.Precio || hab.Costo || 0)}</span>
-              <span style="font-size: 0.8rem; color: var(--muted);">👤 ${ (String(hab.tipo || hab.Tipo || hab.NombreHabitacion || '').toLowerCase().includes('familiar')) ? 5 : (hab.capacidad || hab.Capacidad || 2) } Pers.</span>
             </div>
           </div>
         </div>
@@ -431,6 +433,10 @@ export class ReservasAdminModule {
             <div class="package-image" style="height: 120px; position: relative; background: #f9fafb;">
               ${imgSrc ? `<img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.style.display='none';">` : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; opacity: 0.4;">🎁</div>`}
               ${isSelected ? '<div class="checkmark" style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>' : ''}
+              
+              <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.reservasModule.verDetallePaquete('${pkg.id_paquete || pkg.IDPaquete}')" style="position: absolute; bottom: 8px; right: 8px; background: rgba(255,255,255,0.9); border: none; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; color: var(--brand-deep); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 4px; backdrop-filter: blur(4px);">
+                <i class="fa-solid fa-eye"></i> Detalle
+              </button>
             </div>
 
             <div class="package-info" style="padding: 15px; display: flex; flex-direction: column; flex-grow: 1;">
@@ -538,6 +544,10 @@ export class ReservasAdminModule {
             <div class="service-image" style="height:120px; position:relative;">
               <img src="${serviceImg}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'">
               ${isSelected ? '<div class="checkmark" style="position:absolute; top:10px; right:10px; background:var(--brand); color:white; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 2px 6px rgba(0,0,0,.2);">✓</div>' : ''}
+              
+              <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.reservasModule.verDetalleServicio('${svcId}')" style="position: absolute; bottom: 8px; right: 8px; background: rgba(255,255,255,0.9); border: none; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; color: var(--brand-deep); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 4px; backdrop-filter: blur(4px);">
+                <i class="fa-solid fa-eye"></i> Detalle
+              </button>
             </div>
 
             <!-- Contenido -->
@@ -704,7 +714,7 @@ export class ReservasAdminModule {
       <tr class="hover:bg-gray-50/50 transition-all duration-200">
         <td class="px-6 py-4 font-bold text-gray-400">#${resId}</td>
         <td class="px-6 py-4">
-            <div class="text-sm font-semibold text-brand-deep">${cliente ? (cliente.NombreCompleto || `${cliente.Nombre || ''} ${cliente.Apellido || ''}`.trim() || 'Cliente sin nombre') : reserva.nr_documento || "Sin cliente"}</div>
+            <div class="text-sm font-semibold text-brand-deep">${cliente ? (cliente.NombreCompleto || `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || cliente.Email || cliente.NroDocumento || 'Cliente sin nombre') : reserva.nr_documento || 'Sin cliente'}</div>
             <div class="text-xs text-muted mt-0.5">${cliente ? (cliente.Email || '') : ''}</div>
         </td>
         <td class="px-6 py-4">
@@ -904,14 +914,16 @@ export class ReservasAdminModule {
       if (summaryRoom) {
         summaryRoom.innerHTML = `
           <div class="summary-item-details">
-            <h5 style="color: var(--brand-deep); font-size: 1.1rem; margin-bottom: 4px;">${room.numero || room.Numero || 'Habitación'} - ${room.tipo || room.Tipo || room.NombreHabitacion || 'Estándar'}</h5>
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <h5 style="color: var(--brand-deep); font-size: 1.1rem; margin-bottom: 4px;">${room.numero || room.Numero || 'Habitación'} - ${room.tipo || room.Tipo || room.NombreHabitacion || 'Estándar'}</h5>
+              <span style="font-size: 0.8rem; background: var(--brand-light); padding: 2px 6px; border-radius: 8px; color: var(--brand); font-weight: bold; white-space: nowrap;">👤 ${ (String(room.tipo || room.Tipo || room.NombreHabitacion || '').toLowerCase().includes('familiar')) ? 5 : (room.capacidad || room.Capacidad || 2) } Pers.</span>
+            </div>
             ${fechasStr}
             <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; line-height: 1.4;">
               Precio por noche: $${this.formatCurrency(roomPrice)}
             </p>
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 0.85rem; background: var(--paper); padding: 2px 8px; border-radius: 12px; color: var(--brand);">👤 ${ (String(room.tipo || room.Tipo || room.NombreHabitacion || '').toLowerCase().includes('familiar')) ? 5 : (room.capacidad || room.Capacidad || 2) } Pers.</span>
-              <strong style="color: var(--brand); font-size: 1rem;">$${this.formatCurrency(totalRoom)}</strong>
+            <div style="text-align: right;">
+              <strong style="color: var(--brand); font-size: 1.1rem;">$${this.formatCurrency(totalRoom)}</strong>
             </div>
           </div>
         `;
@@ -1508,7 +1520,7 @@ if (this.refs.reservationForm) {
     document.getElementById('detalleReservaID').textContent = `ID: #${reserva.id_reserva || reserva.IDReserva || id}`;
     
     // Guest info
-    document.getElementById('detResClienteNombre').textContent = cliente ? (cliente.NombreCompleto || `${cliente.Nombres || ''} ${cliente.Apellidos || ''}`.trim() || 'Cliente sin nombre') : reserva.nr_documento || 'Huésped Principal';
+    document.getElementById('detResClienteNombre').textContent = cliente ? (cliente.NombreCompleto || `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || cliente.Email || cliente.NroDocumento || 'Cliente sin nombre') : reserva.nr_documento || 'Huésped Principal';
     document.getElementById('detResClienteDoc').textContent = `Doc: ${cliente ? (cliente.NroDocumento || cliente.nro_documento || '--') : reserva.nr_documento || '--'}`;
     document.getElementById('detResClienteEmail').textContent = `Email: ${cliente ? (cliente.Email || '--') : '--'}`;
     document.getElementById('detResClienteTel').textContent = `Tel: ${cliente ? (cliente.Telefono || '--') : '--'}`;
@@ -1680,62 +1692,140 @@ if (this.refs.reservationForm) {
     this.refs.reservationFormSection.style.display = 'none';
     this.refs.editReservationSection.style.display = 'block';
 
-    const bannerCancelada = isCancelada
-      ? `<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
-           <span style="font-size:1.4rem;">🔒</span>
-           <div>
-             <strong style="color:#991b1b;font-size:0.95rem;">Reserva Cancelada — Edición Bloqueada</strong>
-             <p style="color:#b91c1c;font-size:0.85rem;margin:2px 0 0;">Las reservas canceladas no pueden modificarse. Solo puedes consultar la información.</p>
-           </div>
-         </div>`
-      : '';
-
-    const bannerActiva = isActiva && !isCancelada
-      ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
-           <span style="font-size:1.4rem;">⚡</span>
-           <div>
-             <strong style="color:#92400e;font-size:0.95rem;">Reserva Pendiente — Edición Limitada</strong>
-             <p style="color:#b45309;font-size:0.85rem;margin:2px 0 0;">Solo puedes agregar servicios extra o extender las fechas de salida.</p>
-           </div>
-         </div>`
-      : '';
+    const bannerCancelada = '';
+    const bannerActiva = '';
 
     // Generar opciones de paquetes y servicios (checkboxes)
     const paquetesActiveOptions = this.currentData.paquetes.filter(p => Number(p.estado ?? p.Estado ?? 1) === 1);
     const serviciosActiveOptions = this.currentData.servicios.filter(s => Number(s.estado ?? s.Estado ?? 1) === 1);
 
-    const paquetesCheckboxes = paquetesActiveOptions.map(p => {
-      const pid = String(p.id_paquete || p.IDPaquete || '');
-      // Precio del detalle guardado o del catálogo
+    const paquetesCheckboxes = paquetesActiveOptions.map(pkg => {
+      const pid = String(pkg.id_paquete || pkg.IDPaquete || '');
       const paqEnReserva = paquetesActuales.find(pr => String(pr.id_paquete || pr.IDPaquete || pr.id || '') === pid);
-      const precio = Number(
-        (paqEnReserva && (paqEnReserva.precio || paqEnReserva.total)) ||
-        p.precio || p.Precio || 0
-      );
+      const precio = Number((paqEnReserva && (paqEnReserva.precio || paqEnReserva.total)) || pkg.precio || pkg.Precio || 0);
       const checked = paqIds.includes(pid);
       const disabled = isCancelada || paqEnReserva ? 'disabled' : '';
-      return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${disabled?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};transition:all .2s;">
-        <input type="checkbox" name="editPaquetes" value="${pid}" data-price="${precio}" data-name="${p.nombre || p.Nombre || p.NombrePaquete || 'Paquete'}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
-        <span style="flex:1;font-size:0.9rem;font-weight:600;color:#173029;">${p.nombre || p.Nombre || p.NombrePaquete || 'Paquete'}</span>
-        <span style="font-size:0.85rem;color:#258a60;font-weight:700;">$${this.formatCurrency(precio)}</span>
-      </label>`;
+
+      let imgSrc = pkg.ImagenUrl || pkg.imagenUrl || pkg.Imagen || pkg.imagen || pkg.ImagenPaquete || null;
+      if (imgSrc && typeof imgSrc === 'object' && imgSrc.type === 'Buffer') {
+          imgSrc = String.fromCharCode.apply(null, imgSrc.data);
+      }
+      if (imgSrc === 'null') imgSrc = null;
+      if (typeof imgSrc === 'string' && imgSrc.trim()) {
+        imgSrc = imgSrc.trim();
+        if (imgSrc.startsWith('/http')) imgSrc = imgSrc.substring(1);
+        if (!imgSrc.startsWith('http') && /^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(imgSrc)) imgSrc = `/uploads/${imgSrc}`;
+        else if (!imgSrc.startsWith('http') && imgSrc.toLowerCase().includes('uploads') && !imgSrc.startsWith('/')) imgSrc = `/${imgSrc}`;
+      }
+      const displayTitle = pkg.nombre || pkg.Nombre || pkg.NombrePaquete || 'Paquete';
+
+      return `
+        <div class="package-checkbox modern-package" style="position: relative;">
+          <input type="checkbox" id="edit_pkg_${pid}" name="editPaquetes" value="${pid}" data-price="${precio}" data-name="${displayTitle}" ${checked?'checked':''} ${disabled} class="package-check-input" style="position: absolute; opacity: 0; cursor: ${disabled?'default':'pointer'};">
+          <label for="edit_pkg_${pid}" class="package-label ${checked ? 'selected' : ''}" style="display: flex; flex-direction: column; cursor: ${disabled?'default':'pointer'}; border-radius: 16px; overflow: hidden; background: ${checked ? 'rgba(31, 106, 77, 0.05)' : 'white'}; border: 1px solid ${checked ? 'var(--brand)' : 'rgba(0,0,0,0.08)'}; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease; height: 100%;">
+            
+            <div class="package-image" style="height: 120px; position: relative; background: #f9fafb;">
+              ${imgSrc ? `<img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.style.display='none';">` : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; opacity: 0.4;">🎁</div>`}
+              ${checked ? '<div class="checkmark" style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>' : ''}
+              
+              <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.reservasModule.verDetallePaquete('${pid}')" style="position: absolute; bottom: 8px; right: 8px; background: rgba(255,255,255,0.9); border: none; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; color: var(--brand-deep); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 4px; backdrop-filter: blur(4px);">
+                <i class="fa-solid fa-eye"></i> Detalle
+              </button>
+            </div>
+
+            <div class="package-info" style="padding: 15px; display: flex; flex-direction: column; flex-grow: 1;">
+              <h4 style="margin: 0 0 8px 0; font-size: 1.1rem; color: var(--brand-deep); line-height: 1.2;">${displayTitle}</h4>
+              <p style="margin: 0 0 15px 0; font-size: 0.85rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
+                ${pkg.descripcion || pkg.Descripcion || 'Incluye servicios especiales para tu estadía.'}
+              </p>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+                <span class="package-price" style="font-weight: 700; color: var(--brand); font-size: 1.1rem;">$${this.formatCurrency(precio)}</span>
+                <span style="font-size: 0.8rem; background: var(--paper); padding: 4px 10px; border-radius: 20px; color: var(--muted);">Paquete</span>
+              </div>
+            </div>
+          </label>
+        </div>
+      `;
     }).join('');
 
-    const serviciosCheckboxes = serviciosActiveOptions.map(s => {
-      const sid = String(s.id_servicio || s.IDServicio || '');
-      // Usar precio correcto: primero el guardado en detalle de reserva, luego el costo del catálogo
+    const serviciosCheckboxes = serviciosActiveOptions.map(service => {
+      const sid = String(service.id_servicio || service.IDServicio || '');
       const svcEnReserva = serviciosActuales.find(sr => String(sr.id_servicio || sr.IDServicio || sr.id || '') === sid);
-      const precio = Number(
-        (svcEnReserva && (svcEnReserva.precioGuardado || svcEnReserva.costo || svcEnReserva.Precio)) ||
-        s.precio || s.Precio || s.Costo || 0
-      );
+      const unitPrice = Number((svcEnReserva && (svcEnReserva.precioGuardado || svcEnReserva.costo || svcEnReserva.Precio)) || service.precio || service.Precio || service.Costo || 0);
       const checked = svcIds.includes(sid);
       const disabled = isCancelada || svcEnReserva ? 'disabled' : '';
-      return `<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:${disabled?'default':'pointer'};background:${checked?'rgba(37,138,96,0.06)':'#f9fafb'};border:1px solid ${checked?'#258a60':'#e5e7eb'};transition:all .2s;">
-        <input type="checkbox" name="editServicios" value="${sid}" data-price="${precio}" data-name="${s.nombre || s.Nombre || s.NombreServicio || 'Servicio'}" ${checked?'checked':''} ${disabled} style="width:16px;height:16px;accent-color:#258a60;">
-        <span style="flex:1;font-size:0.9rem;font-weight:600;color:#173029;">${s.nombre || s.Nombre || s.NombreServicio || 'Servicio'}</span>
-        <span style="font-size:0.85rem;color:#258a60;font-weight:700;">$${this.formatCurrency(precio)}/pers.</span>
-      </label>`;
+      
+      const personas = svcEnReserva ? (svcEnReserva._personas || 1) : 1; // Assuming _personas is not in old DB, defaults to 1 for edit
+
+      const serviceImg = this._resolveServiceImg(service);
+      const displayTitle = this._resolveServiceTitle(service);
+
+      return `
+        <div class="service-checkbox modern-service" data-svc-id="${sid}">
+          <div style="display:flex; flex-direction:column; border-radius:16px; overflow:hidden;
+                      background:${checked ? 'rgba(31,106,77,0.05)' : 'white'};
+                      border:1px solid ${checked ? 'var(--brand)' : 'rgba(0,0,0,0.08)'};
+                      box-shadow:0 2px 8px rgba(0,0,0,0.04); transition:all 0.3s ease; height:100%;">
+
+            <!-- Imagen -->
+            <div class="service-image" style="height:120px; position:relative;">
+              <img src="${serviceImg}" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'">
+              ${checked ? '<div class="checkmark" style="position:absolute; top:10px; right:10px; background:var(--brand); color:white; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:0 2px 6px rgba(0,0,0,.2);">✓</div>' : ''}
+              
+              <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.reservasModule.verDetalleServicio('${sid}')" style="position: absolute; bottom: 8px; right: 8px; background: rgba(255,255,255,0.9); border: none; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; color: var(--brand-deep); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 4px; backdrop-filter: blur(4px);">
+                <i class="fa-solid fa-eye"></i> Detalle
+              </button>
+            </div>
+
+            <!-- Contenido -->
+            <div style="padding:14px; display:flex; flex-direction:column; flex-grow:1; gap:8px;">
+              <h4 style="margin:0; font-size:1rem; color:var(--brand-deep); line-height:1.2;">${displayTitle}</h4>
+              <p style="margin:0; font-size:0.8rem; color:var(--muted); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.4;">
+                ${service.descripcion || service.Descripcion || 'Servicio adicional para complementar tu estadía.'}
+              </p>
+
+              <!-- Precio por persona -->
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; color:var(--muted); margin-top:auto; padding-top:8px; border-top:1px solid rgba(0,0,0,.06);">
+                <span>Precio/persona</span>
+                <span style="font-weight:700; color:var(--brand);">$${this.formatCurrency(unitPrice)}</span>
+              </div>
+
+              <!-- Selección y contador de personas -->
+              <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                <!-- Toggle selección -->
+                <label style="display:flex; align-items:center; gap:6px; cursor:${disabled?'default':'pointer'}; flex:1;">
+                  <input type="checkbox"
+                    name="editServicios"
+                    value="${sid}"
+                    data-price="${unitPrice}"
+                    data-name="${displayTitle}"
+                    class="service-check-input-edit"
+                    data-service-id="${sid}"
+                    ${checked ? 'checked' : ''}
+                    ${disabled}
+                    style="width:16px; height:16px; accent-color:var(--brand); cursor:${disabled?'default':'pointer'}; flex-shrink:0;">
+                  <span style="font-size:0.82rem; font-weight:600; color:var(--brand-deep);">Agregar</span>
+                </label>
+
+                <!-- Contador personas -->
+                <div class="svc-counter-edit" data-svc-id="${sid}"
+                     style="display:${checked ? 'flex' : 'none'}; align-items:center; gap:4px;">
+                  <button type="button" class="svc-dec-edit"
+                    data-svc-id="${sid}"
+                    ${disabled}
+                    style="width:28px; height:28px; border-radius:8px; border:1px solid rgba(0,0,0,.12); background:#f8fafc; font-size:1rem; font-weight:700; cursor:${disabled?'default':'pointer'}; display:flex; align-items:center; justify-content:center; color:var(--brand-deep);">−</button>
+                  <span class="svc-count-display-edit" data-svc-id="${sid}"
+                    style="min-width:28px; text-align:center; font-weight:700; font-size:0.95rem; color:var(--brand-deep);">${personas}</span>
+                  <button type="button" class="svc-inc-edit"
+                    data-svc-id="${sid}"
+                    ${disabled}
+                    style="width:28px; height:28px; border-radius:8px; border:1px solid rgba(0,0,0,.12); background:#f8fafc; font-size:1rem; font-weight:700; cursor:${disabled?'default':'pointer'}; display:flex; align-items:center; justify-content:center; color:var(--brand-deep);">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
     }).join('');
 
     // HTML del formulario
@@ -1743,15 +1833,15 @@ if (this.refs.reservationForm) {
       <div style="max-width:900px;margin:0 auto;padding-bottom:40px;">
 
         <!-- Encabezado -->
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;">
-          <div>
-            <p style="font-size:0.75rem;font-weight:800;color:#258a60;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 4px;">Gestión de Reservas</p>
-            <h2 style="margin:0;color:#173029;font-size:1.5rem;font-weight:800;">✏️ Editar Reserva <span style="color:#258a60;">#${reserva.id_reserva || reserva.IDReserva}</span></h2>
-          </div>
+        <div style="display:flex;align-items:center;gap:20px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #e2e8f0;">
           <button onclick="window.reservasModule.showReservationsList()"
             style="padding:10px 20px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;color:#173029;font-weight:700;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;gap:6px;">
             ← Volver a la lista
           </button>
+          <div>
+            <p style="font-size:0.75rem;font-weight:800;color:#258a60;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 4px;">Gestión de Reservas</p>
+            <h2 style="margin:0;color:#173029;font-size:1.5rem;font-weight:800;">✏️ Editar Reserva <span style="color:#258a60;">#${reserva.id_reserva || reserva.IDReserva}</span></h2>
+          </div>
         </div>
 
         ${bannerCancelada}
@@ -1909,7 +1999,7 @@ if (this.refs.reservationForm) {
                 💳 Guardar y registrar pago pendiente
               </button>
             </div>
-            <button type="submit"
+            <button type="button" id="btnGuardarCambiosEdit"
               style="padding:12px 28px;border-radius:10px;border:none;background:linear-gradient(135deg,#014034,#258a60);color:#fff;font-weight:800;cursor:pointer;font-size:0.9rem;box-shadow:0 4px 14px rgba(1,64,52,.3);">
               💾 Guardar cambios
             </button>
@@ -1925,16 +2015,81 @@ if (this.refs.reservationForm) {
 
     // Adjuntar event listeners a los checkboxes para recalcular
     this.refs.editReservationContainer.querySelectorAll('input[name="editPaquetes"], input[name="editServicios"]').forEach(cb => {
-      cb.addEventListener('change', () => this._recalcularEdicion());
+      cb.addEventListener('change', (e) => {
+        // Toggle de clases visuales para paquetes
+        if(e.target.name === 'editPaquetes') {
+          const label = e.target.closest('.modern-package').querySelector('.package-label');
+          if(label) {
+            if(e.target.checked) {
+              label.style.background = 'rgba(31, 106, 77, 0.05)';
+              label.style.borderColor = 'var(--brand)';
+              const imgDiv = label.querySelector('.package-image');
+              if(imgDiv && !imgDiv.querySelector('.checkmark')) {
+                imgDiv.insertAdjacentHTML('beforeend', '<div class="checkmark" style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>');
+              }
+            } else {
+              label.style.background = 'white';
+              label.style.borderColor = 'rgba(0,0,0,0.08)';
+              const checkmark = label.querySelector('.checkmark');
+              if(checkmark) checkmark.remove();
+            }
+          }
+        }
+        
+        // Toggle de clases visuales para servicios
+        if(e.target.name === 'editServicios') {
+          const svcId = e.target.dataset.serviceId;
+          const card = e.target.closest('.modern-service').querySelector('div');
+          const counter = this.refs.editReservationContainer.querySelector(`.svc-counter-edit[data-svc-id="${svcId}"]`);
+          
+          if(e.target.checked) {
+            if(counter) counter.style.display = 'flex';
+            if(card) { card.style.background = 'rgba(31,106,77,0.05)'; card.style.borderColor = 'var(--brand)'; }
+            const imgDiv = card.querySelector('.service-image');
+            if (imgDiv && !imgDiv.querySelector('.checkmark')) {
+              imgDiv.insertAdjacentHTML('beforeend', '<div class="checkmark" style="position:absolute;top:10px;right:10px;background:var(--brand);color:white;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 6px rgba(0,0,0,.2);">✓</div>');
+            }
+          } else {
+            if(counter) counter.style.display = 'none';
+            if(card) { card.style.background = 'white'; card.style.borderColor = 'rgba(0,0,0,0.08)'; }
+            const checkmark = card.querySelector('.checkmark');
+            if(checkmark) checkmark.remove();
+            
+            const countEl = this.refs.editReservationContainer.querySelector(`.svc-count-display-edit[data-svc-id="${svcId}"]`);
+            if(countEl) countEl.textContent = '1';
+          }
+        }
+        this._recalcularEdicion();
+      });
+    });
+
+    // Event listeners para los contadores (+/-) de servicios en edición
+    this.refs.editReservationContainer.addEventListener('click', (e) => {
+      const btn = e.target.closest('.svc-inc-edit, .svc-dec-edit');
+      if (!btn || btn.hasAttribute('disabled')) return;
+      const svcId = btn.dataset.svcId;
+      const isInc = btn.classList.contains('svc-inc-edit');
+      
+      const countEl = this.refs.editReservationContainer.querySelector(`.svc-count-display-edit[data-svc-id="${svcId}"]`);
+      if (!countEl) return;
+      
+      let val = parseInt(countEl.textContent || '1', 10);
+      if (isInc) {
+        val = Math.min(val + 1, 20); // asumiendo max 20 temporalmente
+      } else {
+        val = Math.max(val - 1, 1);
+      }
+      countEl.textContent = val;
+      this._recalcularEdicion();
     });
 
     // Calcular inmediatamente con los valores actuales
+    this._initialTotalNuevo = undefined;
     this._recalcularEdicion();
 
-    // Submit del formulario
-    const editForm = this.refs.editReservationContainer.querySelector('#editReservationForm');
-    if (editForm) {
-      editForm.addEventListener('submit', async (e) => {
+    const btnGuardar = this.refs.editReservationContainer.querySelector('#btnGuardarCambiosEdit');
+    if (btnGuardar) {
+      btnGuardar.addEventListener('click', async (e) => {
         e.preventDefault();
         await this.saveReserva(reserva.id_reserva || reserva.IDReserva);
       });
@@ -2014,46 +2169,34 @@ if (this.refs.reservationForm) {
     let totalSvc = 0;
     let descSvc = '';
     const svcChecks = container.querySelectorAll('input[name="editServicios"]:checked');
-    svcChecks.forEach(cb => { 
-      totalSvc += Number(cb.getAttribute('data-price') || 0); 
-      descSvc += `<div style="font-size:0.8rem;color:#6b7280;margin-left:12px;">• ${cb.getAttribute('data-name')} ($${this.formatCurrency(cb.getAttribute('data-price') || 0)})</div>`;
+    svcChecks.forEach(cb => {
+      const svcId = cb.value;
+      const countEl = container.querySelector(`.svc-count-display-edit[data-svc-id="${svcId}"]`);
+      const qty = countEl ? parseInt(countEl.textContent, 10) : 1;
+      const unitPrice = Number(cb.getAttribute('data-price') || 0);
+      const subSvc = unitPrice * qty;
+      
+      totalSvc += subSvc;
+      descSvc += `<div style="font-size:0.8rem;color:#6b7280;margin-left:12px;">• ${cb.getAttribute('data-name')} (${qty} persona${qty>1?'s':''} × $${this.formatCurrency(unitPrice)}) = $${this.formatCurrency(subSvc)}</div>`;
     });
 
     const totalNuevo = totalHab + totalPaq + totalSvc;
-    const totalAnterior = this._editTotalAnterior || 0;
-    const diferencia = totalNuevo - totalAnterior;
-    this._lastEditTotal = totalNuevo;
-
-    let diferenciaHtml = '';
-    if (totalAnterior > 0) {
-      if (diferencia > 0) {
-        diferenciaHtml = `
-          <div style="display:flex;justify-content:space-between;padding:6px 0;">
-            <span style="font-size:0.85rem;color:#b45309;font-weight:700;">⚠️ Diferencia a pagar:</span>
-            <span style="font-weight:800;color:#b45309;">+$${this.formatCurrency(diferencia)}</span>
-          </div>`;
-        if (pagarDifEl) pagarDifEl.style.display = 'block';
-        const btnDif = container.querySelector('#btnPagarDif');
-        if (btnDif) btnDif.textContent = `💳 Guardar y registrar pago: +$${this.formatCurrency(diferencia)}`;
-      } else if (diferencia < 0) {
-        diferenciaHtml = `
-          <div style="display:flex;justify-content:space-between;padding:6px 0;">
-            <span style="font-size:0.85rem;color:#065f46;font-weight:700;">✅ Saldo a favor del cliente:</span>
-            <span style="font-weight:800;color:#065f46;">$${this.formatCurrency(Math.abs(diferencia))}</span>
-          </div>`;
-        if (pagarDifEl) pagarDifEl.style.display = 'none';
-      } else {
-        if (pagarDifEl) pagarDifEl.style.display = 'none';
-      }
+    if (this._initialTotalNuevo === undefined) {
+      this._initialTotalNuevo = totalNuevo;
     }
+    const costoAdicional = Math.max(0, totalNuevo - this._initialTotalNuevo);
+    const totalAnterior = this._editTotalAnterior || 0;
+    // La diferencia es el valor nuevo real que el cliente va a pagar extra
+    const diferencia = Math.max(0, totalNuevo - totalAnterior);
+    this._lastEditTotal = totalNuevo;
 
     if (breakdownEl) {
       let anteriorHtml = totalAnterior > 0 ? `
         <div style="display:flex;justify-content:space-between;padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:10px;border:1px solid #e2e8f0;">
-          <span style="font-size:0.95rem;color:#475569;font-weight:700;">Total pagado / anterior:</span>
+          <span style="font-size:0.95rem;color:#475569;font-weight:700;">Monto Original Pagado:</span>
           <span style="font-weight:800;color:#475569;">$${this.formatCurrency(totalAnterior)}</span>
         </div>
-        <div style="font-size:0.85rem;font-weight:700;color:#173029;margin-bottom:6px;">Detalle de la Reserva Actualizada:</div>
+        <div style="font-size:0.85rem;font-weight:700;color:#173029;margin-bottom:6px;">Detalle Histórico y Agregados:</div>
       ` : '';
 
       breakdownEl.innerHTML = `
@@ -2077,11 +2220,10 @@ if (this.refs.reservationForm) {
             </div>
             ${descSvc}
           </div>
-          <div style="display:flex;justify-content:space-between;padding:10px 0;margin-top:4px;border-bottom:1px dashed #e5e7eb;">
-            <strong style="color:#173029;font-size:1rem;">TOTAL NUEVO:</strong>
-            <strong style="color:#258a60;font-size:1.25rem;">$${this.formatCurrency(totalNuevo)}</strong>
+          <div style="display:flex;justify-content:space-between;padding:12px 16px;margin-top:4px;background:#ebfbf3;border:1px solid #34d399;border-radius:12px;">
+            <strong style="color:#065f46;font-size:1.1rem;">Total Nuevo:</strong>
+            <strong style="color:#059669;font-size:1.3rem;">$${this.formatCurrency(costoAdicional)}</strong>
           </div>
-          ${diferenciaHtml}
         </div>
       `;
     }
@@ -2126,9 +2268,17 @@ if (this.refs.reservationForm) {
     if (idCliente) formData.id_cliente = String(idCliente);
     
     try {
+      Swal.fire({
+        title: 'Guardando cambios...',
+        text: 'Por favor espera',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
       console.log('Actualizando reserva:', formData);
       await actualizarReserva(id, formData);
-      showAlert('Éxito', 'Reserva actualizada exitosamente', 'success');
+      await Swal.fire('Éxito', 'Reserva actualizada exitosamente', 'success');
       
       await this.reloadData();
       this.filterReservations();
@@ -2192,6 +2342,66 @@ if (this.refs.reservationForm) {
       console.error('Error eliminando reserva:', error);
       Swal.fire('Error', 'Error al eliminar la reserva: ' + (error.message || 'Error desconocido'), 'error');
     }
+  }
+  
+  // Detalle de Paquete
+  verDetallePaquete(id) {
+    const pkg = this.currentData.paquetes.find(p => (p.id_paquete || p.IDPaquete) == id);
+    if (!pkg) return;
+    
+    let imgSrc = pkg.ImagenUrl || pkg.imagenUrl || pkg.Imagen || pkg.imagen || pkg.ImagenPaquete || null;
+    if (imgSrc && typeof imgSrc === 'object' && imgSrc.type === 'Buffer') {
+      imgSrc = String.fromCharCode.apply(null, imgSrc.data);
+    }
+    if (imgSrc === 'null') imgSrc = null;
+    if (typeof imgSrc === 'string' && imgSrc.trim()) {
+      imgSrc = imgSrc.trim();
+      if (imgSrc.startsWith('/http')) imgSrc = imgSrc.substring(1);
+      if (!imgSrc.startsWith('http') && /^[\w\- .]+\.(png|jpg|jpeg|webp|gif)$/i.test(imgSrc)) imgSrc = `/uploads/${imgSrc}`;
+      else if (!imgSrc.startsWith('http') && imgSrc.toLowerCase().includes('uploads') && !imgSrc.startsWith('/')) imgSrc = `/${imgSrc}`;
+    }
+
+    Swal.fire({
+      title: `<h3 style="color:var(--brand-deep);margin:0;font-weight:800">${pkg.nombre || pkg.Nombre || pkg.NombrePaquete}</h3>`,
+      html: `
+        <div style="text-align:left;font-size:0.95rem;color:var(--muted);line-height:1.5;">
+          ${imgSrc ? `<img src="${imgSrc}" style="width:100%;height:200px;object-fit:cover;border-radius:12px;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">` : ''}
+          <p><strong>Descripción:</strong><br>${pkg.descripcion || pkg.Descripcion || 'Sin descripción'}</p>
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-top:16px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;">
+            <span style="font-weight:700;">Precio del Paquete:</span>
+            <span style="color:var(--brand);font-weight:800;font-size:1.1rem;">$${this.formatCurrency(pkg.precio || pkg.Precio || 0)}</span>
+          </div>
+        </div>
+      `,
+      showConfirmButton: true,
+      confirmButtonText: 'Cerrar',
+      confirmButtonColor: '#258a60'
+    });
+  }
+
+  // Detalle de Servicio
+  verDetalleServicio(id) {
+    const svc = this.currentData.servicios.find(s => (s.id_servicio || s.IDServicio) == id);
+    if (!svc) return;
+
+    const imgSrc = this._resolveServiceImg(svc);
+    
+    Swal.fire({
+      title: `<h3 style="color:var(--brand-deep);margin:0;font-weight:800">${this._resolveServiceTitle(svc)}</h3>`,
+      html: `
+        <div style="text-align:left;font-size:0.95rem;color:var(--muted);line-height:1.5;">
+          ${imgSrc ? `<img src="${imgSrc}" style="width:100%;height:200px;object-fit:cover;border-radius:12px;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">` : ''}
+          <p><strong>Descripción:</strong><br>${svc.descripcion || svc.Descripcion || 'Sin descripción'}</p>
+          <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-top:16px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;">
+            <span style="font-weight:700;">Precio por Persona:</span>
+            <span style="color:var(--brand);font-weight:800;font-size:1.1rem;">$${this.formatCurrency(svc.precio || svc.Precio || svc.Costo || 0)}</span>
+          </div>
+        </div>
+      `,
+      showConfirmButton: true,
+      confirmButtonText: 'Cerrar',
+      confirmButtonColor: '#258a60'
+    });
   }
   
   // Reload all data

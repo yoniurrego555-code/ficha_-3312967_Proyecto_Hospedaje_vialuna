@@ -715,6 +715,12 @@ async function actualizar(id, data) {
     await connection.query("DELETE FROM detallereservaservicio WHERE IDReserva = ?", [id]);
 
     await guardarDetalles(connection, id, payload.paquetes, payload.servicios);
+
+    // Si la reserva pasa a estado 3 (Finalizada), liberar la habitación
+    if (Number(payload.reserva.id_estado_reserva) === 3) {
+      await connection.query("UPDATE habitacion SET Estado = 1 WHERE IDHabitacion = ?", [payload.reserva.id_habitacion]);
+    }
+
     await connection.commit();
 
     return obtenerPorId(id);

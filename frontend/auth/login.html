@@ -334,9 +334,9 @@
                     throw new Error('Correo o contraseña incorrectos.');
                 }
 
-                localStorage.setItem('vialuna_token', response.token);
-                localStorage.setItem('vialuna_usuario', JSON.stringify(usuario));
-                localStorage.setItem('vialuna_rol', usuario.rol || '');
+                sessionStorage.setItem('vialuna_token', response.token);
+                sessionStorage.setItem('vialuna_usuario', JSON.stringify(usuario));
+                sessionStorage.setItem('vialuna_rol', usuario.rol || '');
 
                 showMessage('Inicio de sesion exitoso', 'success');
 
@@ -394,9 +394,9 @@
                 const usuario = response.user || response.usuario;
 
                 if (response.token && usuario) {
-                    localStorage.setItem('vialuna_token', response.token);
-                    localStorage.setItem('vialuna_usuario', JSON.stringify(usuario));
-                    localStorage.setItem('vialuna_rol', usuario.rol || 'cliente');
+                    sessionStorage.setItem('vialuna_token', response.token);
+                    sessionStorage.setItem('vialuna_usuario', JSON.stringify(usuario));
+                    sessionStorage.setItem('vialuna_rol', usuario.rol || 'cliente');
                     window.location.replace(redirectParam || '../cliente/dashboard.html');
                     return;
                 }

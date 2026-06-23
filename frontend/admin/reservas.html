@@ -113,12 +113,14 @@
     <div class="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6 items-start w-full box-border min-w-0">
     <!-- Form Content Left (Fluye naturalmente) -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-8 w-full box-border min-w-0 relative">
-    <button id="backToListInlineBtn" onclick="" class="px-4 py-2 bg-gray-50 border border-gray-200 text-brand-deep text-xs font-bold rounded-xl hover:bg-gray-100 cursor-pointer transition-all duration-300" style="display:none; position:fixed; left:16px; top:96px; z-index:9999; box-shadow:0 6px 18px rgba(16,24,40,0.08);">
-      ← Volver a la lista
-    </button>
-      <div class="border-b border-gray-100 pb-5 mb-6">
-        <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2"><i class="fa-regular fa-calendar"></i> Registrar Nueva Reserva</h2>
-        <p class="text-sm text-muted mt-1 m-0">Complete la información básica del huésped y personalice su estancia.</p>
+      <div class="border-b border-gray-100 pb-5 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-brand-deep m-0 flex items-center gap-2"><i class="fa-regular fa-calendar"></i> Registrar Nueva Reserva</h2>
+          <p class="text-sm text-muted mt-1 m-0">Complete la información básica del huésped y personalice su estancia.</p>
+        </div>
+        <button id="backToListInlineBtn" onclick="window.reservasModule.showReservationsList()" class="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-200 text-brand-deep text-sm font-bold rounded-xl hover:bg-gray-50 hover:-translate-y-0.5 cursor-pointer transition-all duration-300 shadow-sm shrink-0">
+          <i class="fa-solid fa-arrow-left"></i> Volver
+        </button>
       </div>
 
       <form id="reservationForm" class="flex flex-col gap-8 m-0 p-0 bg-transparent border-none w-full box-border">
@@ -203,11 +205,9 @@
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial:</label>
               <select id="estadoReserva" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer w-full box-border" required>
-                <option value="5">Pendiente</option>
-                <option value="1">Activa</option>
-                <option value="4">Rechazada</option>
-                <option value="3">Finalizada</option>
-                <option value="2">Cancelada</option>
+                <option value="1">Confirmado</option>
+                <option value="5">En proceso</option>
+                <option value="3">Finalizado</option>
               </select>
             </div>
           </div>
@@ -239,34 +239,34 @@
 
     <!-- Summary Sidebar Content Right (Sticky en Desktop) -->
     <aside class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col w-full box-border xl:sticky xl:top-6" style="max-height: calc(100vh - 48px);">
-      <div class="bg-brand-deep text-white p-5 text-center shrink-0">
+      <div class="bg-brand-deep text-white p-4 text-center shrink-0">
         <h3 class="m-0 text-base font-bold tracking-wide">Resumen de Costos</h3>
       </div>
       
-      <div class="p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar flex-1 bg-white">
+      <div class="p-5 flex flex-col gap-4 overflow-y-auto custom-scrollbar flex-1 bg-white">
         <!-- Room details -->
-        <div id="summaryRoom" class="flex flex-col gap-3 pb-5 border-b border-gray-100">
-          <p class="text-xs text-center text-muted italic my-4">Sin habitación seleccionada</p>
+        <div id="summaryRoom" class="flex flex-col gap-2 pb-4 border-b border-gray-100">
+          <p class="text-xs text-center text-muted italic my-2">Sin habitación seleccionada</p>
         </div>
 
         <!-- Packages included -->
-        <div>
-          <h4 class="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Paquetes Seleccionados</h4>
-          <div id="summaryPackages" class="flex flex-col gap-2">
+        <div class="pb-4 border-b border-gray-100">
+          <h4 class="text-[10px] font-bold text-muted uppercase tracking-wider mb-1.5">Paquetes Seleccionados</h4>
+          <div id="summaryPackages" class="flex flex-col gap-1.5">
             <p class="text-xs text-muted italic m-0">Ningún paquete seleccionado</p>
           </div>
         </div>
 
         <!-- Services included -->
-        <div class="pb-5 border-b border-gray-100">
-          <h4 class="text-[10px] font-bold text-muted uppercase tracking-wider mb-2">Servicios Adicionales</h4>
-          <div id="summaryServices" class="flex flex-col gap-2">
+        <div class="pb-4 border-b border-gray-100">
+          <h4 class="text-[10px] font-bold text-muted uppercase tracking-wider mb-1.5">Servicios Adicionales</h4>
+          <div id="summaryServices" class="flex flex-col gap-1.5">
             <p class="text-xs text-muted italic m-0">Ningún servicio seleccionado</p>
           </div>
         </div>
 
         <!-- Summary Totals -->
-        <div class="flex flex-col gap-2 mt-auto pt-4 shrink-0">
+        <div class="flex flex-col gap-2 mt-auto pt-2 shrink-0">
           <div class="flex justify-between items-center text-xs text-muted font-semibold">
             <span>Subtotal:</span>
             <span id="subtotal">$0</span>
@@ -278,9 +278,8 @@
         </div>
       </div>
 
-      <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-center shrink-0">
-        <button id="cancelNewReservationBtn" class="w-full py-3 rounded-xl border border-dashed border-brand/40 text-brand-deep font-bold hover:bg-brand/5 active:scale-98 transition-all duration-300 cursor-pointer bg-white text-xs box-border">
-          ← Volver al listado de reservas
+      <div class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-center shrink-0 hidden" style="display:none;">
+        <button id="cancelNewReservationBtn" class="hidden">
         </button>
       </div>
     </aside>
@@ -385,7 +384,7 @@
       import { apiUrl, getConnectionErrorMessage } from '../js/shared/api-config.js';
       import { renderPremiumPagination } from '../dashboard/modules/ui-utils.js';
 
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token') || sessionStorage.getItem('vialuna_token');
 
       const searchInput = document.getElementById('searchReservations');
       const statusSelect = document.getElementById('filterStatus');
@@ -579,6 +578,7 @@
 
       // Mostrar formulario de nueva reserva y boton volver
       showFormBtn?.addEventListener('click', () => {
+        if (window.reservasModule) window.reservasModule.clearForm();
         if (reservationFormSection) reservationFormSection.style.display = 'block';
         if (reservationListSection) reservationListSection.style.display = 'none';
         // Asegurar que el botón de cancelar/volver esté visible
@@ -587,12 +587,14 @@
       });
 
       cancelNewReservationBtn?.addEventListener('click', () => {
+        if (window.reservasModule) window.reservasModule.clearForm();
         if (reservationFormSection) reservationFormSection.style.display = 'none';
         if (reservationListSection) reservationListSection.style.display = '';
         if (backToListInlineBtn) backToListInlineBtn.style.display = 'none';
       });
 
       backToListInlineBtn?.addEventListener('click', () => {
+        if (window.reservasModule) window.reservasModule.clearForm();
         if (reservationFormSection) reservationFormSection.style.display = 'none';
         if (reservationListSection) reservationListSection.style.display = '';
         if (cancelNewReservationBtn) cancelNewReservationBtn.style.display = 'none';

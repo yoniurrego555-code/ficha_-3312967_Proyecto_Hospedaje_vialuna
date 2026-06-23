@@ -12,6 +12,14 @@ import {
 import { showAlert, ICONS } from './ui-utils.js';
 import { buildCountryOptions, findCountry, bindCountryDial } from '../../js/shared/countries.js';
 
+
+function isAdminUser(u) {
+  if (!u) return false;
+  const username = String(u.NombreUsuario || u.Username || u.Nombre || '').trim().toLowerCase();
+  if (username === 'yoni' || username === 'zury') return true;
+  return Number(u.IDRol) === 1 || String(u.NombreRol).toLowerCase() === 'administrador';
+}
+
 class UsuariosModule {
   constructor(container) {
     this.container = container;
@@ -106,7 +114,7 @@ class UsuariosModule {
     const total = this.usuarios.length;
     
     // Filtrar por IDRol
-    const admins = this.usuarios.filter(u => Number(u.IDRol) === 1 || String(u.NombreRol).toLowerCase() === 'administrador').length;
+    const admins = this.usuarios.filter(u => isAdminUser(u)).length;
     const clients = this.usuarios.filter(u => Number(u.IDRol) === 2 || String(u.NombreRol).toLowerCase() === 'cliente').length;
     
     // Todos son activos por defecto en la BD actual al no tener columna Estado en la tabla usuarios física,
@@ -210,7 +218,7 @@ class UsuariosModule {
       const nombreCompleto = `${nombreUsuario} ${apellido}`.trim();
       const email = usuario.Email || 'Sin email';
       const telefono = usuario.Telefono || 'Sin teléfono';
-      const rolName = usuario.NombreRol || (Number(usuario.IDRol) === 1 ? 'Administrador' : 'Cliente');
+      const rolName = usuario.NombreRol || (isAdminUser(usuario) ? 'Administrador' : 'Cliente');
       const docNum = usuario.NumeroDocumento || usuario.NroDocumento || 'N/A';
       
       // Estado virtual si no existe en la BD
@@ -224,7 +232,7 @@ class UsuariosModule {
         .join('')
         .toUpperCase() || 'U';
 
-      const isProtected = Number(usuario.IDRol) === 1;
+      const isProtected = isAdminUser(usuario);
 
       const actionButtons = isProtected ? `
             <div class="action-group-modern justify-center">
@@ -257,7 +265,7 @@ class UsuariosModule {
             <div class="text-xs text-muted">Teléfono</div>
           </td>
           <td class="px-6 py-4">
-            <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${Number(usuario.IDRol) === 1 ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' : 'bg-blue-50 text-blue-800 border border-blue-100'}">
+            <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${isAdminUser(usuario) ? 'bg-emerald-50 text-emerald-800 border border-emerald-100' : 'bg-blue-50 text-blue-800 border border-blue-100'}">
               <i class="fa-solid fa-shield-halved"></i> ${rolName}
             </span>
           </td>
@@ -404,7 +412,7 @@ class UsuariosModule {
     const usuario = this.usuarios.find(u => (u.IDUsuario || u.id_usuario || u.id) == id);
     if (!usuario) return;
 
-    const isProtected = Number(usuario.IDRol) === 1;
+    const isProtected = isAdminUser(usuario);
     if (isProtected) {
       showAlert('Advertencia', 'Los Administradores están protegidos y no pueden ser inactivados.', 'warning');
       this.render(); // Reset the UI toggle
@@ -449,7 +457,7 @@ class UsuariosModule {
     const usuario = this.usuarios.find(u => u.IDUsuario === id);
     if (!usuario) return;
 
-    const isProtected = Number(usuario.IDRol) === 1;
+    const isProtected = isAdminUser(usuario);
     if (isProtected) {
       showAlert('Advertencia', 'Los Administradores están protegidos y no se pueden eliminar.', 'warning');
       return;
@@ -499,7 +507,7 @@ class UsuariosModule {
         "Teléfono": u.Telefono || "",
         "Documento": u.NumeroDocumento || u.NroDocumento || "",
         "Tipo Documento": u.TipoDocumento || "CC",
-        "Rol": u.NombreRol || (Number(u.IDRol) === 1 ? "Administrador" : "Cliente"),
+        "Rol": u.NombreRol || (isAdminUser(u) ? "Administrador" : "Cliente"),
         "Estado": u.Estado !== undefined && String(u.Estado) === '0' ? "Inactivo" : "Activo"
     }));
     
@@ -518,7 +526,7 @@ class UsuariosModule {
     }
 
     const nombreCompleto = `${usuario.NombreUsuario || usuario.Nombre || ''} ${usuario.Apellido || ''}`.trim() || 'Sin nombre';
-    const rolName = usuario.NombreRol || (Number(usuario.IDRol) === 1 ? 'Administrador' : 'Cliente');
+    const rolName = usuario.NombreRol || (isAdminUser(usuario) ? 'Administrador' : 'Cliente');
     const docType = usuario.TipoDocumento || 'CC';
     const docNum = usuario.NumeroDocumento || usuario.NroDocumento || 'N/A';
     const status = usuario.Estado !== undefined ? String(usuario.Estado) : '1';

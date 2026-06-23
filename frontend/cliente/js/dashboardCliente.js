@@ -96,7 +96,7 @@ function getRoomBedType(room) {
 async function init() {
     try {
         const session = getSession();
-        const token = localStorage.getItem("vialuna_token");
+        const token = sessionStorage.getItem("vialuna_token");
 
         if (!session || !token) {
             window.location.href = "../auth/login.html";

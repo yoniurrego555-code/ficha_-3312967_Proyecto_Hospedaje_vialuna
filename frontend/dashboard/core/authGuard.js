@@ -1,4 +1,4 @@
-﻿import { clearSession, getSession, isAdminSession, isClientSession } from "./api.js";
+import { clearSession, getSession, isAdminSession, isClientSession } from "./api.js";
 
 // Re-exportar funciones de api.js para facilitar importaciones
 export { getSession, isAdminSession, isClientSession } from "./api.js";
@@ -92,7 +92,7 @@ export function protectPage({ requiredRole = null, deniedMessage = "" } = {}) {
   console.log('ðŸ” protectPage llamado con requiredRole:', requiredRole);
 
   const session = getSession();
-  const token = localStorage.getItem('vialuna_token');
+  const token = sessionStorage.getItem('vialuna_token');
 
   console.log('ðŸ“‹ SesiÃ³n obtenida:', session);
   console.log('ðŸ”‘ Token obtenido:', token ? 'Presente' : 'Ausente');
