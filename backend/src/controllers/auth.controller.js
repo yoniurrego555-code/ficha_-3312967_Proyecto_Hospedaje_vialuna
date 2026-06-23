@@ -116,7 +116,7 @@ exports.login = async (req, res) => {
 
     if (!account || !account.passwordHash) {
       return res.status(401).json({
-        message: "Usuario no encontrado"
+        message: "Correo o contraseña incorrectos."
       });
     }
 
@@ -124,7 +124,13 @@ exports.login = async (req, res) => {
 
     if (!validPassword) {
       return res.status(401).json({
-        message: "Contraseña incorrecta"
+        message: "Correo o contraseña incorrectos."
+      });
+    }
+
+    if (Number(account.raw.Estado || 0) !== 1) {
+      return res.status(403).json({
+        message: "Tu cuenta esta inaptiva comunicate con el administrador"
       });
     }
 

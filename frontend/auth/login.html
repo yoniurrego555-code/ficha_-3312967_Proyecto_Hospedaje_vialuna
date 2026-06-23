@@ -346,7 +346,12 @@
 
                 setTimeout(() => window.location.replace(destino), 500);
             } catch (error) {
-                showMessage('Correo o contraseña incorrectos.', 'error');
+                // Detectar inactividad propagada desde usuarios.js o backend
+                if (error.message.includes("inactiva") || error.message.includes("inaptiva")) {
+                    showMessage('Tu cuenta está inactiva. Contacta al administrador.', 'error');
+                } else {
+                    showMessage('Correo o contraseña incorrectos.', 'error');
+                }
                 setLoading(false);
             }
         });

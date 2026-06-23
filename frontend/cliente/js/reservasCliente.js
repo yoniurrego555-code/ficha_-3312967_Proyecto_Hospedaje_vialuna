@@ -407,6 +407,10 @@ window.editarReserva = async (id) => {
                 <div style="text-align:left;font-size:0.95rem;color:var(--muted);line-height:1.5;">
                   ${imgSrc ? `<img src="${imgSrc}" style="width:100%;height:200px;object-fit:cover;border-radius:12px;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">` : ''}
                   <p><strong>Descripción:</strong><br>${desc || 'Sin descripción'}</p>
+                  <ul style="padding-left:20px; margin-top:10px;">
+                    ${svc.Duracion || svc.duracion ? `<li><strong>Duración:</strong> ${svc.Duracion || svc.duracion} min</li>` : ''}
+                    ${svc.CantidadMaximaPersonas || svc.capacidad_maxima ? `<li><strong>Capacidad Max:</strong> ${svc.CantidadMaximaPersonas || svc.capacidad_maxima} personas</li>` : ''}
+                  </ul>
                   <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-top:16px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;">
                     <span style="font-weight:700;">Precio por Persona:</span>
                     <span style="color:var(--brand);font-weight:800;font-size:1.1rem;">${formatMoney(svc.precio || svc.Precio || svc.Costo || 0)}</span>
@@ -452,7 +456,6 @@ window.editarReserva = async (id) => {
         const currentPq = pqReservados.find(pr => String(pr.id_paquete || pr.IDPaquete || pr.id || '') === pid);
         const precio = Number((currentPq && (currentPq.precio || currentPq.total)) || pkg.precio || pkg.Precio || 0);
         const checked = !!currentPq;
-        const disabled = checked ? 'disabled' : '';
 
         let imgSrc = pkg.ImagenUrl || pkg.imagenUrl || pkg.Imagen || pkg.imagen || pkg.ImagenPaquete || null;
         if (imgSrc && typeof imgSrc === 'object' && imgSrc.type === 'Buffer') imgSrc = String.fromCharCode.apply(null, imgSrc.data);
@@ -467,8 +470,8 @@ window.editarReserva = async (id) => {
 
         return `
         <div class="package-checkbox modern-package" style="position: relative;">
-          <input type="checkbox" id="client_edit_pkg_${pid}" name="clientEditPaquetes" value="${pid}" data-price="${precio}" data-name="${displayTitle}" ${checked?'checked':''} ${disabled} class="package-check-input" style="position: absolute; opacity: 0; cursor: ${disabled?'default':'pointer'};">
-          <label for="client_edit_pkg_${pid}" class="package-label ${checked ? 'selected' : ''}" style="display: flex; flex-direction: column; cursor: ${disabled?'default':'pointer'}; border-radius: 16px; overflow: hidden; background: ${checked ? 'rgba(31, 106, 77, 0.05)' : 'white'}; border: 1px solid ${checked ? 'var(--brand)' : 'rgba(0,0,0,0.08)'}; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease; height: 100%;">
+          <input type="checkbox" id="client_edit_pkg_${pid}" name="clientEditPaquetes" value="${pid}" data-price="${precio}" data-name="${displayTitle}" data-original="${checked}" ${checked?'checked':''} class="package-check-input" style="position: absolute; opacity: 0; cursor: pointer;">
+          <label for="client_edit_pkg_${pid}" class="package-label ${checked ? 'selected' : ''}" style="display: flex; flex-direction: column; cursor: pointer; border-radius: 16px; overflow: hidden; background: ${checked ? 'rgba(31, 106, 77, 0.05)' : 'white'}; border: 1px solid ${checked ? 'var(--brand)' : 'rgba(0,0,0,0.08)'}; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.3s ease; height: 100%;">
             
             <div class="package-image" style="height: 120px; position: relative; background: #f9fafb;">
               ${imgSrc ? `<img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.style.display='none';">` : `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3rem; opacity: 0.4;">🎁</div>`}
@@ -499,7 +502,6 @@ window.editarReserva = async (id) => {
         const currentSv = svReservados.find(sr => String(sr.id_servicio || sr.IDServicio || sr.id || '') === sid);
         const precio = Number((currentSv && (currentSv.precioGuardado || currentSv.costo || currentSv.Precio)) || service.precio || service.Precio || service.Costo || 0);
         const checked = !!currentSv;
-        const disabled = checked ? 'disabled' : '';
         
         const personas = currentSv ? (currentSv._personas || 1) : 1;
         
@@ -560,17 +562,17 @@ window.editarReserva = async (id) => {
               <!-- Selección y contador de personas -->
               <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
                 <!-- Toggle selección -->
-                <label style="display:flex; align-items:center; gap:6px; cursor:${disabled?'default':'pointer'}; flex:1;">
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; flex:1;">
                   <input type="checkbox"
                     name="clientEditServicios"
                     value="${sid}"
                     data-price="${precio}"
                     data-name="${title}"
+                    data-original="${checked}"
                     class="service-check-input-client-edit"
                     data-service-id="${sid}"
                     ${checked ? 'checked' : ''}
-                    ${disabled}
-                    style="width:16px; height:16px; accent-color:var(--brand); cursor:${disabled?'default':'pointer'}; flex-shrink:0;">
+                    style="width:16px; height:16px; accent-color:var(--brand); cursor:pointer; flex-shrink:0;">
                   <span style="font-size:0.82rem; font-weight:600; color:var(--brand-deep);">Agregar</span>
                 </label>
 
@@ -578,15 +580,13 @@ window.editarReserva = async (id) => {
                 <div class="svc-counter-client-edit" data-svc-id="${sid}"
                      style="display:${checked ? 'flex' : 'none'}; align-items:center; gap:4px;">
                   <button type="button" class="svc-dec-client-edit"
-                    data-svc-id="${sid}"
-                    ${disabled}
-                    style="width:28px; height:28px; border-radius:8px; border:1px solid rgba(0,0,0,.12); background:#f8fafc; font-size:1rem; font-weight:700; cursor:${disabled?'default':'pointer'}; display:flex; align-items:center; justify-content:center; color:var(--brand-deep);">−</button>
+                    data-svc-id="${sid}" data-min-qty="${checked ? personas : 1}"
+                    style="width:28px; height:28px; border-radius:8px; border:1px solid rgba(0,0,0,.12); background:#f8fafc; font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--brand-deep);">−</button>
                   <span class="svc-count-display-client-edit" data-svc-id="${sid}"
                     style="min-width:28px; text-align:center; font-weight:700; font-size:0.95rem; color:var(--brand-deep);">${personas}</span>
                   <button type="button" class="svc-inc-client-edit"
                     data-svc-id="${sid}"
-                    ${disabled}
-                    style="width:28px; height:28px; border-radius:8px; border:1px solid rgba(0,0,0,.12); background:#f8fafc; font-size:1rem; font-weight:700; cursor:${disabled?'default':'pointer'}; display:flex; align-items:center; justify-content:center; color:var(--brand-deep);">+</button>
+                    style="width:28px; height:28px; border-radius:8px; border:1px solid rgba(0,0,0,.12); background:#f8fafc; font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--brand-deep);">+</button>
                 </div>
               </div>
             </div>
@@ -603,6 +603,12 @@ window.editarReserva = async (id) => {
     document.querySelectorAll('input[name="clientEditPaquetes"], input[name="clientEditServicios"]').forEach(el => {
         el.addEventListener('change', (e) => {
             if(e.target.name === 'clientEditPaquetes') {
+                if (!e.target.checked && e.target.getAttribute('data-original') === 'true') {
+                    // Prevent unchecking original
+                    e.target.checked = true;
+                    showAlert('Info', 'No puedes remover paquetes ya confirmados en la reserva', 'info');
+                    return;
+                }
                 const label = e.target.closest('.modern-package').querySelector('.package-label');
                 if(label) {
                     if(e.target.checked) {
@@ -621,6 +627,11 @@ window.editarReserva = async (id) => {
                 }
             }
             if(e.target.name === 'clientEditServicios') {
+                if (!e.target.checked && e.target.getAttribute('data-original') === 'true') {
+                    e.target.checked = true;
+                    showAlert('Info', 'No puedes remover servicios ya confirmados en la reserva', 'info');
+                    return;
+                }
                 const svcId = e.target.dataset.serviceId;
                 const card = e.target.closest('.modern-service').querySelector('div');
                 const counter = svGrid.querySelector(`.svc-counter-client-edit[data-svc-id="${svcId}"]`);
@@ -648,14 +659,23 @@ window.editarReserva = async (id) => {
     // Contadores de servicios
     svGrid.addEventListener('click', (e) => {
         const btn = e.target.closest('.svc-inc-client-edit, .svc-dec-client-edit');
-        if (!btn || btn.hasAttribute('disabled')) return;
+        if (!btn) return;
         const svcId = btn.dataset.svcId;
         const isInc = btn.classList.contains('svc-inc-client-edit');
         const countEl = svGrid.querySelector(`.svc-count-display-client-edit[data-svc-id="${svcId}"]`);
         if (!countEl) return;
+        
         let val = parseInt(countEl.textContent || '1', 10);
+        const minQty = parseInt(btn.dataset.minQty || '1', 10);
+        
         if (isInc) val = Math.min(val + 1, 20);
-        else val = Math.max(val - 1, 1);
+        else {
+            if (val <= minQty && minQty > 1) {
+                 showAlert('Info', 'No puedes reducir la cantidad de personas por debajo de lo reservado', 'info');
+                 return;
+            }
+            val = Math.max(val - 1, minQty);
+        }
         countEl.textContent = val;
         recalc();
     });

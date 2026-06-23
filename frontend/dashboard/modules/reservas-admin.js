@@ -152,6 +152,36 @@ export class ReservasAdminModule {
       searchReservations: this.container.querySelector("#searchReservations"),
       filterStatus: this.container.querySelector("#filterStatus")
     };
+    
+    // Globals for details modals
+    window.verDetalleHabitacionAdmin = (id) => {
+        const hab = this.currentData.habitaciones.find(h => (h.id_habitacion || h.IDHabitacion) == id);
+        if (!hab) return;
+        const cap = hab.capacidad || hab.CapacidadMaximaPersonas || hab.Capacidad || 2;
+        const camas = hab.cantidad_camas || hab.Camas || 1;
+        const tipoCamas = hab.tipo_camas || hab.TipoCamas || "Doble";
+        Swal.fire({
+            title: `<h3 style="color:var(--brand-deep);margin:0;font-weight:800">${hab.tipo || hab.Tipo || hab.NombreHabitacion || 'Habitación'}</h3>`,
+            html: `
+                <div style="text-align:left;font-size:0.95rem;color:var(--muted);line-height:1.5;">
+                  <img src="${this.resolveRoomImage(hab)}" style="width:100%;height:200px;object-fit:cover;border-radius:12px;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                  <p><strong>Descripción:</strong><br>${hab.descripcion || hab.Descripcion || 'Sin descripción'}</p>
+                  <ul style="padding-left:20px; margin-top:10px;">
+                    <li><strong>Capacidad:</strong> ${cap} persona(s)</li>
+                    <li><strong>Camas:</strong> ${camas} (${tipoCamas})</li>
+                  </ul>
+                  <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-top:16px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;">
+                    <span style="font-weight:700;">Precio por Noche:</span>
+                    <span style="color:var(--brand);font-weight:800;font-size:1.1rem;">$${this.formatCurrency(hab.precio || hab.Precio || hab.Costo || 0)}</span>
+                  </div>
+                </div>
+            `,
+            confirmButtonText: 'Cerrar',
+            confirmButtonColor: '#258a60'
+        });
+    };
+
+    window.verDetallePaqueteAdmin = (id) => { };
 
     // Make standard time readonly
     if (this.refs.horaEntrada) this.refs.horaEntrada.setAttribute('readonly', 'true');
@@ -344,6 +374,9 @@ export class ReservasAdminModule {
                  onerror="this.onerror=null; this.src='${getAppUrl('assets/images/rooms/individual.png')}'"
                  style="width: 100%; height: 100%; object-fit: cover;">
             ${isSelected ? '<div style="position: absolute; top: 10px; right: 10px; background: var(--brand); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">✓</div>' : ''}
+            <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.verDetalleHabitacionAdmin('${hab.id_habitacion || hab.IDHabitacion}')" style="position: absolute; bottom: 8px; right: 8px; background: rgba(255,255,255,0.9); border: none; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; color: var(--brand-deep); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 4px; backdrop-filter: blur(4px);">
+              <i class="fa-solid fa-eye"></i> Detalle
+            </button>
           </div>
           <div class="room-info" style="padding: 15px;">
             <div style="display: flex; justify-content: space-between; align-items: start;">
@@ -1704,7 +1737,7 @@ if (this.refs.reservationForm) {
       const paqEnReserva = paquetesActuales.find(pr => String(pr.id_paquete || pr.IDPaquete || pr.id || '') === pid);
       const precio = Number((paqEnReserva && (paqEnReserva.precio || paqEnReserva.total)) || pkg.precio || pkg.Precio || 0);
       const checked = paqIds.includes(pid);
-      const disabled = isCancelada || paqEnReserva ? 'disabled' : '';
+      const disabled = isCancelada ? 'disabled' : '';
 
       let imgSrc = pkg.ImagenUrl || pkg.imagenUrl || pkg.Imagen || pkg.imagen || pkg.ImagenPaquete || null;
       if (imgSrc && typeof imgSrc === 'object' && imgSrc.type === 'Buffer') {
@@ -1753,7 +1786,7 @@ if (this.refs.reservationForm) {
       const svcEnReserva = serviciosActuales.find(sr => String(sr.id_servicio || sr.IDServicio || sr.id || '') === sid);
       const unitPrice = Number((svcEnReserva && (svcEnReserva.precioGuardado || svcEnReserva.costo || svcEnReserva.Precio)) || service.precio || service.Precio || service.Costo || 0);
       const checked = svcIds.includes(sid);
-      const disabled = isCancelada || svcEnReserva ? 'disabled' : '';
+      const disabled = isCancelada ? 'disabled' : '';
       
       const personas = svcEnReserva ? (svcEnReserva._personas || 1) : 1; // Assuming _personas is not in old DB, defaults to 1 for edit
 
@@ -2392,6 +2425,10 @@ if (this.refs.reservationForm) {
         <div style="text-align:left;font-size:0.95rem;color:var(--muted);line-height:1.5;">
           ${imgSrc ? `<img src="${imgSrc}" style="width:100%;height:200px;object-fit:cover;border-radius:12px;margin-bottom:16px;box-shadow:0 4px 12px rgba(0,0,0,0.1);">` : ''}
           <p><strong>Descripción:</strong><br>${svc.descripcion || svc.Descripcion || 'Sin descripción'}</p>
+          <ul style="padding-left:20px; margin-top:10px;">
+            ${svc.Duracion || svc.duracion ? `<li><strong>Duración:</strong> ${svc.Duracion || svc.duracion} min</li>` : ''}
+            ${svc.CantidadMaximaPersonas || svc.capacidad_maxima ? `<li><strong>Capacidad Max:</strong> ${svc.CantidadMaximaPersonas || svc.capacidad_maxima} personas</li>` : ''}
+          </ul>
           <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-top:16px;border:1px solid #e2e8f0;display:flex;justify-content:space-between;">
             <span style="font-weight:700;">Precio por Persona:</span>
             <span style="color:var(--brand);font-weight:800;font-size:1.1rem;">$${this.formatCurrency(svc.precio || svc.Precio || svc.Costo || 0)}</span>

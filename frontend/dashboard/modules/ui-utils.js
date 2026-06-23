@@ -151,8 +151,8 @@ export function attachTooltip() {
     const maxTop = window.innerHeight - tooltipRect.height - offset;
     if (left > maxLeft) left = e.clientX - tooltipRect.width - offset;
     if (top > maxTop) top = e.clientY - tooltipRect.height - offset;
-    tooltipEl.style.left = `${left + window.scrollX}px`;
-    tooltipEl.style.top = `${top + window.scrollY}px`;
+    tooltipEl.style.left = `${left}px`;
+    tooltipEl.style.top = `${top}px`;
   }
 
   // Use event delegation for tooltip handling (covers dynamic elements)

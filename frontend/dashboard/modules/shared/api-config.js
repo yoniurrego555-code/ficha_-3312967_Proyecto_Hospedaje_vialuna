@@ -1,6 +1,10 @@
 // API Configuration for frontend modules
 
-const API_BASE_URL = 'https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com/api';
+const defaultOrigin =
+    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:10000'
+        : 'https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com';
+const API_BASE_URL = `${defaultOrigin}/api`;
 const TOKEN_KEY = 'vialuna_token';
 const SESSION_KEY = 'vialuna_usuario';
 

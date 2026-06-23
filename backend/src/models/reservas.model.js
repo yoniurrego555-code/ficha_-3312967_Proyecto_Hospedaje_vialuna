@@ -371,14 +371,16 @@ async function validarReserva(connection, data, options = {}) {
     }
   }
 
-  const [clientes] = await connection.query(
-    "SELECT * FROM clientes WHERE NroDocumento = ? AND Estado = 1 LIMIT 1",
-    [String(idCliente)]
-  );
-  const [habitaciones] = await connection.query(
-    "SELECT * FROM habitacion WHERE IDHabitacion = ? AND Estado = 1 LIMIT 1",
-    [idHabitacion]
-  );
+  let queryCliente = "SELECT * FROM clientes WHERE NroDocumento = ?";
+  if (!options.isUpdate) queryCliente += " AND Estado = 1";
+  queryCliente += " LIMIT 1";
+
+  let queryHabitacion = "SELECT * FROM habitacion WHERE IDHabitacion = ?";
+  if (!options.isUpdate) queryHabitacion += " AND Estado = 1";
+  queryHabitacion += " LIMIT 1";
+
+  const [clientes] = await connection.query(queryCliente, [String(idCliente)]);
+  const [habitaciones] = await connection.query(queryHabitacion, [idHabitacion]);
   const [metodosPago] = await connection.query(
     "SELECT * FROM metodopago WHERE IdMetodoPago = ? LIMIT 1",
     [idMetodoPago]

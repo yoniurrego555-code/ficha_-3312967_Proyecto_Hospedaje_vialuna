@@ -11,10 +11,13 @@ async function parseResponse(response, isLogin = false) {
   }
 
   if (!response.ok) {
+    const raw = data.message || data.mensaje || data.error || "Error en la solicitud";
     if (isLogin) {
+      if (raw.includes("inactiva") || raw.includes("inaptiva")) {
+        throw new Error(raw);
+      }
       throw new Error("Correo o contraseña incorrectos.");
     }
-    const raw = data.message || data.mensaje || data.error || "Error en la solicitud";
     throw new Error(raw);
   }
 
@@ -38,7 +41,7 @@ export async function loginUsuario({ email, password }) {
     };
   } catch (error) {
     // Errores de red o del servidor → mensaje amigable
-    if (error.message === "Correo o contraseña incorrectos.") throw error;
+    if (error.message === "Correo o contraseña incorrectos." || error.message.includes("inactiva") || error.message.includes("inaptiva")) throw error;
     throw new Error("Correo o contraseña incorrectos.");
   }
 }

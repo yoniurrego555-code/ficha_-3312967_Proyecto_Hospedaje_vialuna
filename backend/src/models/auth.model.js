@@ -166,13 +166,13 @@ async function documentoExists(documento) {
 async function findAccountByEmail(email) {
   const usuario = normalizeUsuario(await findUsuarioByEmail(email));
 
-  if (usuario && Number(usuario.raw.Estado || 0) === 1) {
+  if (usuario) {
     return usuario;
   }
 
   const cliente = normalizeCliente(await findClienteByEmail(email));
 
-  if (cliente && Number(cliente.raw.Estado || 0) === 1) {
+  if (cliente) {
     return cliente;
   }
 

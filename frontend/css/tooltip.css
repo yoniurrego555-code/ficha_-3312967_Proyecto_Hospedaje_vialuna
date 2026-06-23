@@ -1,24 +1,28 @@
-/* Tooltip styling */
+/* Tooltip styling - Professional Appearance */
 .tooltip {
   position: fixed;
-  background: rgba(30, 30, 30, 0.9);
+  background: rgba(23, 48, 41, 0.95); /* Deep green tint to match brand */
   color: #fff;
-  padding: 0.6rem 0.9rem;
-  border-radius: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
   font-size: 0.85rem;
   font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.3px;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+  transform: translateY(8px) scale(0.95);
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 99999;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .tooltip.show {
   opacity: 1;
-  transform: translateY(-2px);
+  transform: translateY(0) scale(1);
 }
 
 /* Arrow for tooltip */
@@ -29,21 +33,22 @@
   height: 0;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-top: 6px solid rgba(30, 30, 30, 0.9);
-  left: 12px;
+  border-top: 6px solid rgba(23, 48, 41, 0.95);
+  left: 50%;
+  transform: translateX(-50%);
   top: 100%;
 }
 
 /* Sidebar-styled tooltip (match admin sidebar look) */
 .tooltip.sidebar-style {
-  background: var(--brand-deep, #245543);
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(36,85,67,0.22);
+  background: rgba(36, 85, 67, 0.95); /* var(--brand-deep) with opacity */
+  box-shadow: 0 8px 24px rgba(36, 85, 67, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 .tooltip.sidebar-style::after {
-  border-top-color: var(--brand-deep, #245543);
+  border-top-color: rgba(36, 85, 67, 0.95);
+  left: 12px;
+  transform: none;
 }
 
 [data-tooltip] {
