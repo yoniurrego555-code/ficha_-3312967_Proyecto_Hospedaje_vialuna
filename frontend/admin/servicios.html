@@ -95,7 +95,7 @@
                         <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-5">
                             <div class="flex flex-col gap-2">
                                 <label for="nombre" class="text-xs font-bold text-muted uppercase tracking-wider">Nombre de la Experiencia</label>
-                                <input type="text" id="nombre" name="nombre" placeholder="Ej. Cabalgata Guiada Nocturna" required 
+                                <input type="text" id="nombre" name="nombre" placeholder="Ej. Cabalgata Guiada Nocturna" required maxlength="30" oninput="this.value=this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g,'')"
                                        class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                             </div>
                             
@@ -105,7 +105,7 @@
                                     <label for="precio" class="text-xs font-bold text-muted uppercase tracking-wider">Tarifa (COP)</label>
                                     <div class="relative">
                                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
-                                        <input type="number" id="precio" name="precio" min="0" placeholder="50000" required 
+                                        <input type="number" id="precio" name="precio" min="0" placeholder="50000" required oninput="this.value=this.value.replace(/[^0-9]/g,'')" 
                                                class="w-full min-h-[44px] py-2.5 pl-8 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                                     </div>
                                 </div>
@@ -122,14 +122,14 @@
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                                 <div class="flex flex-col gap-2">
                                     <label for="duracion" class="text-xs font-bold text-muted uppercase tracking-wider">Duración (minutos)</label>
-                                    <input type="number" id="duracion" name="duracion" min="0" placeholder="120"
+                                    <input type="number" id="duracion" name="duracion" min="0" placeholder="120" oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                            class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                                     <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="duracion"></div>
                                 </div>
 
                                 <div class="flex flex-col gap-2">
                                     <label for="capacidad" class="text-xs font-bold text-muted uppercase tracking-wider">Capacidad Máx.</label>
-                                    <input type="number" id="capacidad" name="capacidad" min="1" placeholder="10"
+                                    <input type="number" id="capacidad" name="capacidad" min="1" placeholder="10" oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                            class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                                     <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="capacidad"></div>
                                 </div>
@@ -144,21 +144,21 @@
                             
                             <div class="flex flex-col gap-2">
                                 <label for="descripcionExtra" class="text-xs font-bold text-muted uppercase tracking-wider">Descripción Extra (Notas)</label>
-                                <textarea id="descripcionExtra" name="descripcionExtra" placeholder="Notas adicionales sobre restricciones..." 
+                                <textarea id="descripcionExtra" name="descripcionExtra" placeholder="Notas adicionales sobre restricciones..." maxlength="100"
                                           class="w-full min-h-[80px] p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all resize-y"></textarea>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
                                 <div class="flex flex-col gap-2">
                                     <label for="edadMinima" class="text-xs font-bold text-muted uppercase tracking-wider">Edad mínima</label>
-                                    <input type="number" id="edadMinima" name="edadMinima" min="0" placeholder="0"
+                                    <input type="number" id="edadMinima" name="edadMinima" min="0" placeholder="0" oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                            class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                                     <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="edadMinima"></div>
                                 </div>
 
                                 <div class="flex flex-col gap-2">
                                     <label for="edadMaxima" class="text-xs font-bold text-muted uppercase tracking-wider">Edad máxima</label>
-                                    <input type="number" id="edadMaxima" name="edadMaxima" min="0" placeholder="99"
+                                    <input type="number" id="edadMaxima" name="edadMaxima" min="0" placeholder="99" oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                            class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                                     <div class="text-xs text-red-600 mt-1 hidden error-message" data-for="edadMaxima"></div>
                                 </div>

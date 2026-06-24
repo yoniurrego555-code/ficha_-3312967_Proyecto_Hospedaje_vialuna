@@ -127,12 +127,12 @@
                             <div class="grid grid-cols-1 gap-5">
                                 <div class="flex flex-col gap-2">
                                     <label for="nombre" class="text-xs font-bold text-muted uppercase tracking-wider">Nombre / Identificador</label>
-                                    <input type="text" id="nombre" name="nombre" placeholder="Ej. Familiar Suite Vista Montaña" required 
+                                    <input type="text" id="nombre" name="nombre" placeholder="Ej. Familiar Suite Vista Montaña" required maxlength="30" oninput="this.value=this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g,'')"
                                            class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                                 </div>
                                 <div class="flex flex-col gap-2">
                                     <label for="descripcion" class="text-xs font-bold text-muted uppercase tracking-wider">Descripción detallada</label>
-                                    <textarea id="descripcion" name="descripcion" placeholder="Detalles de diseño, vistas y comodidades..." required
+                                    <textarea id="descripcion" name="descripcion" placeholder="Detalles de diseño, vistas y comodidades..." required maxlength="100"
                                               class="w-full min-h-[100px] p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all resize-y"></textarea>
                                 </div>
                             </div>
@@ -149,7 +149,7 @@
                                     <label for="precio" class="text-xs font-bold text-muted uppercase tracking-wider">Tarifa base x Noche (COP)</label>
                                     <div class="relative">
                                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
-                                        <input type="number" id="precio" name="precio" min="0" placeholder="150000" required 
+                                        <input type="number" id="precio" name="precio" min="0" placeholder="150000" required oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                                class="w-full min-h-[44px] py-2.5 pl-8 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                                     </div>
                                 </div>
@@ -157,7 +157,7 @@
                                     <label for="capacidad" class="text-xs font-bold text-muted uppercase tracking-wider">Capacidad (Pers)</label>
                                     <div class="relative">
                                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><i class="fa-solid fa-user-group"></i></span>
-                                        <input type="number" id="capacidad" name="capacidad" min="1" placeholder="2" required 
+                                        <input type="number" id="capacidad" name="capacidad" min="1" placeholder="2" required oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                                class="w-full min-h-[44px] py-2.5 pl-10 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                                     </div>
                                 </div>
@@ -180,13 +180,13 @@
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div class="flex flex-col gap-2">
                                     <label for="cantidadCamas" class="text-xs font-bold text-muted uppercase tracking-wider">Cant. de camas</label>
-                                    <input type="number" id="cantidadCamas" name="cantidadCamas" min="1" max="10" placeholder="1" required
+                                    <input type="number" id="cantidadCamas" name="cantidadCamas" min="1" max="10" placeholder="1" required oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                            class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                                     <small id="error-cantidadCamas" class="text-xs text-red-600 hidden mt-1"></small>
                                 </div>
                                 <div class="flex flex-col gap-2">
                                     <label for="tipoCamas" class="text-xs font-bold text-muted uppercase tracking-wider">Tipo de Camas</label>
-                                    <input type="text" id="tipoCamas" name="tipoCamas" placeholder="Dobles, Sencillas..." required
+                                    <input type="text" id="tipoCamas" name="tipoCamas" placeholder="Dobles, Sencillas..." required maxlength="30" oninput="this.value=this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g,'')"
                                            class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                                 </div>
                                 <div class="flex flex-col gap-2">

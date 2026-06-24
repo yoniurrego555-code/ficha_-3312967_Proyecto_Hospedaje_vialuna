@@ -74,11 +74,13 @@
     <div class="flex gap-2">
       <select id="filterStatus" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer">
         <option value="">Todos los estados</option>
-        <option value="1">Activa</option>
-        <option value="4">Aceptada</option>
-        <option value="3">Finalizada</option>
-        <option value="5">Rechazada</option>
-        <option value="2">Cancelada</option>
+        <option value="1">Pendiente</option>
+        <option value="2">Confirmada</option>
+        <option value="3">En Proceso</option>
+        <option value="4">Completada</option>
+        <option value="5">Finalizada</option>
+        <option value="6">Rechazada</option>
+        <option value="7">Cancelada</option>
       </select>
     </div>
   </div>
@@ -205,9 +207,13 @@
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial:</label>
               <select id="estadoReserva" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer w-full box-border" required>
-                <option value="1">Confirmado</option>
-                <option value="5">En proceso</option>
-                <option value="3">Finalizado</option>
+                <option value="1">Pendiente</option>
+                <option value="2">Confirmada</option>
+                <option value="3">En Proceso</option>
+                <option value="4">Completada</option>
+                <option value="5">Finalizada</option>
+                <option value="6">Rechazada</option>
+                <option value="7">Cancelada</option>
               </select>
             </div>
           </div>

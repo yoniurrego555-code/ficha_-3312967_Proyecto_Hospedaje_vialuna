@@ -4,7 +4,7 @@ const usuariosService = require("./usuarios.auth.service");
 
 const TOKEN_DURATION_MINUTES = Number(process.env.PASSWORD_RESET_TOKEN_MINUTES || 30);
 const RESET_SECRET = process.env.PASSWORD_RESET_SECRET || "vialuna-reset-secret";
-const EMAIL_FROM = process.env.EMAIL_FROM || "ViaLuna <onboarding@resend.dev>";
+const EMAIL_FROM = process.env.EMAIL_FROM;
 const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL || "http://localhost:3000";
 const RESET_PAGE_URL = process.env.PASSWORD_RESET_PAGE_URL || `${BACKEND_BASE_URL}/frontend/public/reset-password.html`;
 

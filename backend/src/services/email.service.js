@@ -1,7 +1,7 @@
-const resend = require('../config/resend');
+const sendEmail = require('../utils/sendEmail');
 
 /**
- * Servicio para envío de correos electrónicos transaccionales usando Resend.
+ * Servicio para envío de correos electrónicos transaccionales usando Brevo.
  */
 
 /**
@@ -13,12 +13,6 @@ const resend = require('../config/resend');
 async function enviarConfirmacionReserva(reserva) {
   try {
     const adminEmail = process.env.ADMIN_EMAIL;
-    const fromEmail = process.env.EMAIL_FROM;
-
-    if (!fromEmail) {
-      console.warn("ADVERTENCIA: process.env.EMAIL_FROM no está configurado. Se omite el envío de correos.");
-      return;
-    }
 
     const clienteEmail = reserva.cliente?.email;
     const nombreCliente = reserva.cliente?.nombreCompleto || "Huésped";
@@ -56,15 +50,10 @@ async function enviarConfirmacionReserva(reserva) {
       `;
 
       try {
-        await resend.emails.send({
-          from: fromEmail,
-          to: clienteEmail,
-          subject: "Confirmación de Reserva - Via Luna Hospedaje",
-          html: clienteHtml,
-        });
+        await sendEmail(clienteEmail, "Confirmación de Reserva - Via Luna Hospedaje", clienteHtml);
         console.log(`[EmailService] ✅ Correo de confirmación enviado exitosamente al cliente: ${clienteEmail}`);
       } catch (err) {
-        console.error(`[EmailService] ❌ Error enviando correo al cliente (${clienteEmail}):`, err.response?.data || err.message);
+        console.error(`[EmailService] ❌ Error enviando correo al cliente (${clienteEmail}):`, err.response?.body || err.message || err);
       }
     } else {
       console.warn(`[EmailService] ⚠️ La reserva #${reserva.id_reserva} no tiene correo de cliente. Se omite envío al cliente.`);
@@ -100,15 +89,10 @@ async function enviarConfirmacionReserva(reserva) {
       `;
 
       try {
-        await resend.emails.send({
-          from: fromEmail,
-          to: adminEmail,
-          subject: `Nueva Reserva - ${nombreCliente} - ${habitacionNombre}`,
-          html: adminHtml,
-        });
+        await sendEmail(adminEmail, `Nueva Reserva - ${nombreCliente} - ${habitacionNombre}`, adminHtml);
         console.log(`[EmailService] ✅ Correo de notificación enviado exitosamente al administrador: ${adminEmail}`);
       } catch (err) {
-        console.error(`[EmailService] ❌ Error enviando notificación al admin (${adminEmail}):`, err.response?.data || err.message);
+        console.error(`[EmailService] ❌ Error enviando notificación al admin (${adminEmail}):`, err.response?.body || err.message || err);
       }
     } else {
       console.warn("[EmailService] ⚠️ process.env.ADMIN_EMAIL no está configurado. No se enviará notificación al administrador.");
@@ -123,8 +107,6 @@ async function enviarConfirmacionReserva(reserva) {
  * Genera y envía el correo de recuperación de contraseña
  */
 async function enviarCorreoRecuperacion(email, resetUrl, userName = "Usuario") {
-  const fromEmail = process.env.EMAIL_FROM || "onboarding@resend.dev";
-  
   const subject = "Restablece tu contraseña - Via Luna Hospedaje";
   const html = `
     <!DOCTYPE html>
@@ -173,16 +155,11 @@ async function enviarCorreoRecuperacion(email, resetUrl, userName = "Usuario") {
   `;
 
   try {
-    const response = await resend.emails.send({
-      from: fromEmail,
-      to: email,
-      subject: subject,
-      html: html,
-    });
+    const response = await sendEmail(email, subject, html);
     console.log(`[EmailService] ✅ Correo de recuperación enviado a: ${email}`);
     return response;
   } catch (error) {
-    console.error(`[EmailService] ❌ Error enviando correo de recuperación a ${email}:`, error.message);
+    console.error(`[EmailService] ❌ Error enviando correo de recuperación a ${email}:`, error.response?.body || error.message || error);
     throw error;
   }
 }
@@ -191,8 +168,6 @@ async function enviarCorreoRecuperacion(email, resetUrl, userName = "Usuario") {
  * Genera y envía el correo de bienvenida a nuevos usuarios
  */
 async function enviarBienvenida(email, userName = "Usuario", setPasswordUrl = null) {
-  const fromEmail = process.env.EMAIL_FROM;
-  if (!fromEmail) return;
   
   const subject = "¡Bienvenido a Via Luna Hospedaje!";
   
@@ -227,15 +202,10 @@ async function enviarBienvenida(email, userName = "Usuario", setPasswordUrl = nu
   `;
 
   try {
-    await resend.emails.send({
-      from: fromEmail,
-      to: email,
-      subject: subject,
-      html: html,
-    });
+    await sendEmail(email, subject, html);
     console.log(`[EmailService] ✅ Correo de bienvenida enviado a: ${email}`);
   } catch (error) {
-    console.error(`[EmailService] ❌ Error enviando bienvenida a ${email}:`, error.message);
+    console.error(`[EmailService] ❌ Error enviando bienvenida a ${email}:`, error.response?.body || error.message || error);
   }
 }
 
@@ -243,8 +213,6 @@ async function enviarBienvenida(email, userName = "Usuario", setPasswordUrl = nu
  * Genera y envía el correo de cancelación de reserva
  */
 async function enviarCancelacionReserva(reserva, motivo = "Sin motivo especificado") {
-  const fromEmail = process.env.EMAIL_FROM;
-  if (!fromEmail) return;
   
   const clienteEmail = reserva.cliente?.email;
   const nombreCliente = reserva.cliente?.nombreCompleto || reserva.cliente?.Nombres || "Huésped";
@@ -276,15 +244,10 @@ async function enviarCancelacionReserva(reserva, motivo = "Sin motivo especifica
   `;
 
   try {
-    await resend.emails.send({
-      from: fromEmail,
-      to: clienteEmail,
-      subject: subject,
-      html: html,
-    });
+    await sendEmail(clienteEmail, subject, html);
     console.log(`[EmailService] ✅ Correo de cancelación enviado a: ${clienteEmail}`);
   } catch (error) {
-    console.error(`[EmailService] ❌ Error enviando cancelación a ${clienteEmail}:`, error.message);
+    console.error(`[EmailService] ❌ Error enviando cancelación a ${clienteEmail}:`, error.response?.body || error.message || error);
   }
 }
 
@@ -292,8 +255,6 @@ async function enviarCancelacionReserva(reserva, motivo = "Sin motivo especifica
  * Genera y envía el correo de confirmación de pago de reserva
  */
 async function enviarConfirmacionPago(reserva) {
-  const fromEmail = process.env.EMAIL_FROM;
-  if (!fromEmail) return;
   
   const clienteEmail = reserva.cliente?.email;
   const nombreCliente = reserva.cliente?.nombreCompleto || reserva.cliente?.Nombres || "Huésped";
@@ -329,15 +290,10 @@ async function enviarConfirmacionPago(reserva) {
   `;
 
   try {
-    await resend.emails.send({
-      from: fromEmail,
-      to: clienteEmail,
-      subject: subject,
-      html: html,
-    });
+    await sendEmail(clienteEmail, subject, html);
     console.log(`[EmailService] ✅ Correo de confirmación de pago enviado a: ${clienteEmail}`);
   } catch (error) {
-    console.error(`[EmailService] ❌ Error enviando confirmación de pago a ${clienteEmail}:`, error.message);
+    console.error(`[EmailService] ❌ Error enviando confirmación de pago a ${clienteEmail}:`, error.response?.body || error.message || error);
   }
 }
 

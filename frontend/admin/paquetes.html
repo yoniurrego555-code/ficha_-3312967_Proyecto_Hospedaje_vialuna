@@ -105,13 +105,13 @@
                         <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-5">
                             <div class="flex flex-col gap-2">
                                 <label for="nombre" class="text-xs font-bold text-muted uppercase tracking-wider">Nombre del Paquete</label>
-                                <input type="text" id="nombre" name="nombre" placeholder="Ej. Escapada Romántica de Fin de Semana" required
+                                <input type="text" id="nombre" name="nombre" placeholder="Ej. Escapada Romántica de Fin de Semana" required maxlength="30" oninput="this.value=this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g,'')"
                                        class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                             </div>
 
                             <div class="flex flex-col gap-2">
                                 <label for="descripcion" class="text-xs font-bold text-muted uppercase tracking-wider">Descripción del Paquete</label>
-                                <textarea id="descripcion" name="descripcion" placeholder="Detalla los servicios incluidos, días, noches, alimentos..." 
+                                <textarea id="descripcion" name="descripcion" placeholder="Detalla los servicios incluidos, días, noches, alimentos..." required maxlength="100"
                                           class="w-full min-h-[100px] p-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all resize-y"></textarea>
                             </div>
 
@@ -120,7 +120,7 @@
                                     <label for="precio" class="text-xs font-bold text-muted uppercase tracking-wider">Precio Total (COP)</label>
                                     <div class="relative">
                                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
-                                        <input type="number" id="precio" name="precio" min="0" placeholder="180000" required
+                                        <input type="number" id="precio" name="precio" min="0" placeholder="180000" required oninput="this.value=this.value.replace(/[^0-9]/g,'')"
                                                class="w-full min-h-[44px] py-2.5 pl-8 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:bg-white focus:outline-none focus:border-brand/40 focus:ring-2 focus:ring-brand/10 transition-all">
                                     </div>
                                 </div>

@@ -761,13 +761,17 @@ export class ReservasAdminModule {
         </td>
         <td class="px-6 py-4">
             <div class="flex items-center gap-4">
-              <!-- Switch de Estado (ON = Activa, OFF = Cancelada/Pendiente) -->
-              <label class="relative inline-block w-11 h-6 m-0 cursor-pointer shrink-0" data-tooltip="Alternar entre Activa y Cancelada">
-                <input type="checkbox" class="sr-only peer" ${String(status) === '1' ? 'checked' : ''} 
-                       ${(String(status) === '4' || String(status) === '5' || String(status) === '3') ? 'disabled' : ''}
-                       onchange="window.reservasModule.changeStatusFromTable(${resId}, this.checked ? '1' : '2')">
-                <span class="absolute inset-0 rounded-full ${(String(status) === '4' || String(status) === '5' || String(status) === '3') ? 'bg-slate-300' : 'bg-slate-200'} peer-checked:bg-emerald-500 transition-colors duration-300 before:content-[''] before:absolute before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-white before:rounded-full before:transition-transform before:duration-300 peer-checked:before:translate-x-5"></span>
-              </label>
+              <!-- Dropdown de Estado -->
+              <select class="form-select form-select-sm border-gray-200 text-xs rounded-lg focus:border-brand focus:ring-brand font-semibold shadow-sm w-32"
+                      onchange="window.reservasModule.changeStatusFromTable(this, ${resId}, ${status})"
+                      style="color: var(--brand-deep); outline: none;">
+                <option value="1" ${String(status) === '1' ? 'selected' : ''}>Pendiente</option>
+                <option value="2" ${String(status) === '2' ? 'selected' : ''}>Confirmada</option>
+                <option value="3" ${String(status) === '3' ? 'selected' : ''}>En Proceso</option>
+                <option value="4" ${String(status) === '4' ? 'selected' : ''}>Completada</option>
+                <option value="5" ${String(status) === '5' ? 'selected' : ''}>Finalizada</option>
+                <option value="6" ${String(status) === '6' ? 'selected' : ''}>Rechazada</option>
+              </select>
               <!-- Badge Semántico Visual -->
               <span class="${getStatusClass(status)}">
                 ${getStatusText(status)}
@@ -775,8 +779,8 @@ export class ReservasAdminModule {
             </div>
         </td>
         <td class="px-6 py-4 font-bold text-brand">$${this.formatCurrency(reserva.total || 0)}</td>
-        <td class="px-6 py-4">
-          <div class="action-group-modern justify-center">
+        <td class="px-6 py-4 min-w-[140px] whitespace-nowrap">
+          <div class="action-group-modern justify-center flex-nowrap">
             <button class="btn-action-modern view" 
                     onclick="window.reservasModule.verDetalleReserva(${resId})" 
                     title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
@@ -1205,9 +1209,9 @@ export class ReservasAdminModule {
     if (statusCounts[status] !== undefined) statusCounts[status]++;
     else statusCounts['1']++;
   });
-  const statusLabels = ['Activa', 'Cancelada', 'Finalizada', 'Rechazada', 'Pendiente'];
-  const statusData = [statusCounts['1'], statusCounts['2'], statusCounts['3'], statusCounts['4'], statusCounts['5']];
-  const statusColors = ['rgba(16,185,129,0.6)', 'rgba(239,68,68,0.6)', 'rgba(59,130,246,0.6)', 'rgba(99,102,241,0.6)', 'rgba(245,158,11,0.6)'];
+  const statusLabels = ['Pendiente', 'Confirmada', 'En Proceso', 'Completada', 'Finalizada', 'Rechazada', 'Cancelada'];
+  const statusData = [statusCounts['1']||0, statusCounts['2']||0, statusCounts['3']||0, statusCounts['4']||0, statusCounts['5']||0, statusCounts['6']||0, statusCounts['7']||0];
+  const statusColors = ['#f3f4f6', '#dbeafe', '#fef3c7', '#d1fae5', '#e0e7ff', '#fee2e2', '#fef2f2'];
   this.charts.statusChart = new Chart(chartStatusCanvas, {
     type: 'pie',
     data: {
@@ -1488,7 +1492,43 @@ if (this.refs.reservationForm) {
   }
 
   // Change status directly from table
-  async changeStatusFromTable(id, newStatus) {
+  async changeStatusFromTable(selectElement, id, oldStatusId) {
+    const newStatus = selectElement.value;
+    const currentState = Number(oldStatusId);
+    const newState = Number(newStatus);
+    
+    // Validar transición en frontend
+    let errorMsg = null;
+    if (currentState !== newState) {
+        if (currentState === 1 && ![2, 6, 7].includes(newState)) {
+            errorMsg = "Desde Pendiente solo se puede pasar a Confirmada, Rechazada o Cancelada";
+        } else if (currentState === 2 && ![3, 6, 7].includes(newState)) {
+            errorMsg = "Desde Confirmada solo se puede pasar a En Proceso, Rechazada o Cancelada";
+        } else if (currentState === 3 && newState !== 4) {
+            errorMsg = "Desde En Proceso solo se puede pasar a Completada";
+        } else if (currentState === 4 && newState !== 5) {
+            errorMsg = "Desde Completada solo se puede pasar a Finalizada";
+        } else if (currentState === 5) {
+            errorMsg = "Una reserva Finalizada no puede cambiar de estado";
+        } else if (currentState === 6 && newState !== 1) {
+            errorMsg = "Una reserva Rechazada solo puede volver a Pendiente";
+        } else if (currentState === 7) {
+            errorMsg = "Una reserva Cancelada no puede cambiar de estado";
+        }
+    }
+
+    if (errorMsg) {
+      Swal.fire({
+          icon: 'error',
+          title: 'Acción no permitida',
+          text: errorMsg,
+          confirmButtonColor: '#258a60'
+      });
+      // Revertir visualmente el select
+      selectElement.value = currentState;
+      return;
+    }
+
     try {
       if (!id || id === 'undefined' || id === 'null') {
         throw new Error('ID de reserva no válido');
@@ -1519,9 +1559,18 @@ if (this.refs.reservationForm) {
       await actualizarReserva(id, formData);
       showAlert('Información', 'Estado de reserva actualizado con éxito', 'info');
       
-      // Actualizar datos locales y re-renderizar
-      await this.reloadData();
-      this.renderReservationsTable(this.currentData.reservas);
+      // Actualizar el estado en cache para evitar desincronización
+      if (reserva) {
+          reserva.id_estado_reserva = newStatus;
+          reserva.Estado = newStatus;
+          reserva.estado = newStatus;
+      }
+      
+      // Actualizar el onchange del select para reflejar el nuevo 'oldStatusId'
+      selectElement.setAttribute('onchange', `window.reservasModule.changeStatusFromTable(this, ${id}, ${newStatus})`);
+
+      // Refrescar solo visualmente (tabla y badges)
+      this.renderReservationsTable(this.currentFilteredData || this.currentData.reservas);
       this.updateMetrics();
     } catch (error) {
       console.error('Error al cambiar estado:', error);
@@ -1686,21 +1735,23 @@ if (this.refs.reservationForm) {
       : (reserva.habitacion ? reserva.habitacion.nombre : 'Sin habitación');
 
     // Estado como texto
-    const estadoTextoMap = { '1': 'Activa', '2': 'Cancelada', '3': 'Finalizada', '4': 'Rechazada', '5': 'Pendiente' };
+    const estadoTextoMap = { '1': 'Pendiente', '2': 'Confirmada', '3': 'En Proceso', '4': 'Completada', '5': 'Finalizada', '6': 'Rechazada', '7': 'Cancelada' };
     const estadoColorMap = {
-      '1': 'background:#d1fae5;color:#065f46;border:1px solid #a7f3d0',
-      '2': 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5',
-      '3': 'background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe',
-      '4': 'background:#fef2f2;color:#b91c1c;border:1px solid #fecaca',
-      '5': 'background:#fef3c7;color:#92400e;border:1px solid #fde68a'
+      '1': 'background:#f3f4f6;color:#374151;border:1px solid #d1d5db',
+      '2': 'background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe',
+      '3': 'background:#fef3c7;color:#92400e;border:1px solid #fde68a',
+      '4': 'background:#d1fae5;color:#065f46;border:1px solid #a7f3d0',
+      '5': 'background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe',
+      '6': 'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5',
+      '7': 'background:#fef2f2;color:#7f1d1d;border:1px solid #fecaca'
     };
     const estadoTexto = estadoTextoMap[idEstado] || 'Desconocido';
     const estadoColor = estadoColorMap[idEstado] || 'background:#f3f4f6;color:#374151';
 
-    // Solo bloquear edición de paquetes si está CANCELADA o RECHAZADA
-    const isCancelada = idEstado === '2' || idEstado === '4' || idEstado === '3';
-    const isActiva = idEstado === '1';
-    const isPendiente = idEstado === '5';
+    // Solo bloquear edición de paquetes si está FINALIZADA (5), RECHAZADA (6) o CANCELADA (7)
+    const isCancelada = idEstado === '5' || idEstado === '6' || idEstado === '7';
+    const isActiva = idEstado === '3' || idEstado === '4'; // En proceso o Completada (ya iniciada)
+    const isPendiente = idEstado === '1';
 
     // Paquetes y servicios actuales
     const paquetesActuales = Array.isArray(reserva.paquetes) ? reserva.paquetes : [];
@@ -1951,11 +2002,13 @@ if (this.refs.reservationForm) {
               <div>
                 <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Estado</label>
                 <select id="editEstadoReserva" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:#f9fafb;font-size:0.9rem;font-weight:600;color:#173029;">
-                  <option value="1" ${idEstado=='1'?'selected':''}>Activa</option>
-                  <option value="4" ${idEstado=='4'?'selected':''}>Rechazada</option>
-                  <option value="3" ${idEstado=='3'?'selected':''}>Finalizada</option>
-                  <option value="5" ${idEstado=='5'?'selected':''}>Pendiente</option>
-                  <option value="2" ${idEstado=='2'?'selected':''}>Cancelada</option>
+                  <option value="1" ${idEstado=='1'?'selected':''}>Pendiente</option>
+                  <option value="2" ${idEstado=='2'?'selected':''}>Confirmada</option>
+                  <option value="3" ${idEstado=='3'?'selected':''}>En Proceso</option>
+                  <option value="4" ${idEstado=='4'?'selected':''}>Completada</option>
+                  <option value="5" ${idEstado=='5'?'selected':''}>Finalizada</option>
+                  <option value="6" ${idEstado=='6'?'selected':''}>Rechazada</option>
+                  <option value="7" ${idEstado=='7'?'selected':''}>Cancelada</option>
                 </select>
               </div>
 

@@ -1,6 +1,6 @@
 const db = require("../config/db");
 
-const ESTADO_CANCELADA = 2;
+const ESTADO_RECHAZADA = 6;
 let reservationColumnsPromise = null;
 
 function buildError(message, status = 400) {
@@ -348,12 +348,12 @@ async function validarReserva(connection, data, options = {}) {
   }
 
   // VALIDACIÓN DE CONFLICTOS DE HABITACIÓN
-  if (idEstadoReserva === 1 || idEstadoReserva === 5) {
+  if ([1, 2, 3, 4].includes(idEstadoReserva)) {
     let queryConflictos = `
       SELECT id_reserva
       FROM reservas
       WHERE id_habitacion = ?
-        AND id_estado_reserva IN (1, 5)
+        AND id_estado_reserva IN (1, 2, 3, 4)
         AND fecha_inicio < ?
         AND fecha_fin > ?
     `;
@@ -658,12 +658,33 @@ async function actualizar(id, data) {
 
     const reservationColumns = await getReservationColumns();
     const [existingRows] = await connection.query(
-      "SELECT id_reserva, fecha_reserva FROM reservas WHERE id_reserva = ? LIMIT 1",
+      "SELECT id_reserva, fecha_reserva, id_estado_reserva FROM reservas WHERE id_reserva = ? LIMIT 1",
       [id]
     );
 
     if (!existingRows.length) {
       throw buildError("La reserva no existe", 404);
+    }
+
+    const currentState = Number(existingRows[0].id_estado_reserva);
+    const newState = Number(data.id_estado_reserva || currentState);
+
+    if (currentState !== newState) {
+        if (currentState === 1 && ![2, 6, 7].includes(newState)) {
+            throw buildError("Desde Pendiente solo se puede pasar a Confirmada, Rechazada o Cancelada");
+        } else if (currentState === 2 && ![3, 6, 7].includes(newState)) {
+            throw buildError("Desde Confirmada solo se puede pasar a En Proceso, Rechazada o Cancelada");
+        } else if (currentState === 3 && newState !== 4) {
+            throw buildError("Desde En Proceso solo se puede pasar a Completada");
+        } else if (currentState === 4 && newState !== 5) {
+            throw buildError("Desde Completada solo se puede pasar a Finalizada");
+        } else if (currentState === 5) {
+            throw buildError("Una reserva Finalizada no puede cambiar de estado");
+        } else if (currentState === 6 && newState !== 1) {
+            throw buildError("Una reserva Rechazada solo puede volver a Pendiente");
+        } else if (currentState === 7) {
+            throw buildError("Una reserva Cancelada no puede cambiar de estado");
+        }
     }
 
     const payload = await validarReserva(connection, data, {
@@ -718,8 +739,8 @@ async function actualizar(id, data) {
 
     await guardarDetalles(connection, id, payload.paquetes, payload.servicios);
 
-    // Si la reserva pasa a estado 3 (Finalizada), liberar la habitación
-    if (Number(payload.reserva.id_estado_reserva) === 3) {
+    // Si la reserva pasa a estado 5 (Finalizada), liberar la habitación
+    if (Number(payload.reserva.id_estado_reserva) === 5) {
       await connection.query("UPDATE habitacion SET Estado = 1 WHERE IDHabitacion = ?", [payload.reserva.id_habitacion]);
     }
 
@@ -742,7 +763,7 @@ async function eliminar(id, motivo = null) {
     const reservationColumns = await getReservationColumns();
     const hasMotivoCancelacion = reservationColumns.has("motivo_cancelacion");
     
-    // Soft delete: actualizar el estado a 2 (Cancelada) y guardar el motivo
+    // Soft delete: actualizar el estado a 6 (Rechazada/Cancelada) y guardar el motivo
     let updateQuery;
     let updateParams;
     

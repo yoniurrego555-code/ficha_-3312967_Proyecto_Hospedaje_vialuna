@@ -226,12 +226,13 @@ export class DashboardModule {
     
     const statusValue = String(reserva.Estado || reserva.estado || reserva.id_estado_reserva || reserva.IdEstado || reserva.estado_nombre || '').toLowerCase();
     
-    if (statusValue.includes('cancel') || statusValue.includes('anul') || statusValue === '2') return '2';
-    if (statusValue.includes('final') || statusValue.includes('complete') || statusValue.includes('completada') || statusValue === '3') return '3';
-    if (statusValue.includes('rechaz') || statusValue === '4') return '4';
-    if (statusValue.includes('pend') || statusValue === '5') return '5';
+    if (statusValue.includes('confirmada') || statusValue === '2') return '2';
+    if (statusValue.includes('proceso') || statusValue === '3') return '3';
+    if (statusValue.includes('completada') || statusValue === '4') return '4';
+    if (statusValue.includes('finalizada') || statusValue === '5') return '5';
+    if (statusValue.includes('rechazada') || statusValue === '6') return '6';
     
-    return '1';
+    return '1'; // Pendiente por defecto
   }
 
   // Helper functions
@@ -241,32 +242,36 @@ export class DashboardModule {
 
   getStatusClass(estado) {
     const statusMap = {
-      '1': 'status-active',
-      '2': 'status-completed',
-      '3': 'status-cancelled',
-      '4': 'status-cancelled',
-      '5': 'status-active',
-      'activo': 'status-active',
+      '1': 'status-pending',
+      '2': 'status-active',
+      '3': 'status-active',
+      '4': 'status-completed',
+      '5': 'status-completed',
+      '6': 'status-cancelled',
+      'pendiente': 'status-pending',
+      'confirmada': 'status-active',
+      'en proceso': 'status-active',
       'completada': 'status-completed',
-      'cancelada': 'status-cancelled',
-      'active': 'status-active',
-      'completed': 'status-completed',
-      'cancelled': 'status-cancelled'
+      'finalizada': 'status-completed',
+      'rechazada': 'status-cancelled'
     };
-    return statusMap[String(estado).toLowerCase()] || 'status-active';
+    return statusMap[String(estado).toLowerCase()] || 'status-pending';
   }
 
   getStatusText(estado) {
     const statusMap = {
-      '1': 'Activa',
-      '2': 'Cancelada',
-      '3': 'Finalizada',
-      '4': 'Rechazada',
-      '5': 'Pendiente',
-      'activo': 'Activa',
-      'completada': 'Finalizada',
+      '1': 'Pendiente',
+      '2': 'Confirmada',
+      '3': 'En Proceso',
+      '4': 'Completada',
+      '5': 'Finalizada',
+      '6': 'Rechazada',
+      'pendiente': 'Pendiente',
+      'confirmada': 'Confirmada',
+      'en proceso': 'En Proceso',
+      'completada': 'Completada',
       'finalizada': 'Finalizada',
-      'cancelada': 'Cancelada'
+      'rechazada': 'Rechazada'
     };
     return statusMap[String(estado).toLowerCase()] || estado || 'Desconocido';
   }
