@@ -168,9 +168,9 @@ async function enviarCorreoRecuperacion(email, resetUrl, userName = "Usuario") {
  * Genera y envía el correo de bienvenida a nuevos usuarios
  */
 async function enviarBienvenida(email, userName = "Usuario", setPasswordUrl = null) {
-  
+
   const subject = "¡Bienvenido a Via Luna Hospedaje!";
-  
+
   let linkSection = "";
   if (setPasswordUrl) {
     linkSection = `
@@ -213,11 +213,11 @@ async function enviarBienvenida(email, userName = "Usuario", setPasswordUrl = nu
  * Genera y envía el correo de cancelación de reserva
  */
 async function enviarCancelacionReserva(reserva, motivo = "Sin motivo especificado") {
-  
+
   const clienteEmail = reserva.cliente?.email;
   const nombreCliente = reserva.cliente?.nombreCompleto || reserva.cliente?.Nombres || "Huésped";
   const habitacionNombre = reserva.habitacion?.nombre || reserva.habitacion?.NombreHabitacion || "Habitación";
-  
+
   if (!clienteEmail) return;
 
   const subject = "Cancelación de Reserva - Via Luna Hospedaje";
@@ -255,11 +255,11 @@ async function enviarCancelacionReserva(reserva, motivo = "Sin motivo especifica
  * Genera y envía el correo de confirmación de pago de reserva
  */
 async function enviarConfirmacionPago(reserva) {
-  
+
   const clienteEmail = reserva.cliente?.email;
   const nombreCliente = reserva.cliente?.nombreCompleto || reserva.cliente?.Nombres || "Huésped";
   const habitacionNombre = reserva.habitacion?.nombre || reserva.habitacion?.NombreHabitacion || "Habitación reservada";
-  
+
   if (!clienteEmail) return;
 
   const total = reserva.total ? `$${Number(reserva.total).toLocaleString('es-CO')}` : "Por definir";
@@ -297,10 +297,79 @@ async function enviarConfirmacionPago(reserva) {
   }
 }
 
+/**
+ * Correo enviado cuando el ADMIN crea una cuenta de cliente manualmente.
+ * Le informa la contraseña temporal asignada y le da un enlace (válido 7 días)
+ * para que la cambie por una propia.
+ */
+async function enviarBienvenidaAdminCreado(email, userName = "Cliente", plainPassword = "", setPasswordUrl = null) {
+  const subject = "Tu cuenta en Vía Luna Hospedaje ha sido creada";
+
+  const linkSection = setPasswordUrl ? `
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #02634f;">
+      <p style="margin-top: 0; font-size: 15px; color: #333;">
+        Para garantizar la seguridad de tu cuenta, te recomendamos cambiar tu contraseña antes de <strong>7 días</strong>. 
+        Haz clic en el siguiente botón para crear una contraseña personalizada:
+      </p>
+      <div style="text-align: center; margin: 25px 0;">
+        <a href="${setPasswordUrl}" style="background-color: #258a60; color: #ffffff !important; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-size: 16px; font-weight: bold; display: inline-block;">
+          Cambiar mi Contraseña
+        </a>
+      </div>
+      <p style="font-size: 12px; color: #888; margin-bottom: 0;">
+        Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+        <a href="${setPasswordUrl}" style="color: #258a60; word-break: break-all;">${setPasswordUrl}</a>
+      </p>
+      <p style="font-size: 12px; color: #e53e3e; margin-top: 12px; margin-bottom: 0;">
+        ⚠️ Este enlace expirará en <strong>7 días</strong>.
+      </p>
+    </div>
+  ` : '';
+
+  const html = `
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #02634f; padding-bottom: 15px;">
+        <h1 style="color: #02634f; margin: 0;">Vía Luna Hospedaje</h1>
+        <p style="color: #666; font-size: 14px; margin-top: 4px;">Tu cuenta ha sido creada</p>
+      </div>
+
+      <p style="font-size: 16px; color: #333;">Hola <strong>${userName}</strong>,</p>
+      <p style="font-size: 15px; color: #333; line-height: 1.6;">
+        El administrador de <strong>Vía Luna Hospedaje</strong> ha creado una cuenta para ti en nuestro sistema. 
+        A continuación encontrarás tus credenciales de acceso:
+      </p>
+
+      <div style="background-color: #eefaf4; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #c6f0da;">
+        <p style="margin: 6px 0; font-size: 15px;"><strong>📧 Correo:</strong> ${email}</p>
+        <p style="margin: 6px 0; font-size: 15px;"><strong>🔑 Contraseña temporal:</strong> <span style="font-family: monospace; background: #f0f0f0; padding: 2px 8px; border-radius: 4px; font-size: 16px;">${plainPassword}</span></p>
+      </div>
+
+      ${linkSection}
+
+      <p style="font-size: 14px; color: #555; line-height: 1.6;">
+        Si no solicitaste esta cuenta o crees que se creó por error, puedes ignorar este correo. 
+        Para cualquier consulta, contáctanos.
+      </p>
+
+      <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 30px 0;">
+      <p style="font-size: 12px; color: #999; text-align: center; margin: 0;">© ${new Date().getFullYear()} Vía Luna Hospedaje. Todos los derechos reservados.</p>
+    </div>
+  `;
+
+  try {
+    await sendEmail(email, subject, html);
+    console.log(`[EmailService] ✅ Correo de cuenta creada por admin enviado a: ${email}`);
+  } catch (error) {
+    console.error(`[EmailService] ❌ Error enviando correo de cuenta admin a ${email}:`, error.response?.body || error.message || error);
+    throw error;
+  }
+}
+
 module.exports = {
   enviarConfirmacionReserva,
   enviarCorreoRecuperacion,
   enviarBienvenida,
+  enviarBienvenidaAdminCreado,
   enviarCancelacionReserva,
   enviarConfirmacionPago,
 };

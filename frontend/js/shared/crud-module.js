@@ -38,8 +38,8 @@ function createRequest(baseHeaders = {}) {
 
         const data = await response.json().catch(() => ({}));
 
-        if (!response.ok || !data.ok) {
-            throw new Error(data.mensaje || data.error || 'No se pudo completar la operacion');
+        if (!response.ok) {
+            throw new Error(data.mensaje || data.error || data.message || 'No se pudo completar la operacion');
         }
 
         return data;

@@ -87,11 +87,14 @@ async function obtenerReservasBase(connection, whereClause = "", params = []) {
         c.Apellido AS ClienteApellido,
         c.Email AS ClienteEmail,
         c.Telefono AS ClienteTelefono,
-        ${hasMotivoCancelacion ? "r.motivo_cancelacion" : "NULL AS motivo_cancelacion"}
+        ${hasMotivoCancelacion ? "r.motivo_cancelacion," : "NULL AS motivo_cancelacion,"}
+        r.estado_pago,
+        r.comprobante_url,
+        r.fecha_pago,
+        r.observacion_pago
       FROM reservas r
       LEFT JOIN clientes c
-        ON CAST(c.NroDocumento AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci =
-           CAST(r.nr_documento AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci
+        ON c.NroDocumento = r.nr_documento
       LEFT JOIN habitacion h
         ON h.IDHabitacion = r.id_habitacion
       LEFT JOIN metodopago mp
@@ -242,6 +245,10 @@ async function hidratarReservas(connection, rows) {
       nombre: row.NombreEstadoReserva || "Sin estado"
     },
     id_estado_reserva: row.id_estado_reserva,
+    estado_pago: row.estado_pago || 'Pendiente',
+    comprobante_url: row.comprobante_url || null,
+    fecha_pago: row.fecha_pago ? normalizeDate(row.fecha_pago) : null,
+    observacion_pago: row.observacion_pago || null,
     id_metodo_pago: row.id_metodo_pago,
     id_habitacion: row.id_habitacion,
     metodoPago: {
@@ -614,6 +621,10 @@ async function crear(data) {
       "total",
       "id_metodo_pago",
       "id_habitacion",
+      "estado_pago",
+      "comprobante_url",
+      "fecha_pago",
+      "observacion_pago",
       ...(hasAceptaTerminos ? ["acepta_terminos"] : [])
     ];
     const insertValues = [
@@ -628,6 +639,10 @@ async function crear(data) {
       payload.reserva.total,
       payload.reserva.id_metodo_pago,
       payload.reserva.id_habitacion,
+      data.estado_pago || 'Pendiente',
+      data.comprobante_url || null,
+      data.fecha_pago || null,
+      data.observacion_pago || null,
       ...(hasAceptaTerminos ? [data.acepta_terminos || 0] : [])
     ];
     const [result] = await connection.query(
@@ -707,6 +722,10 @@ async function actualizar(id, data) {
       "total = ?",
       "id_metodo_pago = ?",
       "id_habitacion = ?",
+      "estado_pago = ?",
+      "comprobante_url = ?",
+      "fecha_pago = ?",
+      "observacion_pago = ?",
       ...(hasAceptaTerminos && data.acepta_terminos !== undefined ? ["acepta_terminos = ?"] : [])
     ];
     const updateValues = [
@@ -721,6 +740,10 @@ async function actualizar(id, data) {
       payload.reserva.total,
       payload.reserva.id_metodo_pago,
       payload.reserva.id_habitacion,
+      data.estado_pago !== undefined ? data.estado_pago : existingRows[0].estado_pago,
+      data.comprobante_url !== undefined ? data.comprobante_url : existingRows[0].comprobante_url,
+      data.fecha_pago !== undefined ? data.fecha_pago : existingRows[0].fecha_pago,
+      data.observacion_pago !== undefined ? data.observacion_pago : existingRows[0].observacion_pago,
       ...(hasAceptaTerminos && data.acepta_terminos !== undefined ? [data.acepta_terminos || 0] : []),
       id
     ];

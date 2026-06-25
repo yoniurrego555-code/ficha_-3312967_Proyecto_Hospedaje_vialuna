@@ -214,6 +214,212 @@ window.verDetalle = (id) => {
     document.getElementById('detailModalEstado').textContent = getStatusText(getEstadoValue(reserva), reserva);
     document.getElementById('detailModalTotal').textContent = formatMoney(reserva.total || reserva.Total || reserva.TotalPagado || 0);
 
+    // Estado de Pago
+    const estadoPagoText = reserva.estado_pago || 'Pendiente';
+    const estadoPagoBadge = document.getElementById('detailModalEstadoPago');
+    if (estadoPagoBadge) {
+        estadoPagoBadge.textContent = estadoPagoText;
+        if (estadoPagoText === 'Pagado') {
+            estadoPagoBadge.style.backgroundColor = '#dcfce7';
+            estadoPagoBadge.style.color = '#166534';
+        } else if (estadoPagoText === 'En revisión') {
+            estadoPagoBadge.style.backgroundColor = '#e0f2fe';
+            estadoPagoBadge.style.color = '#075985';
+        } else if (estadoPagoText === 'Rechazado') {
+            estadoPagoBadge.style.backgroundColor = '#fee2e2';
+            estadoPagoBadge.style.color = '#991b1b';
+        } else {
+            estadoPagoBadge.style.backgroundColor = '#fef08a';
+            estadoPagoBadge.style.color = '#854d0e';
+        }
+    }
+
+    // Comprobante UI
+    const comprobanteViewer = document.getElementById('comprobanteViewer');
+    const comprobanteLink = document.getElementById('comprobanteLink');
+    const comprobanteUploader = document.getElementById('comprobanteUploader');
+
+    if (reserva.comprobante_url) {
+        comprobanteViewer.style.display = 'flex';
+        const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+            ? "http://localhost:10000"
+            : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+        comprobanteLink.href = baseUrl + reserva.comprobante_url; // Adjust based on host
+        comprobanteUploader.style.display = (estadoPagoText === 'Pagado' || estadoPagoText === 'En revisión') ? 'none' : 'flex';
+    } else {
+        comprobanteViewer.style.display = 'none';
+        comprobanteUploader.style.display = 'flex';
+    }
+
+    const btnDeleteComprobante = document.getElementById('btnDeleteComprobante');
+    if (btnDeleteComprobante) {
+        const newBtnDelete = btnDeleteComprobante.cloneNode(true);
+        btnDeleteComprobante.parentNode.replaceChild(newBtnDelete, btnDeleteComprobante);
+        
+        if (estadoPagoText === 'En revisión') {
+            newBtnDelete.style.display = 'inline-block';
+            newBtnDelete.onclick = async () => {
+                const result = await Swal.fire({
+                    title: '¿Retirar comprobante?',
+                    text: 'Esto cambiará el estado de pago nuevamente a Pendiente.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: 'Sí, retirar',
+                    cancelButtonText: 'Cancelar'
+                });
+                
+                if (result.isConfirmed) {
+                    newBtnDelete.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Retirando...';
+                    newBtnDelete.disabled = true;
+                    
+                    try {
+                        const token = sessionStorage.getItem("vialuna_token");
+                        const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                            ? "http://localhost:10000"
+                            : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+                        const apiUrl = `${baseUrl}/api/reservas/${id}/comprobante`;
+
+                        const res = await fetch(apiUrl, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error || 'Error al retirar comprobante');
+
+                        Swal.fire('¡Éxito!', data.mensaje, 'success').then(() => location.reload());
+                    } catch (error) {
+                        showAlert('Error', error.message, 'error');
+                        newBtnDelete.innerHTML = '<i class="fa-solid fa-trash-can"></i> Retirar Comprobante';
+                        newBtnDelete.disabled = false;
+                    }
+                }
+            };
+        } else {
+            newBtnDelete.style.display = 'none';
+        }
+    }
+
+    if (estadoPagoText === 'Pagado') {
+        comprobanteUploader.style.display = 'none';
+    }
+
+    // Setup uploader events for this reservation
+    const btnSelectComprobante = document.getElementById('btnSelectComprobante');
+    const comprobanteInput = document.getElementById('comprobanteInput');
+    const comprobanteFileName = document.getElementById('comprobanteFileName');
+    const comprobantePreviewContainer = document.getElementById('comprobantePreviewContainer');
+    const comprobanteImgPreview = document.getElementById('comprobanteImgPreview');
+    const comprobantePdfPreview = document.getElementById('comprobantePdfPreview');
+    const btnRemoveComprobante = document.getElementById('btnRemoveComprobante');
+    const btnSendComprobante = document.getElementById('btnSendComprobante');
+
+    // Remove old listeners by cloning elements
+    const newBtnSelect = btnSelectComprobante.cloneNode(true);
+    btnSelectComprobante.parentNode.replaceChild(newBtnSelect, btnSelectComprobante);
+    const newBtnRemove = btnRemoveComprobante.cloneNode(true);
+    btnRemoveComprobante.parentNode.replaceChild(newBtnRemove, btnRemoveComprobante);
+    const newBtnSend = btnSendComprobante.cloneNode(true);
+    btnSendComprobante.parentNode.replaceChild(newBtnSend, btnSendComprobante);
+    const newInput = comprobanteInput.cloneNode(true);
+    comprobanteInput.parentNode.replaceChild(newInput, comprobanteInput);
+
+    let selectedFile = null;
+
+    const resetUploader = () => {
+        selectedFile = null;
+        newInput.value = '';
+        comprobanteFileName.textContent = 'Ningún archivo seleccionado';
+        comprobantePreviewContainer.style.display = 'none';
+        newBtnSend.style.opacity = '0.5';
+        newBtnSend.style.pointerEvents = 'none';
+    };
+    resetUploader();
+
+    newBtnSelect.onclick = () => newInput.click();
+    newBtnRemove.onclick = resetUploader;
+
+    newInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            showAlert('Error', 'El archivo no debe pesar más de 5MB.', 'error');
+            resetUploader();
+            return;
+        }
+
+        selectedFile = file;
+        comprobanteFileName.textContent = file.name;
+        comprobantePreviewContainer.style.display = 'block';
+        newBtnSend.style.opacity = '1';
+        newBtnSend.style.pointerEvents = 'auto';
+
+        if (file.type.startsWith('image/')) {
+            comprobanteImgPreview.src = URL.createObjectURL(file);
+            comprobanteImgPreview.style.display = 'block';
+            comprobantePdfPreview.style.display = 'none';
+        } else {
+            comprobanteImgPreview.style.display = 'none';
+            comprobantePdfPreview.style.display = 'block';
+        }
+    };
+
+    newBtnSend.onclick = async () => {
+        if (!selectedFile) return;
+        
+        newBtnSend.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
+        newBtnSend.disabled = true;
+
+        const formData = new FormData();
+        formData.append('comprobante', selectedFile);
+
+        try {
+            const token = sessionStorage.getItem("vialuna_token");
+            const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                ? "http://localhost:10000"
+                : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+            const apiUrl = `${baseUrl}/api/reservas/${id}/comprobante`;
+
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al subir comprobante');
+
+            Swal.fire('¡Éxito!', data.mensaje, 'success').then(() => {
+                location.reload();
+            });
+        } catch (error) {
+            showAlert('Error', error.message, 'error');
+            newBtnSend.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Enviar Comprobante';
+            newBtnSend.disabled = false;
+        }
+    };
+
+    // Botón Agregar más servicios
+    const estadoTextoVer = getStatusText(getEstadoValue(reserva), reserva);
+    const canEditVer = ["Pendiente", "Confirmada", "En curso"].includes(estadoTextoVer);
+
+    const btnAgregarServicios = document.getElementById('btnAgregarServicios');
+    if (btnAgregarServicios) {
+        if (canEditVer) {
+            btnAgregarServicios.style.display = 'inline-block';
+            const newBtnAg = btnAgregarServicios.cloneNode(true);
+            btnAgregarServicios.parentNode.replaceChild(newBtnAg, btnAgregarServicios);
+            newBtnAg.onclick = () => {
+                closeModal();
+                editarReserva(id);
+            };
+        } else {
+            btnAgregarServicios.style.display = 'none';
+        }
+    }
+
     // Extras (paquetes y servicios)
     const paquetes = Array.isArray(reserva.paquetes) && reserva.paquetes.length
         ? reserva.paquetes.map((item) => `<div>• ${item.nombre} <span style="color:#258a60;font-size:0.85em;">(${formatMoney(item.precio || item.total)})</span></div>`).join("")
@@ -811,21 +1017,18 @@ function getStatusText(estado, reserva = null) {
     const s = String(estado || "").toLowerCase();
     
     // Auto-completar si la fecha ya pasó
-    if (reserva && (["1", "activa", "activo", "confirmada", "confirmado", "reservada", "0", "5", "pendiente", "por confirmar"].includes(s))) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const end = new Date(getEndDate(reserva));
-        if (end < today) return "Finalizada";
-    }
-
-    if (["2", "cancelada", "cancelado"].includes(s)) return "Cancelada";
-    if (["4", "rechazada", "rechazado"].includes(s)) return "Rechazada";
-    if (["3", "finalizada", "completada", "completado", "finalizado"].includes(s)) return "Finalizada";
-    if (["0", "5", "pendiente", "por confirmar"].includes(s)) return "Pendiente";
-    if (["1", "activa", "activo", "confirmada", "confirmado", "reservada"].includes(s)) {
+    // Mapeo exacto con los ID de la BD o por nombres comunes
+    if (s === "1" || ["pendiente", "por confirmar"].includes(s)) return "Pendiente";
+    if (s === "2" || ["confirmada", "confirmado", "reservada"].includes(s)) {
         if (reserva && isCurrentReservation(reserva)) return "En curso";
         return "Confirmada";
     }
+    if (s === "3" || ["en proceso", "en curso", "activa", "activo"].includes(s)) return "En curso";
+    if (s === "4" || ["completada", "completado"].includes(s)) return "Completada";
+    if (s === "5" || ["finalizada", "finalizado"].includes(s)) return "Finalizada";
+    if (s === "6" || ["rechazada", "rechazado"].includes(s)) return "Rechazada";
+    if (["cancelada", "cancelado"].includes(s)) return "Cancelada";
+
     return estado || "Pendiente";
 }
 

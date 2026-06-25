@@ -100,11 +100,12 @@ function getStatusName(reserva) {
   if (typeof reserva?.estado === 'object' && reserva.estado !== null) {
     return String(reserva.estado.nombre || reserva.estado.NombreEstadoReserva || "Sin estado").trim();
   }
-  if (reserva?.estado == 1) return 'Activa';
-  if (reserva?.estado == 2) return 'Cancelada';
-  if (reserva?.estado == 3) return 'Finalizada';
-  if (reserva?.estado == 4) return 'Rechazada';
-  if (reserva?.estado == 5) return 'Pendiente';
+  if (reserva?.estado == 1) return 'Pendiente';
+  if (reserva?.estado == 2) return 'Confirmada';
+  if (reserva?.estado == 3) return 'En Proceso';
+  if (reserva?.estado == 4) return 'Completada';
+  if (reserva?.estado == 5) return 'Finalizada';
+  if (reserva?.estado == 6) return 'Rechazada';
   return String(reserva?.estado || "Sin estado").trim();
 }
 
@@ -881,6 +882,117 @@ function mostrarDetalleReserva(id) {
   }
 
   gridContainer.innerHTML = extrasHtml;
+
+  // Estado de Pago (Admin view)
+  const estadoPagoText = reserva.estado_pago || 'Pendiente';
+  const detResEstadoPagoBadge = document.getElementById('detResEstadoPagoBadge');
+  if (detResEstadoPagoBadge) {
+      detResEstadoPagoBadge.textContent = estadoPagoText;
+      if (estadoPagoText === 'Pagado') {
+          detResEstadoPagoBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800";
+      } else if (estadoPagoText === 'En revisión') {
+          detResEstadoPagoBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800";
+      } else if (estadoPagoText === 'Rechazado') {
+          detResEstadoPagoBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800";
+      } else {
+          detResEstadoPagoBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800";
+      }
+  }
+
+  const adminComprobanteViewer = document.getElementById('adminComprobanteViewer');
+  const adminComprobanteLink = document.getElementById('adminComprobanteLink');
+  const adminPaymentActions = document.getElementById('adminPaymentActions');
+  
+  if (adminComprobanteViewer && adminComprobanteLink) {
+      if (reserva.comprobante_url) {
+          adminComprobanteViewer.style.display = 'block';
+          const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+              ? "http://localhost:10000"
+              : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+          adminComprobanteLink.href = baseUrl + reserva.comprobante_url;
+      } else {
+          adminComprobanteViewer.style.display = 'none';
+      }
+  }
+
+  if (adminPaymentActions) {
+      if (estadoPagoText === 'En revisión') {
+          adminPaymentActions.style.display = 'flex';
+          
+          document.getElementById('btnAprobarPago').onclick = async () => {
+              try {
+                  const token = sessionStorage.getItem("vialuna_token");
+                  const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                      ? "http://localhost:10000"
+                      : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+                  const res = await fetch(`${baseUrl}/api/reservas/${id}/estado-pago`, {
+                      method: 'PUT',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({ estado_pago: 'Pagado' })
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error);
+                  Swal.fire('Aprobado', 'Pago aprobado exitosamente. Si la reserva estaba Pendiente, ahora está Confirmada.', 'success').then(() => location.reload());
+              } catch (e) {
+                  Swal.fire('Error', e.message, 'error');
+              }
+          };
+
+          document.getElementById('btnRechazarPago').onclick = async () => {
+              const { value: obs } = await Swal.fire({
+                  title: 'Rechazar Pago',
+                  input: 'textarea',
+                  inputLabel: 'Observación del rechazo',
+                  inputPlaceholder: 'El comprobante es borroso...',
+                  showCancelButton: true
+              });
+              if (!obs) return;
+              try {
+                  const token = sessionStorage.getItem("vialuna_token");
+                  const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                      ? "http://localhost:10000"
+                      : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+                  const res = await fetch(`${baseUrl}/api/reservas/${id}/estado-pago`, {
+                      method: 'PUT',
+                      headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({ estado_pago: 'Rechazado', observacion_pago: obs })
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data.error);
+                  Swal.fire('Rechazado', 'Pago rechazado.', 'info').then(() => location.reload());
+              } catch (e) {
+                  Swal.fire('Error', e.message, 'error');
+              }
+          };
+      } else {
+          adminPaymentActions.style.display = 'none';
+      }
+  }
+
+  const btnAdminAgregarServicios = document.getElementById('btnAdminAgregarServicios');
+  if (btnAdminAgregarServicios) {
+      // Allow adding services if the reservation is not finished or cancelled
+      if (statusName.toLowerCase().includes("activ") || statusName.toLowerCase().includes("confirm") || statusName.toLowerCase().includes("pendient")) {
+          btnAdminAgregarServicios.style.display = 'inline-block';
+          btnAdminAgregarServicios.onclick = () => {
+              document.getElementById('reservaDetalleModal').classList.add('hidden');
+              // Assuming admin has edit capability similar to client. If not natively supported by UI, we would redirect to edit form.
+              if (window.editarReserva) window.editarReserva(id);
+              else if (typeof window.reservasModule !== 'undefined' && window.reservasModule.openEditModal) {
+                  const reservaItem = window.reservasModule.currentData.reservas.find(r => Number(r.id_reserva || r.IDReserva) === Number(id));
+                  if(reservaItem) window.reservasModule.openEditModal(reservaItem);
+              }
+          };
+      } else {
+          btnAdminAgregarServicios.style.display = 'none';
+      }
+  }
 
   // Mostrar modal
   modal.classList.remove('hidden');

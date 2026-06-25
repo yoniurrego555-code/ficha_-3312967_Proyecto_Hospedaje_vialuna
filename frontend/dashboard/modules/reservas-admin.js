@@ -1387,10 +1387,9 @@ if (this.refs.reservationForm) {
         hora_entrada: this.refs.horaEntrada.value || '14:00',
         hora_salida: this.refs.horaSalida.value || '12:00',
 
-        // <i class="fa-solid fa-check"></i> AQUÍ ESTÁ EL FIX REAL - CAMPO CORRECTO PARA BACKEND
         id_metodo_pago: parseInt(this.refs.metodoPago.value),
 
-        estado: parseInt(this.refs.estadoReserva.value),
+        id_estado_reserva: this.options.isClientMode ? 1 : parseInt(this.refs.estadoReserva?.value || 1),
 
         total: totalAmount,
 
@@ -1695,6 +1694,63 @@ if (this.refs.reservationForm) {
       } else {
         motivoContainer.style.display = 'none';
       }
+    }
+
+    // Comprobante
+    const adminComprobanteViewer = document.getElementById('adminComprobanteViewer');
+    const adminComprobanteLink = document.getElementById('adminComprobanteLink');
+    if (adminComprobanteViewer && adminComprobanteLink) {
+        if (reserva.comprobante_url) {
+            adminComprobanteViewer.style.display = 'block';
+            const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                ? "http://localhost:10000"
+                : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+            adminComprobanteLink.href = baseUrl + reserva.comprobante_url;
+        } else {
+            adminComprobanteViewer.style.display = 'none';
+        }
+    }
+
+    // Botones de pago (Aceptar / Rechazar)
+    const adminPaymentActions = document.getElementById('adminPaymentActions');
+    if (adminPaymentActions) {
+        if (reserva.estado_pago === 'En revisión') {
+            adminPaymentActions.style.display = 'flex';
+            
+            document.getElementById('btnAprobarPago').onclick = async () => {
+                try {
+                    const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                        ? "http://localhost:10000"
+                        : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+                    const res = await fetch(`${baseUrl}/api/reservas/${reserva.id_reserva || reserva.IDReserva}/estado-pago`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.token || sessionStorage.getItem('vialuna_token')}`
+                        },
+                        body: JSON.stringify({ estado_pago: 'Pagado', observacion_pago: 'Pago aprobado por admin' })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    Swal.fire('¡Éxito!', data.mensaje, 'success').then(async () => {
+                        document.getElementById('reservaDetalleModal').classList.add('hidden');
+                        await this.reloadData();
+                        this.renderReservationsTable(this.currentFilteredData || this.currentData.reservas);
+                        this.updateMetrics();
+                        this.showReservationsList();
+                    });
+                } catch(err) {
+                    Swal.fire('Error', err.message, 'error');
+                }
+            };
+
+            document.getElementById('btnRechazarPago').onclick = async () => {
+                window.reservasModule.rechazarComprobante(reserva.id_reserva || reserva.IDReserva);
+                document.getElementById('reservaDetalleModal').classList.add('hidden');
+            };
+        } else {
+            adminPaymentActions.style.display = 'none';
+        }
     }
 
     // Unhide modal

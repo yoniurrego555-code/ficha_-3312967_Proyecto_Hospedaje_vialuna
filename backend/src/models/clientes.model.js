@@ -113,7 +113,8 @@ const actualizar = (id, data) => {
     Estado: "Estado",
     IDRol: "IDRol",
     Pais: "Pais",
-    Departamento: "Departamento"
+    Departamento: "Departamento",
+    FechaNacimiento: "FechaNacimiento"
   };
 
   for (const [key, column] of Object.entries(mappings)) {

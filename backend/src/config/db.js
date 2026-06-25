@@ -24,4 +24,11 @@ if (process.env.DB_SSL === 'true') {
 
 const pool = mysql.createPool(dbConfig);
 
+// Wrap the query method to log queries
+const originalQuery = pool.query;
+pool.query = function (...args) {
+  console.log('[DB QUERY]:', args[0], args[1]);
+  return originalQuery.apply(this, args);
+};
+
 module.exports = pool;

@@ -211,9 +211,6 @@
                 <option value="2">Confirmada</option>
                 <option value="3">En Proceso</option>
                 <option value="4">Completada</option>
-                <option value="5">Finalizada</option>
-                <option value="6">Rechazada</option>
-                <option value="7">Cancelada</option>
               </select>
             </div>
           </div>
@@ -373,6 +370,23 @@
         </div>
       </div>
 
+      <!-- Estado de pago y comprobante (Admin) -->
+      <div class="p-5 bg-white rounded-2xl border border-gray-100 flex flex-col gap-3 shadow-sm">
+        <div class="flex justify-between items-center">
+          <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">Estado de Pago</h4>
+          <span id="detResEstadoPagoBadge" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">Pendiente</span>
+        </div>
+        
+        <div id="adminComprobanteViewer" class="mt-2" style="display: none;">
+          <a id="adminComprobanteLink" href="#" target="_blank" class="inline-block px-4 py-2 bg-blue-50 text-blue-600 font-bold rounded-lg text-sm transition hover:bg-blue-100"><i class="fa-solid fa-file-invoice"></i> Ver Comprobante Enviado</a>
+        </div>
+        
+        <div id="adminPaymentActions" class="flex gap-2 mt-3 pt-3 border-t border-gray-50" style="display: none;">
+          <button type="button" id="btnAprobarPago" class="flex-1 px-4 py-2 rounded-lg bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-600 transition-colors border-none cursor-pointer"><i class="fa-solid fa-check"></i> Aprobar Pago</button>
+          <button type="button" id="btnRechazarPago" class="flex-1 px-4 py-2 rounded-lg bg-rose-500 text-white font-bold text-sm hover:bg-rose-600 transition-colors border-none cursor-pointer"><i class="fa-solid fa-xmark"></i> Rechazar</button>
+        </div>
+      </div>
+
       <!-- Motivo de cancelación (se muestra solo si la reserva está cancelada) -->
       <div id="detResMotivoCancelacionContainer" style="display:none;" class="p-4 bg-red-50 rounded-2xl border border-red-100">
         <span class="text-xs text-red-700 font-bold uppercase tracking-wider block mb-1">🔒 Motivo de Cancelación</span>
@@ -381,7 +395,8 @@
     </div>
 
     <div class="flex gap-3 mt-8 pt-4 border-t border-gray-100">
-      <button class="flex-1 px-5 py-3 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep active:scale-98 shadow-md shadow-brand/10 cursor-pointer border-none transition-all duration-300" type="button" onclick="document.getElementById('reservaDetalleModal').classList.add('hidden')">Cerrar detalle</button>
+      <button class="flex-1 px-5 py-3 rounded-xl bg-white border border-gray-200 text-brand-deep font-semibold hover:bg-gray-50 cursor-pointer transition-all duration-300" type="button" onclick="document.getElementById('reservaDetalleModal').classList.add('hidden')">Cerrar detalle</button>
+      <button class="flex-1 px-5 py-3 rounded-xl bg-brand text-white font-semibold hover:bg-brand-deep shadow-md shadow-brand/10 cursor-pointer border-none transition-all duration-300" type="button" id="btnAdminAgregarServicios"><i class="fa-solid fa-plus"></i> Agregar servicios</button>
     </div>
   </article>
 </div>
@@ -429,7 +444,10 @@
           const headers = {};
           if (token) headers['Authorization'] = `Bearer ${token}`;
 
-          const res = await fetch(apiUrl('reservas'), { headers });
+          const res = await fetch(apiUrl('reservas'), { 
+            headers,
+            cache: 'no-cache'
+          });
           if (!res.ok) {
             if (res.status === 401) {
               showMessageInTable('Necesitas iniciar sesión para ver las reservas.');
@@ -560,6 +578,91 @@
         document.getElementById('detResMetodoPago').textContent = r.metodoPago?.nombre || '—';
         document.getElementById('detResEstadoBadge').textContent = r.estado?.nombre || '—';
         document.getElementById('detResTotal').textContent = formatMoney(r.total || 0);
+
+        // Comprobante y Estado de Pago
+        const estadoPagoText = r.estado_pago || 'Pendiente';
+        const detResEstadoPagoBadge = document.getElementById('detResEstadoPagoBadge');
+        if (detResEstadoPagoBadge) {
+            detResEstadoPagoBadge.textContent = estadoPagoText;
+            if (estadoPagoText === 'Pagado') {
+                detResEstadoPagoBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800";
+            } else if (estadoPagoText === 'En revisión') {
+                detResEstadoPagoBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800";
+            } else if (estadoPagoText === 'Rechazado') {
+                detResEstadoPagoBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800";
+            } else {
+                detResEstadoPagoBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800";
+            }
+        }
+
+        const adminComprobanteViewer = document.getElementById('adminComprobanteViewer');
+        const adminComprobanteLink = document.getElementById('adminComprobanteLink');
+        if (adminComprobanteViewer && adminComprobanteLink) {
+            if (r.comprobante_url) {
+                adminComprobanteViewer.style.display = 'block';
+                const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                    ? "http://localhost:10000"
+                    : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+                adminComprobanteLink.href = baseUrl + r.comprobante_url;
+            } else {
+                adminComprobanteViewer.style.display = 'none';
+            }
+        }
+
+        const adminPaymentActions = document.getElementById('adminPaymentActions');
+        if (adminPaymentActions) {
+            if (r.estado_pago === 'En revisión') {
+                adminPaymentActions.style.display = 'flex';
+                
+                document.getElementById('btnAprobarPago').onclick = async () => {
+                    try {
+                        const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                            ? "http://localhost:10000"
+                            : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+                        const res = await fetch(`${baseUrl}/api/reservas/${r.id_reserva}/estado-pago`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ estado_pago: 'Pagado', observacion_pago: 'Pago aprobado por admin' })
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error);
+                        Swal.fire('¡Éxito!', data.mensaje, 'success').then(() => {
+                            document.getElementById('reservaDetalleModal').classList.add('hidden');
+                            fetchReservations();
+                        });
+                    } catch(err) {
+                        Swal.fire('Error', err.message, 'error');
+                    }
+                };
+
+                document.getElementById('btnRechazarPago').onclick = async () => {
+                    try {
+                        const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                            ? "http://localhost:10000"
+                            : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+                        const res = await fetch(`${baseUrl}/api/reservas/${r.id_reserva}/comprobante`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error);
+                        Swal.fire('¡Éxito!', data.mensaje, 'success').then(() => {
+                            document.getElementById('reservaDetalleModal').classList.add('hidden');
+                            fetchReservations();
+                        });
+                    } catch(err) {
+                        Swal.fire('Error', err.message, 'error');
+                    }
+                };
+            } else {
+                adminPaymentActions.style.display = 'none';
+            }
+        }
 
         // Mostrar motivo de cancelación si aplica
         const motivoContainer = document.getElementById('detResMotivoCancelacionContainer');

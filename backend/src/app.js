@@ -32,20 +32,27 @@ if (process.env.NODE_ENV !== 'production') {
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Permitir requests sin origen (como Postman o curl) o herramientas de la misma IP
+    // Permitir requests sin origen (como Postman, curl, o mismo servidor)
     if (!origin) return callback(null, true);
+
+    const isLocalhost =
+      origin.startsWith("http://localhost:") ||
+      origin.startsWith("http://127.0.0.1:") ||
+      origin.startsWith("http://[::1]:");
 
     if (
       allowedOrigins.includes(origin) ||
+      (process.env.NODE_ENV !== 'production' && isLocalhost) ||
       (process.env.NODE_ENV !== 'production' && origin.endsWith(".vercel.app"))
     ) {
       return callback(null, true);
     }
 
+    console.warn(`[CORS] Origen bloqueado: ${origin}`);
     return callback(new Error(`CORS bloqueado: origen ${origin} no autorizado`));
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "Cache-Control"],
   credentials: true
 };
 
