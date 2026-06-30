@@ -245,6 +245,23 @@ window.verDetalle = (id) => {
             ? "http://localhost:10000"
             : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
         comprobanteLink.href = baseUrl + reserva.comprobante_url; // Adjust based on host
+        
+        // Populate status
+        const statusEl = document.getElementById('comprobanteStatus');
+        if (statusEl) {
+            statusEl.innerHTML = `Estado del comprobante: <strong>${estadoPagoText}</strong>`;
+            if (estadoPagoText === 'Pagado') {
+                statusEl.style.backgroundColor = '#dcfce7';
+                statusEl.style.color = '#166534';
+            } else if (estadoPagoText === 'Rechazado') {
+                statusEl.style.backgroundColor = '#fee2e2';
+                statusEl.style.color = '#991b1b';
+            } else {
+                statusEl.style.backgroundColor = '#e0f2fe';
+                statusEl.style.color = '#075985';
+            }
+        }
+        
         comprobanteUploader.style.display = (estadoPagoText === 'Pagado' || estadoPagoText === 'En revisión') ? 'none' : 'flex';
     } else {
         comprobanteViewer.style.display = 'none';
@@ -1007,7 +1024,7 @@ function getNights(start, end) {
 function getStatusClass(estado, reserva = null) {
     const text = getStatusText(estado, reserva).toLowerCase();
     if (text === "en curso" || text === "confirmada") return "status-active";
-    if (text === "finalizada") return "status-completed";
+    if (text === "completada") return "status-completed";
     if (text === "cancelada" || text === "rechazada") return "status-cancelled";
     if (text === "pendiente") return "status-pending";
     return "status-active";
@@ -1025,7 +1042,6 @@ function getStatusText(estado, reserva = null) {
     }
     if (s === "3" || ["en proceso", "en curso", "activa", "activo"].includes(s)) return "En curso";
     if (s === "4" || ["completada", "completado"].includes(s)) return "Completada";
-    if (s === "5" || ["finalizada", "finalizado"].includes(s)) return "Finalizada";
     if (s === "6" || ["rechazada", "rechazado"].includes(s)) return "Rechazada";
     if (["cancelada", "cancelado"].includes(s)) return "Cancelada";
 

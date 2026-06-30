@@ -78,7 +78,6 @@
         <option value="2">Confirmada</option>
         <option value="3">En Proceso</option>
         <option value="4">Completada</option>
-        <option value="5">Finalizada</option>
         <option value="6">Rechazada</option>
         <option value="7">Cancelada</option>
       </select>
@@ -203,6 +202,7 @@
                 <option value="2">Tarjeta Débito/Crédito</option>
                 <option value="3">Transferencia Bancaria</option>
               </select>
+              <div id="paymentDetailsContainer"></div>
             </div>
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial:</label>
@@ -296,7 +296,7 @@
 
 <!-- Reservation Detail Modal -->
 <div id="reservaDetalleModal" class="hidden fixed inset-0 bg-[#173029]/40 backdrop-blur-sm z-[1000] flex items-center justify-center p-4 transition-all duration-300">
-  <article class="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300">
+  <article class="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto custom-scrollbar transform scale-95 transition-transform duration-300">
     <div class="mb-6 border-b border-gray-100 pb-4 flex justify-between items-start">
       <div>
         <div class="flex items-center gap-3">

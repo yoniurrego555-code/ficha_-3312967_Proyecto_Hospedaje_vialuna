@@ -39,7 +39,7 @@ async function cancelarReservasPendientesExpiradas() {
            CAST(r.nr_documento  AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci
       LEFT JOIN habitacion h
         ON h.IDHabitacion = r.id_habitacion
-      WHERE r.id_estado_reserva = 5
+      WHERE r.id_estado_reserva = 1
         AND r.fecha_creacion <= NOW() - INTERVAL 30 MINUTE
     `);
 
@@ -62,14 +62,14 @@ async function cancelarReservasPendientesExpiradas() {
             `UPDATE reservas
              SET id_estado_reserva = 2,
                  motivo_cancelacion = ?
-             WHERE id_reserva = ? AND id_estado_reserva = 5`,
+             WHERE id_reserva = ? AND id_estado_reserva = 1`,
             [motivo, reserva.id_reserva]
           );
         } else {
           await connection.query(
             `UPDATE reservas
              SET id_estado_reserva = 2
-             WHERE id_reserva = ? AND id_estado_reserva = 5`,
+             WHERE id_reserva = ? AND id_estado_reserva = 1`,
             [reserva.id_reserva]
           );
         }

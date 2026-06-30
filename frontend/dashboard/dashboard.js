@@ -159,7 +159,7 @@ export class DashboardModule {
       }
     });
 
-    const statusCounts = { '1': 0, '2': 0, '3': 0 };
+    const statusCounts = { '1': 0, '2': 0, '3': 0, '4': 0, '6': 0, '7': 0 };
     this.currentData.reservas.forEach(r => {
       const status = this._extractStatusId(r);
       if (statusCounts[status] !== undefined) statusCounts[status]++;
@@ -167,9 +167,9 @@ export class DashboardModule {
     this.charts.statusChart = new Chart(chartStatusCanvas, {
       type: 'doughnut',
       data: {
-        labels: ['Activas', 'Canceladas', 'Finalizadas'],
+        labels: ['En Proceso', 'Canceladas', 'Completadas'],
         datasets: [{
-          data: [statusCounts['1'], statusCounts['2'], statusCounts['3']],
+          data: [statusCounts['3'], (statusCounts['6'] + statusCounts['7']), statusCounts['4']],
           backgroundColor: ['rgba(16,185,129,0.7)', 'rgba(239,68,68,0.7)', 'rgba(59,130,246,0.7)']
         }]
       },
@@ -229,7 +229,6 @@ export class DashboardModule {
     if (statusValue.includes('confirmada') || statusValue === '2') return '2';
     if (statusValue.includes('proceso') || statusValue === '3') return '3';
     if (statusValue.includes('completada') || statusValue === '4') return '4';
-    if (statusValue.includes('finalizada') || statusValue === '5') return '5';
     if (statusValue.includes('rechazada') || statusValue === '6') return '6';
     
     return '1'; // Pendiente por defecto
@@ -246,13 +245,11 @@ export class DashboardModule {
       '2': 'status-active',
       '3': 'status-active',
       '4': 'status-completed',
-      '5': 'status-completed',
       '6': 'status-cancelled',
       'pendiente': 'status-pending',
       'confirmada': 'status-active',
       'en proceso': 'status-active',
       'completada': 'status-completed',
-      'finalizada': 'status-completed',
       'rechazada': 'status-cancelled'
     };
     return statusMap[String(estado).toLowerCase()] || 'status-pending';
@@ -264,13 +261,11 @@ export class DashboardModule {
       '2': 'Confirmada',
       '3': 'En Proceso',
       '4': 'Completada',
-      '5': 'Finalizada',
       '6': 'Rechazada',
       'pendiente': 'Pendiente',
       'confirmada': 'Confirmada',
       'en proceso': 'En Proceso',
       'completada': 'Completada',
-      'finalizada': 'Finalizada',
       'rechazada': 'Rechazada'
     };
     return statusMap[String(estado).toLowerCase()] || estado || 'Desconocido';

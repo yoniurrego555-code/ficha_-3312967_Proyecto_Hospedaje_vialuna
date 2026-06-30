@@ -12,6 +12,7 @@ import { getAppUrl } from "../core/authGuard.js";
 import { showAlert } from "./ui-utils.js";
 import { getStatusClass, getStatusText } from "../../js/shared/reservaStatus.js";
 import { formatCurrency } from "../../js/shared/helpers.js";
+import PaymentDetailsForm from "../../js/shared/PaymentDetailsForm.js";
 
 // Admin Reservas module
 export class ReservasAdminModule {
@@ -152,6 +153,12 @@ export class ReservasAdminModule {
       searchReservations: this.container.querySelector("#searchReservations"),
       filterStatus: this.container.querySelector("#filterStatus")
     };
+    
+    // Initialize PaymentDetailsForm for creation
+    this.paymentFormCreate = new PaymentDetailsForm('paymentDetailsContainer', {
+      mode: 'admin',
+      onChange: () => this.calculateTotal()
+    });
     
     // Globals for details modals
     window.verDetalleHabitacionAdmin = (id) => {
@@ -769,7 +776,6 @@ export class ReservasAdminModule {
                 <option value="2" ${String(status) === '2' ? 'selected' : ''}>Confirmada</option>
                 <option value="3" ${String(status) === '3' ? 'selected' : ''}>En Proceso</option>
                 <option value="4" ${String(status) === '4' ? 'selected' : ''}>Completada</option>
-                <option value="5" ${String(status) === '5' ? 'selected' : ''}>Finalizada</option>
                 <option value="6" ${String(status) === '6' ? 'selected' : ''}>Rechazada</option>
               </select>
               <!-- Badge Semántico Visual -->
@@ -1045,10 +1051,12 @@ export class ReservasAdminModule {
     this.container.querySelectorAll('.package-checkbox input').forEach(cb => cb.checked = false);
     this.container.querySelectorAll('.service-checkbox input').forEach(cb => cb.checked = false);
     
-    // reset flatpickr disabled ranges
+    // reset flatpickr disabled ranges and values
     if (this.fpInicio && this.fpFin) {
        this.fpInicio.set('disable', []);
        this.fpFin.set('disable', []);
+       this.fpInicio.clear();
+       this.fpFin.clear();
     }
     
     this.calculateTotal();
@@ -1105,12 +1113,11 @@ export class ReservasAdminModule {
   }
 
 
-  // Bloquear fechas ocupadas para la habitación seleccionada.
-  // Excluye reservas canceladas (estado 2) y anuladas (estado 3).
+  // Excluye reservas completadas (4), rechazadas (6) y canceladas (7).
   bloquearFechasOcupadas(idHabitacion) {
     if (!this.fpInicio || !this.fpFin || !this.currentData.reservas) return;
 
-    const CANCELLED = new Set(['2', '3', 'cancelada', 'cancelado', 'anulada', 'anulado']);
+    const CANCELLED = new Set(['4', '6', '7', 'completada', 'completado', 'rechazada', 'rechazado', 'cancelada', 'cancelado', 'anulada', 'anulado']);
 
     const fechasOcupadas = this.currentData.reservas
       .filter(r => {
@@ -1209,7 +1216,7 @@ export class ReservasAdminModule {
     if (statusCounts[status] !== undefined) statusCounts[status]++;
     else statusCounts['1']++;
   });
-  const statusLabels = ['Pendiente', 'Confirmada', 'En Proceso', 'Completada', 'Finalizada', 'Rechazada', 'Cancelada'];
+  const statusLabels = ['Pendiente', 'Confirmada', 'En Proceso', 'Completada', 'Rechazada', 'Cancelada'];
   const statusData = [statusCounts['1']||0, statusCounts['2']||0, statusCounts['3']||0, statusCounts['4']||0, statusCounts['5']||0, statusCounts['6']||0, statusCounts['7']||0];
   const statusColors = ['#f3f4f6', '#dbeafe', '#fef3c7', '#d1fae5', '#e0e7ff', '#fee2e2', '#fef2f2'];
   this.charts.statusChart = new Chart(chartStatusCanvas, {
@@ -1269,6 +1276,13 @@ export class ReservasAdminModule {
     // Clear form button
     if (this.refs.clearFormBtn) {
       this.refs.clearFormBtn.addEventListener('click', () => this.clearForm());
+    }
+
+    if (this.refs.metodoPago) {
+      this.refs.metodoPago.addEventListener('change', (e) => {
+        const totalAmount = Number(this.refs.totalAmount?.textContent.replace(/\D/g, '') || 0);
+        this.paymentFormCreate.render(e.target.value, totalAmount);
+      });
     }
 
     // Real-time calculation triggers
@@ -1379,6 +1393,12 @@ if (this.refs.reservationForm) {
       
       if (!conf.isConfirmed) return;
 
+      const paymentError = this.paymentFormCreate.validate();
+      if (paymentError) {
+          throw new Error(paymentError);
+      }
+      const detalles_pago = this.paymentFormCreate.getData();
+
       const formData = {
         id_cliente: this.options.isClientMode ? null : parseInt(this.refs.clienteSelect.value),
         id_habitacion: this.currentData.selectedRoom.id_habitacion || this.currentData.selectedRoom.IDHabitacion,
@@ -1390,6 +1410,8 @@ if (this.refs.reservationForm) {
         id_metodo_pago: parseInt(this.refs.metodoPago.value),
 
         id_estado_reserva: this.options.isClientMode ? 1 : parseInt(this.refs.estadoReserva?.value || 1),
+
+        detalles_pago: detalles_pago,
 
         total: totalAmount,
 
@@ -1505,10 +1527,8 @@ if (this.refs.reservationForm) {
             errorMsg = "Desde Confirmada solo se puede pasar a En Proceso, Rechazada o Cancelada";
         } else if (currentState === 3 && newState !== 4) {
             errorMsg = "Desde En Proceso solo se puede pasar a Completada";
-        } else if (currentState === 4 && newState !== 5) {
-            errorMsg = "Desde Completada solo se puede pasar a Finalizada";
-        } else if (currentState === 5) {
-            errorMsg = "Una reserva Finalizada no puede cambiar de estado";
+        } else if (currentState === 4) {
+            errorMsg = "Una reserva Completada no puede cambiar de estado";
         } else if (currentState === 6 && newState !== 1) {
             errorMsg = "Una reserva Rechazada solo puede volver a Pendiente";
         } else if (currentState === 7) {
@@ -1591,7 +1611,9 @@ if (this.refs.reservationForm) {
       return;
     }
 
-    const cliente = this.currentData.clientes.find(c => (c.id_cliente || c.IDCliente) == reserva.id_cliente);
+    let cliente = this.currentData.clientes.find(c => (c.id_cliente || c.IDCliente) == reserva.id_cliente);
+    if (!cliente && reserva.cliente) cliente = reserva.cliente;
+
     const habitacionId = reserva.id_habitacion || (reserva.habitacion ? reserva.habitacion.id : null);
     let habitacion = this.currentData.habitaciones.find(h => (h.id_habitacion || h.IDHabitacion) == habitacionId);
     if (!habitacion && reserva.habitacion) habitacion = reserva.habitacion;
@@ -1600,11 +1622,16 @@ if (this.refs.reservationForm) {
     // Populate modal elements
     document.getElementById('detalleReservaID').textContent = `ID: #${reserva.id_reserva || reserva.IDReserva || id}`;
     
-    // Guest info
-    document.getElementById('detResClienteNombre').textContent = cliente ? (cliente.NombreCompleto || `${cliente.Nombre || cliente.Nombres || ''} ${cliente.Apellido || cliente.Apellidos || ''}`.trim() || cliente.Email || cliente.NroDocumento || 'Cliente sin nombre') : reserva.nr_documento || 'Huésped Principal';
-    document.getElementById('detResClienteDoc').textContent = `Doc: ${cliente ? (cliente.NroDocumento || cliente.nro_documento || '--') : reserva.nr_documento || '--'}`;
-    document.getElementById('detResClienteEmail').textContent = `Email: ${cliente ? (cliente.Email || '--') : '--'}`;
-    document.getElementById('detResClienteTel').textContent = `Tel: ${cliente ? (cliente.Telefono || '--') : '--'}`;
+    // Guest info variables
+    const nombreCliente = cliente ? (cliente.NombreCompleto || `${cliente.Nombre || cliente.nombre || cliente.Nombres || cliente.nombres || ''} ${cliente.Apellido || cliente.apellido || cliente.Apellidos || cliente.apellidos || ''}`.trim() || cliente.Email || cliente.email || cliente.NroDocumento || cliente.nro_documento || 'Cliente sin nombre') : (reserva.cliente_nombre || reserva.nombre_cliente || reserva.nombres || reserva.nombre || reserva.nr_documento || 'Huésped Principal');
+    const docCliente = cliente ? (cliente.NroDocumento || cliente.nro_documento || cliente.documento || '--') : (reserva.nr_documento || reserva.documento || '--');
+    const emailCliente = cliente ? (cliente.Email || cliente.email || cliente.Correo || cliente.correo || '--') : (reserva.email || reserva.cliente_email || '--');
+    const telCliente = cliente ? (cliente.Telefono || cliente.telefono || cliente.TelefonoContacto || '--') : (reserva.telefono || reserva.cliente_telefono || '--');
+
+    document.getElementById('detResClienteNombre').textContent = nombreCliente || 'Huésped Principal';
+    document.getElementById('detResClienteDoc').textContent = `Doc: ${docCliente}`;
+    document.getElementById('detResClienteEmail').textContent = `Email: ${emailCliente}`;
+    document.getElementById('detResClienteTel').textContent = `Tel: ${telCliente}`;
 
     // Room info
     const nombreHabitacion = habitacion ? (habitacion.nombre || habitacion.NombreHabitacion || habitacion.tipo || habitacion.Tipo || `Habitación ${habitacion.numero || habitacion.Numero}`) : 'Sin Habitación';
@@ -1672,15 +1699,39 @@ if (this.refs.reservationForm) {
     // Status badge
     const badge = document.getElementById('detResEstadoBadge');
     if (badge) {
-      const badgeColors = {
-        '1': ['bg-emerald-100', 'text-emerald-800'],
-        '2': ['bg-red-100', 'text-red-800'],
-        '3': ['bg-blue-100', 'text-blue-800'],
-        '4': ['bg-indigo-100', 'text-indigo-800'],
-        '5': ['bg-amber-100', 'text-amber-800']
+      const statusNames = {
+        '1': 'Pendiente',
+        '2': 'Confirmada',
+        '3': 'En Proceso',
+        '4': 'Completada',
+        '6': 'Rechazada',
+        '7': 'Cancelada'
       };
+      
+      const badgeColors = {
+        '1': ['bg-amber-100', 'text-amber-800'],
+        '2': ['bg-blue-100', 'text-blue-800'],
+        '3': ['bg-indigo-100', 'text-indigo-800'],
+        '4': ['bg-emerald-100', 'text-emerald-800'],
+        '6': ['bg-red-100', 'text-red-800'],
+        '7': ['bg-gray-100', 'text-gray-800']
+      };
+      
+      // Limpiar clases anteriores
+      badge.className = 'inline-block px-3 py-1 rounded-full text-xs font-bold mt-1';
+      
       const colors = badgeColors[status] || ['bg-gray-100', 'text-gray-800'];
       badge.classList.add(...colors);
+      
+      let statusText = statusNames[status];
+      if (!statusText) {
+          if (String(status).toLowerCase() === 'cancelada' || String(status).toLowerCase() === 'anulada') statusText = 'Cancelada';
+          else if (String(status).toLowerCase() === 'completada' || String(status).toLowerCase() === 'finalizada') statusText = 'Completada';
+          else if (String(status).toLowerCase() === 'confirmada') statusText = 'Confirmada';
+          else statusText = String(status).charAt(0).toUpperCase() + String(status).slice(1);
+      }
+      
+      badge.textContent = statusText;
     }
 
     // Motivo de cancelación (si aplica)
@@ -1791,7 +1842,7 @@ if (this.refs.reservationForm) {
       : (reserva.habitacion ? reserva.habitacion.nombre : 'Sin habitación');
 
     // Estado como texto
-    const estadoTextoMap = { '1': 'Pendiente', '2': 'Confirmada', '3': 'En Proceso', '4': 'Completada', '5': 'Finalizada', '6': 'Rechazada', '7': 'Cancelada' };
+    const estadoTextoMap = { '1': 'Pendiente', '2': 'Confirmada', '3': 'En Proceso', '4': 'Completada', '6': 'Rechazada', '7': 'Cancelada' };
     const estadoColorMap = {
       '1': 'background:#f3f4f6;color:#374151;border:1px solid #d1d5db',
       '2': 'background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe',
@@ -2062,7 +2113,6 @@ if (this.refs.reservationForm) {
                   <option value="2" ${idEstado=='2'?'selected':''}>Confirmada</option>
                   <option value="3" ${idEstado=='3'?'selected':''}>En Proceso</option>
                   <option value="4" ${idEstado=='4'?'selected':''}>Completada</option>
-                  <option value="5" ${idEstado=='5'?'selected':''}>Finalizada</option>
                   <option value="6" ${idEstado=='6'?'selected':''}>Rechazada</option>
                   <option value="7" ${idEstado=='7'?'selected':''}>Cancelada</option>
                 </select>
@@ -2091,6 +2141,7 @@ if (this.refs.reservationForm) {
                   <option value="3" ${idMetodoPago==3?'selected':''}>Transferencia Bancaria</option>
                 </select>
               </div>
+              <div id="paymentDetailsContainerEdit" style="grid-column: span 2;"></div>
 
               <div style="grid-column:span 2;">
                 <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Observaciones</label>
@@ -2255,6 +2306,18 @@ if (this.refs.reservationForm) {
       });
     }
 
+    // Initialize PaymentDetailsForm for edit
+    this.paymentFormEdit = new PaymentDetailsForm('paymentDetailsContainerEdit', { mode: 'admin' });
+    const initialTotalEdit = this._lastEditTotal || Number(reserva.total || 0);
+    this.paymentFormEdit.render(idMetodoPago, initialTotalEdit, reserva.detalles_pago);
+
+    const editMetodoPagoSelect = this.refs.editReservationContainer.querySelector('#editMetodoPago');
+    if (editMetodoPagoSelect) {
+      editMetodoPagoSelect.addEventListener('change', (e) => {
+        this.paymentFormEdit.render(e.target.value, this._lastEditTotal || Number(reserva.total || 0));
+      });
+    }
+
     window.reservasModule = this;
   }
 
@@ -2391,6 +2454,13 @@ if (this.refs.reservationForm) {
 
     const observaciones = editContainer.querySelector('#editObservaciones')?.value || '';
 
+    const paymentError = this.paymentFormEdit.validate();
+    if (paymentError) {
+        Swal.fire('Error', paymentError, 'error');
+        return;
+    }
+    const detalles_pago = this.paymentFormEdit.getData();
+
     const formData = {
       id_habitacion: idHabitacion,
       fecha_inicio: editContainer.querySelector('#editFechaInicio')?.value || original?.fecha_inicio,
@@ -2399,6 +2469,7 @@ if (this.refs.reservationForm) {
       hora_salida: original?.hora_salida || '12:00',
       id_metodo_pago: parseInt(editContainer.querySelector('#editMetodoPago')?.value || 1),
       id_estado_reserva: parseInt(editContainer.querySelector('#editEstadoReserva')?.value || 1),
+      detalles_pago: detalles_pago,
       total: this._lastEditTotal || Number(original?.total || 0),
       paquetes: paquetesSeleccionados,
       servicios: serviciosSeleccionados,

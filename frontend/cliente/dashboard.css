@@ -1432,7 +1432,6 @@ button, input, select, textarea { font: inherit; }
 .badge-pendiente { background-color: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
 .badge-pagada    { background-color: #D1FAE5; color: #059669; border: 1px solid #A7F3D0; }
 .badge-cancelada { background-color: #FEE2E2; color: #DC2626; border: 1px solid #FECACA; }
-.badge-finalizada{ background-color: #DBEAFE; color: #1D4ED8; border: 1px solid #BFDBFE; }
 .badge-aceptada  { background-color: #E0E7FF; color: #3730A3; border: 1px solid #C7D2FE; }
 .badge-rechazada { background-color: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
 
@@ -1630,7 +1629,6 @@ button, input, select, textarea { font: inherit; }
 .badge-pendiente { background-color: #D1FAE5; color: #065F46; border: 1px solid #A7F3D0; }
 .badge-pagada    { background-color: #D1FAE5; color: #059669; border: 1px solid #A7F3D0; }
 .badge-cancelada { background-color: #FEE2E2; color: #DC2626; border: 1px solid #FECACA; }
-.badge-finalizada{ background-color: #DBEAFE; color: #1D4ED8; border: 1px solid #BFDBFE; }
 .badge-aceptada  { background-color: #E0E7FF; color: #3730A3; border: 1px solid #C7D2FE; }
 .badge-rechazada { background-color: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
 

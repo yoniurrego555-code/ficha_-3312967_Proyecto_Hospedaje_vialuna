@@ -91,7 +91,8 @@ async function obtenerReservasBase(connection, whereClause = "", params = []) {
         r.estado_pago,
         r.comprobante_url,
         r.fecha_pago,
-        r.observacion_pago
+        r.observacion_pago,
+        r.detalles_pago
       FROM reservas r
       LEFT JOIN clientes c
         ON c.NroDocumento = r.nr_documento
@@ -249,6 +250,7 @@ async function hidratarReservas(connection, rows) {
     comprobante_url: row.comprobante_url || null,
     fecha_pago: row.fecha_pago ? normalizeDate(row.fecha_pago) : null,
     observacion_pago: row.observacion_pago || null,
+    detalles_pago: row.detalles_pago ? (typeof row.detalles_pago === 'string' ? JSON.parse(row.detalles_pago) : row.detalles_pago) : null,
     id_metodo_pago: row.id_metodo_pago,
     id_habitacion: row.id_habitacion,
     metodoPago: {
@@ -355,12 +357,12 @@ async function validarReserva(connection, data, options = {}) {
   }
 
   // VALIDACIÓN DE CONFLICTOS DE HABITACIÓN
-  if ([1, 2, 3, 4].includes(idEstadoReserva)) {
+  if ([1, 2, 3].includes(idEstadoReserva)) {
     let queryConflictos = `
       SELECT id_reserva
       FROM reservas
       WHERE id_habitacion = ?
-        AND id_estado_reserva IN (1, 2, 3, 4)
+        AND id_estado_reserva IN (1, 2, 3)
         AND fecha_inicio < ?
         AND fecha_fin > ?
     `;
@@ -374,7 +376,31 @@ async function validarReserva(connection, data, options = {}) {
     const [conflictosRows] = await connection.query(queryConflictos, paramsConflictos);
 
     if (conflictosRows.length > 0) {
-      throw buildError("La habitacion no esta disponible para las fechas seleccionadas");
+      throw buildError("Esta habitación ya está reservada en estas fechas.");
+    }
+  }
+
+  // VALIDACIÓN DE CONFLICTOS DEL HUÉSPED
+  if ([1, 2, 3].includes(idEstadoReserva)) {
+    let queryConflictosHuesped = `
+      SELECT id_reserva
+      FROM reservas
+      WHERE id_cliente = ?
+        AND id_estado_reserva IN (1, 2, 3)
+        AND fecha_inicio < ?
+        AND fecha_fin > ?
+    `;
+    let paramsConflictosHuesped = [idCliente, fechaFinStr, fechaInicioStr];
+
+    if (options.isUpdate && options.reservationId) {
+      queryConflictosHuesped += " AND id_reserva != ?";
+      paramsConflictosHuesped.push(options.reservationId);
+    }
+
+    const [conflictosHuespedRows] = await connection.query(queryConflictosHuesped, paramsConflictosHuesped);
+
+    if (conflictosHuespedRows.length > 0) {
+      throw buildError("El huésped seleccionado ya tiene una reserva en estas fechas.");
     }
   }
 
@@ -625,6 +651,7 @@ async function crear(data) {
       "comprobante_url",
       "fecha_pago",
       "observacion_pago",
+      "detalles_pago",
       ...(hasAceptaTerminos ? ["acepta_terminos"] : [])
     ];
     const insertValues = [
@@ -643,6 +670,7 @@ async function crear(data) {
       data.comprobante_url || null,
       data.fecha_pago || null,
       data.observacion_pago || null,
+      data.detalles_pago ? JSON.stringify(data.detalles_pago) : null,
       ...(hasAceptaTerminos ? [data.acepta_terminos || 0] : [])
     ];
     const [result] = await connection.query(
@@ -673,7 +701,7 @@ async function actualizar(id, data) {
 
     const reservationColumns = await getReservationColumns();
     const [existingRows] = await connection.query(
-      "SELECT id_reserva, fecha_reserva, id_estado_reserva FROM reservas WHERE id_reserva = ? LIMIT 1",
+      "SELECT id_reserva, fecha_reserva, id_estado_reserva, estado_pago, comprobante_url, fecha_pago, observacion_pago, detalles_pago FROM reservas WHERE id_reserva = ? LIMIT 1",
       [id]
     );
 
@@ -691,10 +719,8 @@ async function actualizar(id, data) {
             throw buildError("Desde Confirmada solo se puede pasar a En Proceso, Rechazada o Cancelada");
         } else if (currentState === 3 && newState !== 4) {
             throw buildError("Desde En Proceso solo se puede pasar a Completada");
-        } else if (currentState === 4 && newState !== 5) {
-            throw buildError("Desde Completada solo se puede pasar a Finalizada");
-        } else if (currentState === 5) {
-            throw buildError("Una reserva Finalizada no puede cambiar de estado");
+        } else if (currentState === 4) {
+            throw buildError("Una reserva Completada no puede cambiar de estado");
         } else if (currentState === 6 && newState !== 1) {
             throw buildError("Una reserva Rechazada solo puede volver a Pendiente");
         } else if (currentState === 7) {
@@ -726,6 +752,7 @@ async function actualizar(id, data) {
       "comprobante_url = ?",
       "fecha_pago = ?",
       "observacion_pago = ?",
+      "detalles_pago = ?",
       ...(hasAceptaTerminos && data.acepta_terminos !== undefined ? ["acepta_terminos = ?"] : [])
     ];
     const updateValues = [
@@ -744,6 +771,7 @@ async function actualizar(id, data) {
       data.comprobante_url !== undefined ? data.comprobante_url : existingRows[0].comprobante_url,
       data.fecha_pago !== undefined ? data.fecha_pago : existingRows[0].fecha_pago,
       data.observacion_pago !== undefined ? data.observacion_pago : existingRows[0].observacion_pago,
+      data.detalles_pago !== undefined ? (data.detalles_pago ? JSON.stringify(data.detalles_pago) : null) : existingRows[0].detalles_pago,
       ...(hasAceptaTerminos && data.acepta_terminos !== undefined ? [data.acepta_terminos || 0] : []),
       id
     ];
@@ -762,8 +790,8 @@ async function actualizar(id, data) {
 
     await guardarDetalles(connection, id, payload.paquetes, payload.servicios);
 
-    // Si la reserva pasa a estado 5 (Finalizada), liberar la habitación
-    if (Number(payload.reserva.id_estado_reserva) === 5) {
+    // Si la reserva pasa a estado 4 (Completada), liberar la habitación
+    if (Number(payload.reserva.id_estado_reserva) === 4) {
       await connection.query("UPDATE habitacion SET Estado = 1 WHERE IDHabitacion = ?", [payload.reserva.id_habitacion]);
     }
 

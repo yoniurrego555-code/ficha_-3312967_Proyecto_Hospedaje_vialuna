@@ -104,7 +104,6 @@ function getStatusName(reserva) {
   if (reserva?.estado == 2) return 'Confirmada';
   if (reserva?.estado == 3) return 'En Proceso';
   if (reserva?.estado == 4) return 'Completada';
-  if (reserva?.estado == 5) return 'Finalizada';
   if (reserva?.estado == 6) return 'Rechazada';
   return String(reserva?.estado || "Sin estado").trim();
 }
@@ -1030,7 +1029,7 @@ function renderStatusSummary() {
 
   const reservas = getVisibleReservas();
   const activas = reservas.filter((reserva) => getStatusName(reserva).toLowerCase().includes("activ"));
-  const finalizadas = reservas.filter((reserva) => getStatusName(reserva).toLowerCase().includes("final"));
+  const completadas = reservas.filter((reserva) => getStatusName(reserva).toLowerCase().includes("complet"));
   const canceladas = reservas.filter((reserva) => getStatusName(reserva).toLowerCase().includes("cancel"));
 
   refs.statusSummary.innerHTML = `
@@ -1043,10 +1042,10 @@ function renderStatusSummary() {
     </article>
     <article class="list-card">
       <div>
-        <h4>Reservas finalizadas</h4>
+        <h4>Reservas completadas</h4>
         <p>Historial completado de tus estancias.</p>
       </div>
-      <div class="list-card__meta"><span class="badge">${finalizadas.length}</span></div>
+      <div class="list-card__meta"><span class="badge">${completadas.length}</span></div>
     </article>
     <article class="list-card">
       <div>
