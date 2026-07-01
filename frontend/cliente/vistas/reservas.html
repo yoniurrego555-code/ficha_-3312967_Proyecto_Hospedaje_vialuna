@@ -72,11 +72,11 @@
       </div>
       <div class="detail-modal-item detail-modal-item--wide" id="totalesDesgloseContainer" style="display: none; padding: 10px; background: #f8fafc; border-radius: 8px; font-size: 0.9rem;">
         <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-            <span style="color: #64748b;">Monto Pagado:</span>
+            <span style="color: #64748b;">Primer Monto Pagado:</span>
             <strong id="detailModalMontoPagado" style="color: #258a60;">$0</strong>
         </div>
-        <div style="display: flex; justify-content: space-between;">
-            <span style="color: #64748b;">Saldo Pendiente:</span>
+        <div id="rowClientServiciosExtras" style="display: none; justify-content: space-between; margin-bottom: 5px;">
+            <span style="color: #64748b;">Costo Servicios Extras (Saldo a pagar):</span>
             <strong id="detailModalSaldoPendiente" style="color: #b91c1c;">$0</strong>
         </div>
       </div>
@@ -99,7 +99,7 @@
         </div>
 
         <div id="comprobanteUploader" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; border-top: 1px solid #e5e7eb; padding-top: 10px;">
-          <dt style="color: #173029; font-weight: 800; font-size: 0.8rem; text-transform: uppercase;">Subir / Actualizar Comprobante</dt>
+          <dt id="comprobanteUploaderLabel" style="color: #173029; font-weight: 800; font-size: 0.8rem; text-transform: uppercase;">Subir / Actualizar Comprobante</dt>
           <div style="display: flex; gap: 8px;">
             <input type="file" id="comprobanteInput" accept=".jpg,.jpeg,.png,.pdf" class="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand/10 file:text-brand hover:file:bg-brand/20" style="flex: 1; border: 1px solid #e5e7eb; border-radius: 8px; padding: 4px; font-size: 0.85rem; cursor: pointer; color: #6b7280; background: white;">
             <button type="button" id="btnSendComprobante" style="padding: 8px 16px; background: #258a60; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;"><i class="fa-solid fa-upload"></i> Subir</button>

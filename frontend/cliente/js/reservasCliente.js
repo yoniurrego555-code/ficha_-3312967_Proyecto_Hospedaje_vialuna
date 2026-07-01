@@ -215,19 +215,39 @@ window.verDetalle = (id) => {
     document.getElementById('detailModalSalida').textContent = formatDate(getEndDate(reserva));
     document.getElementById('detailModalEstado').textContent = getStatusText(getEstadoValue(reserva), reserva);
     const total = reserva.total || reserva.Total || reserva.TotalPagado || 0;
-    const montoPagado = reserva.monto_pagado !== undefined ? Number(reserva.monto_pagado) : total;
-    const saldoPendiente = reserva.saldo_pendiente !== undefined ? Number(reserva.saldo_pendiente) : 0;
+    let montoPagado = (reserva.monto_pagado !== undefined && reserva.monto_pagado !== null) ? Number(reserva.monto_pagado) : total;
+    const saldoPendiente = (reserva.saldo_pendiente !== undefined && reserva.saldo_pendiente !== null) ? Number(reserva.saldo_pendiente) : 0;
+    
+    // Fix for older reservations where monto_pagado might be 0 in DB despite having been paid initially
+    if (montoPagado === 0 && saldoPendiente > 0 && total > saldoPendiente) {
+        montoPagado = total - saldoPendiente;
+    }
     
     document.getElementById('detailModalTotal').textContent = formatMoney(total);
     
     const desgloseContainer = document.getElementById('totalesDesgloseContainer');
+    
     if (desgloseContainer) {
         if (montoPagado > 0 && saldoPendiente > 0) {
             desgloseContainer.style.display = 'block';
             document.getElementById('detailModalMontoPagado').textContent = formatMoney(montoPagado);
             document.getElementById('detailModalSaldoPendiente').textContent = formatMoney(saldoPendiente);
+            
+            const rowExtras = document.getElementById('rowClientServiciosExtras');
+            if (rowExtras) {
+                rowExtras.style.display = 'flex';
+            }
+            
+            const uploaderLabel = document.getElementById('comprobanteUploaderLabel');
+            if (uploaderLabel) {
+                uploaderLabel.textContent = 'Subir Comprobante por Servicios Extras';
+            }
         } else {
             desgloseContainer.style.display = 'none';
+            const uploaderLabel = document.getElementById('comprobanteUploaderLabel');
+            if (uploaderLabel) {
+                uploaderLabel.textContent = 'Subir / Actualizar Comprobante';
+            }
         }
     }
 
@@ -342,8 +362,11 @@ window.verDetalle = (id) => {
         }
     }
 
-    if (estadoPagoText === 'Pagado') {
+
+    if ((estadoPagoText === 'Pagado' || estadoPagoText === 'En revisión' || estadoPagoText === 'Aprobado') && saldoPendiente <= 0) {
         comprobanteUploader.style.display = 'none';
+    } else {
+        comprobanteUploader.style.display = 'block';
     }
 
     // Setup uploader events for this reservation

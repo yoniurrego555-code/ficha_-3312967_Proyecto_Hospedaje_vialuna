@@ -376,11 +376,11 @@
       <!-- Desglose de Totales (Monto Pagado / Saldo Pendiente) -->
       <div id="detResDesgloseContainer" class="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex flex-col gap-2" style="display: none;">
         <div class="flex justify-between items-center text-sm">
-          <span class="font-bold text-emerald-800">Monto Pagado:</span>
+          <span class="font-bold text-emerald-800">Primer Monto Pagado:</span>
           <strong id="detResMontoPagado" class="text-emerald-900">$0</strong>
         </div>
-        <div class="flex justify-between items-center text-sm">
-          <span class="font-bold text-red-800">Saldo Pendiente:</span>
+        <div class="flex justify-between items-center text-sm" id="rowAdminServiciosExtras" style="display: none;">
+          <span class="font-bold text-red-800">Costo Servicios Extras (Saldo a pagar):</span>
           <strong id="detResSaldoPendiente" class="text-red-900">$0</strong>
         </div>
       </div>
@@ -404,7 +404,7 @@
         </div>
 
         <div id="adminUploadComprobanteContainer" class="mt-3 pt-3 border-t border-gray-50">
-          <label class="text-xs font-bold text-brand-deep uppercase tracking-wider block mb-2">Subir / Actualizar Comprobante</label>
+          <label id="adminUploadComprobanteLabel" class="text-xs font-bold text-brand-deep uppercase tracking-wider block mb-2">Subir / Actualizar Comprobante</label>
           <div class="flex gap-2">
             <input type="file" id="adminInputComprobante" accept=".jpg,.jpeg,.png,.pdf" class="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand/10 file:text-brand hover:file:bg-brand/20 cursor-pointer border border-gray-200 rounded-lg p-1">
             <button type="button" id="btnAdminSubirComprobante" class="px-4 py-2 rounded-lg bg-brand text-white font-bold text-sm transition-colors border-none cursor-pointer" style="background-color: var(--brand); color: white;">
@@ -735,16 +735,32 @@
 
         // Desglose de totales
         const desgloseContainer = document.getElementById('detResDesgloseContainer');
-        const montoPagado = r.monto_pagado !== undefined ? Number(r.monto_pagado) : Number(r.total || 0);
-        const saldoPendiente = r.saldo_pendiente !== undefined ? Number(r.saldo_pendiente) : 0;
+        const totalActual = Number(r.total || 0);
+        let montoPagado = (r.monto_pagado !== undefined && r.monto_pagado !== null) ? Number(r.monto_pagado) : totalActual;
+        const saldoPendiente = (r.saldo_pendiente !== undefined && r.saldo_pendiente !== null) ? Number(r.saldo_pendiente) : 0;
+        
+        // Fix for older reservations where monto_pagado might be 0 in DB despite having been paid initially
+        if (montoPagado === 0 && saldoPendiente > 0 && totalActual > saldoPendiente) {
+            montoPagado = totalActual - saldoPendiente;
+        }
         
         if (desgloseContainer) {
             if (montoPagado > 0 && saldoPendiente > 0) {
                 desgloseContainer.style.display = 'flex';
                 document.getElementById('detResMontoPagado').textContent = formatMoney(montoPagado);
                 document.getElementById('detResSaldoPendiente').textContent = formatMoney(saldoPendiente);
+                
+                const rowExtras = document.getElementById('rowAdminServiciosExtras');
+                if (rowExtras) {
+                    rowExtras.style.display = 'flex';
+                }
+                
+                const uploaderLabel = document.getElementById('adminUploadComprobanteLabel');
+                if (uploaderLabel) uploaderLabel.textContent = 'Subir Comprobante por Servicios Extras';
             } else {
                 desgloseContainer.style.display = 'none';
+                const uploaderLabel = document.getElementById('adminUploadComprobanteLabel');
+                if (uploaderLabel) uploaderLabel.textContent = 'Subir / Actualizar Comprobante';
             }
         }
 
