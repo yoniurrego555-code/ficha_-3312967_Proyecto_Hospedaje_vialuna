@@ -132,8 +132,15 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Documento del Huésped:</label>
-              <input list="documentosList" type="text" id="documentoInput" placeholder="Buscar por documento..." class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 w-full box-border" autocomplete="off">
-              <datalist id="documentosList"></datalist>
+              <div class="relative w-full">
+                <input type="text" id="documentoInput" placeholder="Buscar por documento..." class="min-h-[44px] py-2.5 px-4 pr-10 rounded-xl border border-gray-200 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 w-full box-border" autocomplete="off">
+                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                  <i class="fa-solid fa-chevron-down text-xs"></i>
+                </div>
+                <div id="documentosDropdown" class="absolute z-[100] w-full mt-1 bg-white border border-gray-100 rounded-xl shadow-lg max-h-60 overflow-y-auto hidden">
+                  <!-- Opciones generadas por JS -->
+                </div>
+              </div>
             </div>
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Nombre del Huésped:</label>
@@ -199,18 +206,14 @@
               <select id="metodoPago" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer w-full box-border" required>
                 <option value="">Seleccionar método...</option>
                 <option value="1">Efectivo</option>
-                <option value="2">Tarjeta Débito/Crédito</option>
                 <option value="3">Transferencia Bancaria</option>
               </select>
               <div id="paymentDetailsContainer"></div>
             </div>
             <div class="flex flex-col gap-2">
               <label class="text-xs font-bold text-brand-deep uppercase tracking-wider">Estado Inicial:</label>
-              <select id="estadoReserva" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-50 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand/20 cursor-pointer w-full box-border" required>
-                <option value="1">Pendiente</option>
-                <option value="2">Confirmada</option>
-                <option value="3">En Proceso</option>
-                <option value="4">Completada</option>
+              <select id="estadoReserva" class="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 bg-gray-100 text-sm font-semibold text-gray-500 cursor-not-allowed w-full box-border" disabled required>
+                <option value="1" selected>Pendiente (Por defecto)</option>
               </select>
             </div>
           </div>
@@ -369,6 +372,24 @@
           <strong id="detResTotal" class="text-2xl font-bold text-brand block mt-0.5">$0</strong>
         </div>
       </div>
+      
+      <!-- Desglose de Totales (Monto Pagado / Saldo Pendiente) -->
+      <div id="detResDesgloseContainer" class="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex flex-col gap-2" style="display: none;">
+        <div class="flex justify-between items-center text-sm">
+          <span class="font-bold text-emerald-800">Monto Pagado:</span>
+          <strong id="detResMontoPagado" class="text-emerald-900">$0</strong>
+        </div>
+        <div class="flex justify-between items-center text-sm">
+          <span class="font-bold text-red-800">Saldo Pendiente:</span>
+          <strong id="detResSaldoPendiente" class="text-red-900">$0</strong>
+        </div>
+      </div>
+
+      <!-- Historial de Pagos Adicionales -->
+      <div id="detResPagosAdicionalesContainer" class="p-5 bg-white rounded-2xl border border-gray-100 flex flex-col gap-3 shadow-sm" style="display: none;">
+        <h4 class="text-xs font-bold text-brand-deep uppercase tracking-wider m-0">Historial de Pagos Adicionales</h4>
+        <div id="detResPagosAdicionalesLista" class="flex flex-col gap-2 mt-2"></div>
+      </div>
 
       <!-- Estado de pago y comprobante (Admin) -->
       <div class="p-5 bg-white rounded-2xl border border-gray-100 flex flex-col gap-3 shadow-sm">
@@ -377,9 +398,21 @@
           <span id="detResEstadoPagoBadge" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">Pendiente</span>
         </div>
         
-        <div id="adminComprobanteViewer" class="mt-2" style="display: none;">
+        <div id="adminComprobanteViewer" class="mt-2 flex items-center gap-2" style="display: none;">
           <a id="adminComprobanteLink" href="#" target="_blank" class="inline-block px-4 py-2 bg-blue-50 text-blue-600 font-bold rounded-lg text-sm transition hover:bg-blue-100"><i class="fa-solid fa-file-invoice"></i> Ver Comprobante Enviado</a>
+          <button type="button" id="btnAdminDeleteComprobante" class="inline-block px-4 py-2 bg-red-50 text-red-600 font-bold rounded-lg text-sm transition hover:bg-red-100 border-none cursor-pointer"><i class="fa-solid fa-trash-can"></i> Retirar</button>
         </div>
+
+        <div id="adminUploadComprobanteContainer" class="mt-3 pt-3 border-t border-gray-50">
+          <label class="text-xs font-bold text-brand-deep uppercase tracking-wider block mb-2">Subir / Actualizar Comprobante</label>
+          <div class="flex gap-2">
+            <input type="file" id="adminInputComprobante" accept=".jpg,.jpeg,.png,.pdf" class="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand/10 file:text-brand hover:file:bg-brand/20 cursor-pointer border border-gray-200 rounded-lg p-1">
+            <button type="button" id="btnAdminSubirComprobante" class="px-4 py-2 rounded-lg bg-brand text-white font-bold text-sm transition-colors border-none cursor-pointer" style="background-color: var(--brand); color: white;">
+              <i class="fa-solid fa-upload"></i> Subir
+            </button>
+          </div>
+        </div>
+
         
         <div id="adminPaymentActions" class="flex gap-2 mt-3 pt-3 border-t border-gray-50" style="display: none;">
           <button type="button" id="btnAprobarPago" class="flex-1 px-4 py-2 rounded-lg bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-600 transition-colors border-none cursor-pointer"><i class="fa-solid fa-check"></i> Aprobar Pago</button>
@@ -533,8 +566,8 @@
                 <td class="px-6 py-4">
                   <div class="action-group-modern justify-center">
                     <button class="btn-action-modern view" data-id="${r.id_reserva}" title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
-                    <button class="btn-action-modern edit" data-id="${r.id_reserva}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-action-modern delete" data-id="${r.id_reserva}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                    ${['3', '4', '5', '6'].includes(estadoId) ? '' : `<button class="btn-action-modern edit" data-id="${r.id_reserva}" title="Editar"><i class="fa-solid fa-pen"></i></button>`}
+                    ${['3', '4', '5', '6'].includes(estadoId) ? '' : `<button class="btn-action-modern delete" data-id="${r.id_reserva}" title="Cancelar"><i class="fa-solid fa-trash"></i></button>`}
                   </div>
                 </td>
               </tr>`;
@@ -556,6 +589,42 @@
           });
         });
       }
+
+      window.adminAprobarPagoAdicional = async (idPago) => {
+          try {
+              const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
+                  ? "http://localhost:10000"
+                  : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+              const res = await fetch(`${baseUrl}/api/reservas/pagos/${idPago}/estado`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                  body: JSON.stringify({ estado: 'Aprobado' })
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error);
+              Swal.fire('¡Éxito!', data.mensaje, 'success').then(() => fetchReservations());
+          } catch(err) {
+              Swal.fire('Error', err.message, 'error');
+          }
+      };
+
+      window.adminRechazarPagoAdicional = async (idPago) => {
+          try {
+              const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
+                  ? "http://localhost:10000"
+                  : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+              const res = await fetch(`${baseUrl}/api/reservas/pagos/${idPago}/estado`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                  body: JSON.stringify({ estado: 'Rechazado' })
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error);
+              Swal.fire('¡Éxito!', data.mensaje, 'success').then(() => fetchReservations());
+          } catch(err) {
+              Swal.fire('Error', err.message, 'error');
+          }
+      };
 
       function showReservationDetail(r) {
         document.getElementById('detalleReservaID').textContent = `ID: #${r.id_reserva}`;
@@ -600,7 +669,7 @@
         if (adminComprobanteViewer && adminComprobanteLink) {
             if (r.comprobante_url) {
                 adminComprobanteViewer.style.display = 'block';
-                const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
                     ? "http://localhost:10000"
                     : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
                 adminComprobanteLink.href = baseUrl + r.comprobante_url;
@@ -616,7 +685,7 @@
                 
                 document.getElementById('btnAprobarPago').onclick = async () => {
                     try {
-                        const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                        const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
                             ? "http://localhost:10000"
                             : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
                         const res = await fetch(`${baseUrl}/api/reservas/${r.id_reserva}/estado-pago`, {
@@ -640,7 +709,7 @@
 
                 document.getElementById('btnRechazarPago').onclick = async () => {
                     try {
-                        const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                        const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
                             ? "http://localhost:10000"
                             : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
                         const res = await fetch(`${baseUrl}/api/reservas/${r.id_reserva}/comprobante`, {
@@ -662,6 +731,186 @@
             } else {
                 adminPaymentActions.style.display = 'none';
             }
+        }
+
+        // Desglose de totales
+        const desgloseContainer = document.getElementById('detResDesgloseContainer');
+        const montoPagado = r.monto_pagado !== undefined ? Number(r.monto_pagado) : Number(r.total || 0);
+        const saldoPendiente = r.saldo_pendiente !== undefined ? Number(r.saldo_pendiente) : 0;
+        
+        if (desgloseContainer) {
+            if (montoPagado > 0 && saldoPendiente > 0) {
+                desgloseContainer.style.display = 'flex';
+                document.getElementById('detResMontoPagado').textContent = formatMoney(montoPagado);
+                document.getElementById('detResSaldoPendiente').textContent = formatMoney(saldoPendiente);
+            } else {
+                desgloseContainer.style.display = 'none';
+            }
+        }
+
+        const btnAdminAgregarServicios = document.getElementById('btnAdminAgregarServicios');
+        if (btnAdminAgregarServicios) {
+            const estadoReservaId = String(r.estado?.id || '');
+            if (['3', '4', '5', '6'].includes(estadoReservaId)) {
+                btnAdminAgregarServicios.style.display = 'none';
+            } else {
+                btnAdminAgregarServicios.style.display = 'flex';
+                btnAdminAgregarServicios.onclick = () => {
+                    document.getElementById('reservaDetalleModal').classList.add('hidden');
+                    // Buscar el boton de editar en la tabla y hacerle click
+                    const editBtn = document.querySelector(`button.edit[data-id="${r.id_reserva}"]`);
+                    if (editBtn) editBtn.click();
+                };
+            }
+        }
+
+        // Pagos adicionales
+        const pagosAdicionalesContainer = document.getElementById('detResPagosAdicionalesContainer');
+        const pagosAdicionalesLista = document.getElementById('detResPagosAdicionalesLista');
+        if (pagosAdicionalesContainer && pagosAdicionalesLista) {
+            if (r.pagos_adicionales && r.pagos_adicionales.length > 0) {
+                pagosAdicionalesContainer.style.display = 'flex';
+                const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
+                    ? "http://localhost:10000"
+                    : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+                pagosAdicionalesLista.innerHTML = r.pagos_adicionales.map(p => {
+                    let badgeColor = 'bg-yellow-100 text-yellow-800';
+                    if (p.estado === 'Aprobado') badgeColor = 'bg-emerald-100 text-emerald-800';
+                    if (p.estado === 'Rechazado') badgeColor = 'bg-rose-100 text-rose-800';
+                    
+                    let actionsHtml = '';
+                    if (p.estado === 'Pendiente') {
+                        actionsHtml = `
+                        <div class="flex gap-2 mt-2">
+                            <button type="button" onclick="window.adminAprobarPagoAdicional(${p.id_pago})" class="flex-1 px-3 py-1 bg-emerald-500 text-white rounded text-xs font-bold hover:bg-emerald-600 transition border-none cursor-pointer">Aprobar</button>
+                            <button type="button" onclick="window.adminRechazarPagoAdicional(${p.id_pago})" class="flex-1 px-3 py-1 bg-rose-500 text-white rounded text-xs font-bold hover:bg-rose-600 transition border-none cursor-pointer">Rechazar</button>
+                        </div>
+                        `;
+                    }
+
+                    return `
+                    <div class="p-3 border border-gray-100 rounded-xl bg-gray-50 flex flex-col gap-1">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <strong class="text-brand-deep">${formatMoney(p.monto)}</strong>
+                                <span class="text-[10px] text-muted ml-2">${p.fecha_pago ? p.fecha_pago.substring(0,10) : ''}</span>
+                            </div>
+                            <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${p.estado}</span>
+                        </div>
+                        ${p.comprobante_url ? `<a href="${baseUrl}${p.comprobante_url}" target="_blank" class="text-xs text-blue-600 font-bold hover:underline"><i class="fa-solid fa-file-invoice"></i> Ver Comprobante</a>` : ''}
+                        ${actionsHtml}
+                    </div>
+                    `;
+                }).join('');
+            } else {
+                pagosAdicionalesContainer.style.display = 'none';
+                pagosAdicionalesLista.innerHTML = '';
+            }
+        }
+
+        // Lógica de subir y retirar comprobante en Admin
+        const btnSubirCompro = document.getElementById('btnAdminSubirComprobante');
+        const inputCompro = document.getElementById('adminInputComprobante');
+        const btnDeleteCompro = document.getElementById('btnAdminDeleteComprobante');
+
+        if (btnDeleteCompro && r.comprobante_url) {
+            const estadoPagoLower = (r.estado_pago || '').toLowerCase();
+            const estadoReservaLower = (r.estado?.nombre || '').toLowerCase();
+            if (estadoPagoLower !== 'pagado' && estadoPagoLower !== 'confirmado' && estadoPagoLower !== 'aprobado' && estadoReservaLower !== 'completada' && estadoReservaLower !== 'rechazada') {
+                btnDeleteCompro.style.display = 'inline-block';
+                const newBtnDelete = btnDeleteCompro.cloneNode(true);
+                btnDeleteCompro.parentNode.replaceChild(newBtnDelete, btnDeleteCompro);
+                
+                newBtnDelete.onclick = async () => {
+                    const confirm = await Swal.fire({
+                        title: '¿Retirar comprobante?',
+                        text: 'La reserva volverá al estado "Pendiente" de pago. Podrás volver a subir un comprobante nuevo.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, retirar',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#b91c1c'
+                    });
+
+                    if (confirm.isConfirmed) {
+                        newBtnDelete.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>...';
+                        newBtnDelete.disabled = true;
+                        try {
+                            const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
+                                ? "http://localhost:10000"
+                                : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+                            const res = await fetch(`${baseUrl}/api/reservas/${r.id_reserva}/comprobante`, {
+                                method: 'DELETE',
+                                headers: { 'Authorization': `Bearer ${token}` }
+                            });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error || 'Error al retirar comprobante');
+                            
+                            Swal.fire('¡Retirado!', 'El comprobante ha sido eliminado.', 'success');
+                            document.getElementById('editReservationModal').style.display = 'none';
+                            fetchReservations();
+                        } catch (err) {
+                            Swal.fire('Error', err.message, 'error');
+                            newBtnDelete.innerHTML = '<i class="fa-solid fa-trash-can"></i> Retirar';
+                            newBtnDelete.disabled = false;
+                        }
+                    }
+                };
+            } else {
+                btnDeleteCompro.style.display = 'none';
+            }
+        }
+
+        if (btnSubirCompro && inputCompro) {
+            const newBtnSubir = btnSubirCompro.cloneNode(true);
+            btnSubirCompro.parentNode.replaceChild(newBtnSubir, btnSubirCompro);
+            
+            const newInput = inputCompro.cloneNode(true);
+            inputCompro.parentNode.replaceChild(newInput, inputCompro);
+            newInput.value = '';
+
+            newBtnSubir.onclick = async () => {
+                const file = newInput.files[0];
+                if (!file) {
+                    Swal.fire('Atención', 'Por favor, selecciona un archivo.', 'warning');
+                    return;
+                }
+                
+                newBtnSubir.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
+                newBtnSubir.disabled = true;
+
+                const formData = new FormData();
+                formData.append('comprobante', file);
+
+                try {
+                    const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
+                        ? "http://localhost:10000"
+                        : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+                    
+                    const isPagoAdicional = (montoPagado > 0 && saldoPendiente > 0);
+                    const apiUrl = isPagoAdicional
+                        ? `${baseUrl}/api/reservas/${r.id_reserva}/pago_adicional`
+                        : `${baseUrl}/api/reservas/${r.id_reserva}/comprobante`;
+
+                    const res = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+
+                    Swal.fire('¡Éxito!', data.mensaje, 'success').then(() => {
+                        document.getElementById('reservaDetalleModal').classList.add('hidden');
+                        fetchReservations();
+                    });
+                } catch (error) {
+                    Swal.fire('Error', error.message, 'error');
+                    newBtnSubir.innerHTML = '<i class="fa-solid fa-upload"></i> Subir';
+                    newBtnSubir.disabled = false;
+                }
+            };
         }
 
         // Mostrar motivo de cancelación si aplica

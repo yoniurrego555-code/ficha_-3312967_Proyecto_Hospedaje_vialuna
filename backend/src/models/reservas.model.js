@@ -92,7 +92,10 @@ async function obtenerReservasBase(connection, whereClause = "", params = []) {
         r.comprobante_url,
         r.fecha_pago,
         r.observacion_pago,
-        r.detalles_pago
+        r.detalles_pago,
+        ${reservationColumns.has("total_original") ? "r.total_original," : "NULL AS total_original,"}
+        ${reservationColumns.has("monto_pagado") ? "r.monto_pagado," : "NULL AS monto_pagado,"}
+        ${reservationColumns.has("saldo_pendiente") ? "r.saldo_pendiente" : "NULL AS saldo_pendiente"}
       FROM reservas r
       LEFT JOIN clientes c
         ON c.NroDocumento = r.nr_documento
@@ -219,15 +222,65 @@ async function obtenerServiciosPorReserva(connection, reservationIds) {
   return servicesByReservation;
 }
 
+async function obtenerPagosAdicionalesPorReserva(connection, reservationIds) {
+  if (!reservationIds.length) {
+    return new Map();
+  }
+
+  const placeholders = reservationIds.map(() => "?").join(",");
+  
+  let rows = [];
+  try {
+      const [results] = await connection.query(
+        `
+          SELECT
+            id_pago,
+            id_reserva,
+            monto,
+            comprobante_url,
+            estado,
+            fecha_pago,
+            observacion
+          FROM pagos_adicionales
+          WHERE id_reserva IN (${placeholders})
+          ORDER BY fecha_pago ASC
+        `,
+        reservationIds
+      );
+      rows = results;
+  } catch (e) {
+      // Table might not exist yet if migrations haven't run on all environments
+      return new Map();
+  }
+
+  const pagosByReservation = new Map();
+
+  rows.forEach((row) => {
+    const current = pagosByReservation.get(row.id_reserva) || [];
+    current.push({
+      id_pago: row.id_pago,
+      monto: Number(row.monto || 0),
+      comprobante_url: row.comprobante_url,
+      estado: row.estado,
+      fecha_pago: row.fecha_pago ? normalizeDate(row.fecha_pago) : null,
+      observacion: row.observacion
+    });
+    pagosByReservation.set(row.id_reserva, current);
+  });
+
+  return pagosByReservation;
+}
+
 async function hidratarReservas(connection, rows) {
   if (!rows.length) {
     return [];
   }
 
   const reservationIds = rows.map((row) => row.id_reserva);
-  const [packagesByReservation, servicesByReservation] = await Promise.all([
+  const [packagesByReservation, servicesByReservation, pagosByReservation] = await Promise.all([
     obtenerPaquetesPorReserva(connection, reservationIds),
-    obtenerServiciosPorReserva(connection, reservationIds)
+    obtenerServiciosPorReserva(connection, reservationIds),
+    obtenerPagosAdicionalesPorReserva(connection, reservationIds)
   ]);
 
   return rows.map((row) => ({
@@ -240,6 +293,9 @@ async function hidratarReservas(connection, rows) {
     hora_entrada: normalizeTime(row.hora_entrada),
     hora_salida: normalizeTime(row.hora_salida),
     total: Number(row.total || 0),
+    total_original: row.total_original !== undefined && row.total_original !== null ? Number(row.total_original) : Number(row.total || 0),
+    monto_pagado: row.monto_pagado !== undefined && row.monto_pagado !== null ? Number(row.monto_pagado) : 0,
+    saldo_pendiente: row.saldo_pendiente !== undefined && row.saldo_pendiente !== null ? Number(row.saldo_pendiente) : 0,
     motivo_cancelacion: row.motivo_cancelacion || null,
     estado: {
       id: row.id_estado_reserva,
@@ -280,7 +336,8 @@ async function hidratarReservas(connection, rows) {
       telefono: row.ClienteTelefono || ""
     },
     paquetes: packagesByReservation.get(row.id_reserva) || [],
-    servicios: servicesByReservation.get(row.id_reserva) || []
+    servicios: servicesByReservation.get(row.id_reserva) || [],
+    pagos_adicionales: pagosByReservation.get(row.id_reserva) || []
   }));
 }
 
@@ -645,6 +702,9 @@ async function crear(data) {
       ...(hasHoraSalida ? ["hora_salida"] : []),
       "id_estado_reserva",
       "total",
+      "total_original",
+      "monto_pagado",
+      "saldo_pendiente",
       "id_metodo_pago",
       "id_habitacion",
       "estado_pago",
@@ -654,6 +714,8 @@ async function crear(data) {
       "detalles_pago",
       ...(hasAceptaTerminos ? ["acepta_terminos"] : [])
     ];
+    const initialMontoPagado = (data.estado_pago === 'Pagado' || data.estado_pago === 'Confirmado') ? payload.reserva.total : 0;
+    const initialSaldoPendiente = payload.reserva.total - initialMontoPagado;
     const insertValues = [
       payload.reserva.id_cliente,
       payload.reserva.nr_documento,
@@ -664,6 +726,9 @@ async function crear(data) {
       ...(hasHoraSalida ? [payload.reserva.hora_salida] : []),
       payload.reserva.id_estado_reserva,
       payload.reserva.total,
+      payload.reserva.total, // total_original
+      initialMontoPagado,
+      initialSaldoPendiente,
       payload.reserva.id_metodo_pago,
       payload.reserva.id_habitacion,
       data.estado_pago || 'Pendiente',
@@ -701,7 +766,7 @@ async function actualizar(id, data) {
 
     const reservationColumns = await getReservationColumns();
     const [existingRows] = await connection.query(
-      "SELECT id_reserva, fecha_reserva, id_estado_reserva, estado_pago, comprobante_url, fecha_pago, observacion_pago, detalles_pago FROM reservas WHERE id_reserva = ? LIMIT 1",
+      "SELECT id_reserva, fecha_reserva, id_estado_reserva, estado_pago, comprobante_url, fecha_pago, observacion_pago, detalles_pago, total, total_original, monto_pagado, saldo_pendiente FROM reservas WHERE id_reserva = ? LIMIT 1",
       [id]
     );
 
@@ -733,6 +798,29 @@ async function actualizar(id, data) {
       isUpdate: true,
       reservationId: id
     });
+    let monto_pagado = Number(existingRows[0].monto_pagado || 0);
+    const nuevo_total = Number(payload.reserva.total || 0);
+    
+    // Si se aprueba el pago principal y el monto pagado era 0, asume el pago completo del original
+    if ((data.estado_pago === 'Pagado' || data.estado_pago === 'Confirmado') && monto_pagado === 0) {
+        monto_pagado = existingRows[0].total_original ? Number(existingRows[0].total_original) : nuevo_total;
+    }
+
+    let saldo_pendiente = nuevo_total - monto_pagado;
+    
+    let nuevo_estado_pago = data.estado_pago !== undefined ? data.estado_pago : existingRows[0].estado_pago;
+    if (monto_pagado > 0 && data.estado_pago === undefined) {
+        if (saldo_pendiente > 0) {
+            nuevo_estado_pago = 'Pendiente Parcial';
+        } else {
+            nuevo_estado_pago = 'Confirmado';
+            saldo_pendiente = 0;
+        }
+    } else if (data.estado_pago === undefined && saldo_pendiente <= 0 && nuevo_total > 0) {
+        nuevo_estado_pago = 'Confirmado';
+        saldo_pendiente = 0;
+    }
+
     const hasHoraEntrada = reservationColumns.has("hora_entrada");
     const hasHoraSalida = reservationColumns.has("hora_salida");
     const hasAceptaTerminos = reservationColumns.has("acepta_terminos");
@@ -746,6 +834,7 @@ async function actualizar(id, data) {
       ...(hasHoraSalida ? ["hora_salida = ?"] : []),
       "id_estado_reserva = ?",
       "total = ?",
+      "saldo_pendiente = ?",
       "id_metodo_pago = ?",
       "id_habitacion = ?",
       "estado_pago = ?",
@@ -765,13 +854,16 @@ async function actualizar(id, data) {
       ...(hasHoraSalida ? [payload.reserva.hora_salida] : []),
       payload.reserva.id_estado_reserva,
       payload.reserva.total,
+      saldo_pendiente,
       payload.reserva.id_metodo_pago,
       payload.reserva.id_habitacion,
-      data.estado_pago !== undefined ? data.estado_pago : existingRows[0].estado_pago,
+      nuevo_estado_pago,
       data.comprobante_url !== undefined ? data.comprobante_url : existingRows[0].comprobante_url,
       data.fecha_pago !== undefined ? data.fecha_pago : existingRows[0].fecha_pago,
       data.observacion_pago !== undefined ? data.observacion_pago : existingRows[0].observacion_pago,
-      data.detalles_pago !== undefined ? (data.detalles_pago ? JSON.stringify(data.detalles_pago) : null) : existingRows[0].detalles_pago,
+      data.detalles_pago !== undefined 
+        ? (data.detalles_pago ? (typeof data.detalles_pago === 'string' ? data.detalles_pago : JSON.stringify(data.detalles_pago)) : null) 
+        : (typeof existingRows[0].detalles_pago === 'object' && existingRows[0].detalles_pago !== null ? JSON.stringify(existingRows[0].detalles_pago) : existingRows[0].detalles_pago),
       ...(hasAceptaTerminos && data.acepta_terminos !== undefined ? [data.acepta_terminos || 0] : []),
       id
     ];
@@ -820,10 +912,10 @@ async function eliminar(id, motivo = null) {
     
     // Intentaremos guardar el motivo si la base de datos lo soporta, o simplemente actualizamos el estado.
     if (motivo && hasMotivoCancelacion) {
-      updateQuery = "UPDATE reservas SET id_estado_reserva = 2, motivo_cancelacion = ? WHERE id_reserva = ?";
+      updateQuery = "UPDATE reservas SET id_estado_reserva = 6, motivo_cancelacion = ? WHERE id_reserva = ?";
       updateParams = [motivo, id];
     } else {
-      updateQuery = "UPDATE reservas SET id_estado_reserva = 2 WHERE id_reserva = ?";
+      updateQuery = "UPDATE reservas SET id_estado_reserva = 6 WHERE id_reserva = ?";
       updateParams = [id];
     }
     

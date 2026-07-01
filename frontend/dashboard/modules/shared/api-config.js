@@ -1,7 +1,7 @@
 // API Configuration for frontend modules
 
 const defaultOrigin =
-    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === ''
         ? 'http://localhost:10000'
         : 'https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com';
 const API_BASE_URL = `${defaultOrigin}/api`;

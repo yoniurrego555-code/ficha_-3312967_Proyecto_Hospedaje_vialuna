@@ -4,12 +4,11 @@ import { showAlert } from '../../dashboard/modules/ui-utils.js';
 
 // Returns an array of objects: { from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' }.
 export function computeOccupiedRanges(roomId, reservations) {
-  if (!roomId) return [];
   const occupied = [];
   if (!Array.isArray(reservations)) return occupied;
   reservations.forEach((res) => {
     const rRoomId = String(res.id_habitacion || res.IDHabitacion || '');
-    if (rRoomId !== String(roomId)) return;
+    if (roomId && rRoomId !== String(roomId)) return;
     // Exclude completed (4), rejected (6), cancelled (7) reservations
     const estado = String(res.id_estado_reserva || res.Estado || res.estado || '').toLowerCase();
     if (['4', '6', '7', 'completada', 'completado', 'rechazada', 'rechazado', 'cancelada', 'cancelado'].includes(estado)) return;

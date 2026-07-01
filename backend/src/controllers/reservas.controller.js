@@ -45,6 +45,10 @@ exports.crear = async (req, res) => {
     if (req.auth && String(req.auth.rol).toLowerCase() === 'cliente') {
       req.body.id_cliente = req.auth.sub || req.auth.id_cliente || req.auth.id || req.auth.IDCliente;
     }
+    
+    // Forzar siempre el estado a Pendiente (ID 1) al crear reserva
+    req.body.id_estado_reserva = 1;
+    
     const reserva = await service.crear(req.body);
     res.status(201).json({
       mensaje: "Reserva creada correctamente",
@@ -141,6 +145,8 @@ exports.actualizarEstadoPago = async (req, res) => {
     // Si se aprueba el pago y la reserva está pendiente, pasar a confirmada (estado 2)
     if (estado_pago === 'Pagado' && String(reserva.estado?.id) === '1') {
       updates.id_estado_reserva = 2; // Confirmada
+    } else if (estado_pago === 'Rechazado' && ['1', '2'].includes(String(reserva.estado?.id))) {
+      updates.id_estado_reserva = 6; // Rechazada
     }
 
     await service.actualizar(req.params.id, {
@@ -190,49 +196,119 @@ exports.eliminarComprobante = async (req, res) => {
     if (!reserva) {
       return res.status(404).json({ error: "La reserva no existe" });
     }
-    
-    // Validar propiedad de la reserva si es cliente
-    if (req.auth && String(req.auth.rol).toLowerCase() === 'cliente') {
-      const clientId = req.auth.sub || req.auth.id_cliente || req.auth.id || req.auth.IDCliente;
-      if (String(reserva.id_cliente) !== String(clientId) && String(reserva.nr_documento) !== String(clientId)) {
-        return res.status(403).json({ error: "No tienes permisos para esta reserva" });
+
+    if (reserva.comprobante_url) {
+      const fs = require('fs');
+      const path = require('path');
+      const filename = reserva.comprobante_url.replace('/uploads/comprobantes/', '');
+      const filePath = path.join(__dirname, '../../public/uploads/comprobantes', filename);
+      
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (err) {
+        console.error("Error eliminando archivo:", err);
       }
     }
 
     await service.actualizar(req.params.id, {
       ...reserva,
       estado_pago: 'Pendiente',
-      comprobante_url: null
+      comprobante_url: null,
+      fecha_pago: null,
+      observacion_pago: null
     });
-
-    // Enviar email de rechazo si es cliente
-    if (reserva.cliente?.email) {
-      try {
-        const html = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;">
-            <h2 style="color: #dc2626; text-align: center;">Comprobante de Pago Rechazado</h2>
-            <p>Hola <strong>${reserva.cliente.nombre || 'Huésped'}</strong>,</p>
-            <p>Hemos revisado el comprobante de pago enviado para tu reserva <strong>#${reserva.id_reserva}</strong>, pero lamentablemente <strong>no hemos podido validarlo</strong>.</p>
-            <p>Tu reserva ha vuelto a estado <strong>Pendiente de Pago</strong>.</p>
-            <div style="background-color: #fef2f2; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #fecaca;">
-              <p style="color: #991b1b; margin: 0;"><strong>Acción requerida:</strong> Por favor, ingresa nuevamente a tu panel de usuario y sube un comprobante válido para que podamos confirmar tu estadía lo antes posible.</p>
-            </div>
-            <p style="color: #6b7280; font-size: 0.85rem; text-align: center; margin-top: 30px;">
-              Hospedaje Via Luna<br>
-              Si crees que esto es un error, por favor contáctanos.
-            </p>
-          </div>
-        `;
-        await sendEmail(reserva.cliente.email, "Aviso Importante: Problema con tu pago - Via Luna", html);
-      } catch (emailErr) {
-        console.error("Error al enviar email de comprobante rechazado:", emailErr);
-      }
-    }
 
     res.json({
       mensaje: "Comprobante retirado correctamente. El estado de pago volvió a Pendiente."
     });
   } catch (error) {
     handleError(res, error, "Error al eliminar el comprobante");
+  }
+};
+
+exports.subirPagoAdicional = async (req, res) => {
+  try {
+    const db = require('../config/db');
+    const reserva = await service.obtener(req.params.id);
+    if (!reserva) {
+      return res.status(404).json({ error: "La reserva no existe" });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ error: "No se proporcionó ningún archivo." });
+    }
+
+    const comprobante_url = `/uploads/comprobantes/reserva-${req.params.id}/${req.file.filename}`;
+    const monto = req.body.monto ? Number(req.body.monto) : Number(reserva.saldo_pendiente || 0);
+
+    await db.query(`
+      INSERT INTO pagos_adicionales (id_reserva, monto, comprobante_url, estado, fecha_pago)
+      VALUES (?, ?, ?, 'Pendiente', NOW())
+    `, [req.params.id, monto, comprobante_url]);
+
+    res.status(201).json({ mensaje: "Comprobante adicional subido exitosamente y enviado a revisión." });
+  } catch (error) {
+    handleError(res, error, "Error subiendo pago adicional");
+  }
+};
+
+exports.actualizarEstadoPagoAdicional = async (req, res) => {
+  try {
+    const db = require('../config/db');
+    const { estado, observacion } = req.body;
+    const idPago = req.params.idPago;
+
+    if (!['Aprobado', 'Rechazado'].includes(estado)) {
+      return res.status(400).json({ error: "Estado inválido." });
+    }
+
+    const [pagos] = await db.query("SELECT * FROM pagos_adicionales WHERE id_pago = ?", [idPago]);
+    if (!pagos.length) {
+      return res.status(404).json({ error: "El pago no existe" });
+    }
+
+    const pago = pagos[0];
+    if (pago.estado === 'Aprobado') {
+      return res.status(400).json({ error: "Este pago ya fue aprobado anteriormente" });
+    }
+
+    await db.query(`
+      UPDATE pagos_adicionales 
+      SET estado = ?, observacion = ?
+      WHERE id_pago = ?
+    `, [estado, observacion || null, idPago]);
+
+    if (estado === 'Aprobado') {
+      const reserva = await service.obtener(pago.id_reserva);
+      if (reserva) {
+        const nuevoMontoPagado = Number(reserva.monto_pagado || 0) + Number(pago.monto);
+        let nuevoSaldoPendiente = Number(reserva.total || 0) - nuevoMontoPagado;
+        if (nuevoSaldoPendiente < 0) nuevoSaldoPendiente = 0;
+        
+        let nuevoEstadoPago = 'Pendiente Parcial';
+        let queryParams = [nuevoMontoPagado, nuevoSaldoPendiente, nuevoEstadoPago];
+        let setQuery = "monto_pagado = ?, saldo_pendiente = ?, estado_pago = ?";
+
+        if (nuevoSaldoPendiente <= 0) {
+           nuevoEstadoPago = 'Confirmado';
+           queryParams = [nuevoMontoPagado, nuevoSaldoPendiente, nuevoEstadoPago, 2];
+           setQuery = "monto_pagado = ?, saldo_pendiente = ?, estado_pago = ?, id_estado_reserva = ?";
+        }
+
+        queryParams.push(pago.id_reserva);
+
+        await db.query(`
+           UPDATE reservas 
+           SET ${setQuery}
+           WHERE id_reserva = ?
+        `, queryParams);
+      }
+    }
+
+    res.json({ mensaje: `Pago adicional ${estado.toLowerCase()} exitosamente.` });
+  } catch (error) {
+    handleError(res, error, "Error actualizando pago adicional");
   }
 };

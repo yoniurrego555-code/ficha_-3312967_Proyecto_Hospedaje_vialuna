@@ -1231,13 +1231,12 @@ button, input, select, textarea { font: inherit; }
 .detail-modal {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 1050;
   display: none;
   align-items: center;
   justify-content: center;
   padding: 24px;
 }
-
 .detail-modal.show {
   display: flex;
 }
@@ -1457,6 +1456,24 @@ button, input, select, textarea { font: inherit; }
   background: #fff;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
   animation: modalSlideIn 0.3s ease-out;
+}
+
+/* Scroll profesional para el modal */
+.detail-modal-card::-webkit-scrollbar {
+  width: 8px;
+}
+.detail-modal-card::-webkit-scrollbar-track {
+  background: #f8fafc;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+.detail-modal-card::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 8px;
+  border: 2px solid #f8fafc;
+}
+.detail-modal-card::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
 }
 
 @keyframes modalSlideIn {
@@ -1662,4 +1679,11 @@ button, input, select, textarea { font: inherit; }
 }
 ::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
+}
+
+/* ==========================================
+   SWEET ALERT FIX (Fuerza Alertas sobre Modal)
+========================================== */
+div.swal2-container {
+  z-index: 999999 !important;
 }

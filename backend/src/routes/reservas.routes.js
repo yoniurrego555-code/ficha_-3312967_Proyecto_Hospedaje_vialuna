@@ -16,4 +16,7 @@ router.post("/:id/comprobante", authenticateToken, uploadComprobante.single('com
 router.delete("/:id/comprobante", authenticateToken, controller.eliminarComprobante);
 router.put("/:id/estado-pago", authenticateToken, controller.actualizarEstadoPago);
 
+// Pagos adicionales
+router.post("/:id/pago_adicional", authenticateToken, uploadComprobante.single('comprobante'), controller.subirPagoAdicional);
+router.put("/pagos/:idPago/estado", authenticateToken, controller.actualizarEstadoPagoAdicional);
 module.exports = router;

@@ -258,8 +258,15 @@ export function deletePaquete(id) {
   });
 }
 
-export function getMetodosPago() {
-  return request("/metodopago");
+export async function getMetodosPago() {
+  const metodos = await request("/metodopago");
+  if (Array.isArray(metodos)) {
+      return metodos.filter(m => {
+          const nombre = String(m.nombre || m.Nombre).toLowerCase();
+          return !nombre.includes('tarjeta');
+      });
+  }
+  return metodos;
 }
 
 export function createMetodoPago(payload) {

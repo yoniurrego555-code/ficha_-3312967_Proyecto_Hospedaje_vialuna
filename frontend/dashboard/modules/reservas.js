@@ -905,7 +905,7 @@ function mostrarDetalleReserva(id) {
   if (adminComprobanteViewer && adminComprobanteLink) {
       if (reserva.comprobante_url) {
           adminComprobanteViewer.style.display = 'block';
-          const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+          const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
               ? "http://localhost:10000"
               : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
           adminComprobanteLink.href = baseUrl + reserva.comprobante_url;
@@ -921,7 +921,7 @@ function mostrarDetalleReserva(id) {
           document.getElementById('btnAprobarPago').onclick = async () => {
               try {
                   const token = sessionStorage.getItem("vialuna_token");
-                  const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                  const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
                       ? "http://localhost:10000"
                       : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
                   const res = await fetch(`${baseUrl}/api/reservas/${id}/estado-pago`, {
@@ -951,7 +951,7 @@ function mostrarDetalleReserva(id) {
               if (!obs) return;
               try {
                   const token = sessionStorage.getItem("vialuna_token");
-                  const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                  const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
                       ? "http://localhost:10000"
                       : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
                   const res = await fetch(`${baseUrl}/api/reservas/${id}/estado-pago`, {

@@ -40,6 +40,8 @@ async function cancelarReservasPendientesExpiradas() {
       LEFT JOIN habitacion h
         ON h.IDHabitacion = r.id_habitacion
       WHERE r.id_estado_reserva = 1
+        AND r.id_metodo_pago = 3
+        AND (r.estado_pago = 'Pendiente' OR r.comprobante_url IS NULL)
         AND r.fecha_creacion <= NOW() - INTERVAL 30 MINUTE
     `);
 
@@ -60,7 +62,7 @@ async function cancelarReservasPendientesExpiradas() {
         if (hasMotivoCancelacion) {
           await connection.query(
             `UPDATE reservas
-             SET id_estado_reserva = 2,
+             SET id_estado_reserva = 6,
                  motivo_cancelacion = ?
              WHERE id_reserva = ? AND id_estado_reserva = 1`,
             [motivo, reserva.id_reserva]
@@ -68,7 +70,7 @@ async function cancelarReservasPendientesExpiradas() {
         } else {
           await connection.query(
             `UPDATE reservas
-             SET id_estado_reserva = 2
+             SET id_estado_reserva = 6
              WHERE id_reserva = ? AND id_estado_reserva = 1`,
             [reserva.id_reserva]
           );

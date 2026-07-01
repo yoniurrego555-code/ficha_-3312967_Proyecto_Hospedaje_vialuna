@@ -137,6 +137,7 @@ export class ReservasAdminModule {
       editReservationContainer: this.container.querySelector("#editReservationContainer"),
       clienteSelect: this.container.querySelector("#clienteSelect"),
       documentoInput: this.container.querySelector("#documentoInput"),
+      documentosDropdown: this.container.querySelector("#documentosDropdown"),
       nombreClienteReadOnly: this.container.querySelector("#nombreClienteReadOnly"),
       fechaInicio: this.container.querySelector("#fechaInicio"),
       fechaFin: this.container.querySelector("#fechaFin"),
@@ -154,6 +155,53 @@ export class ReservasAdminModule {
       filterStatus: this.container.querySelector("#filterStatus")
     };
     
+    // Define global action handlers for additional payments
+    window.adminAprobarPagoAdicional = async (idPago) => {
+        try {
+            const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
+                ? "http://localhost:10000"
+                : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+            const res = await fetch(`${baseUrl}/api/reservas/pagos/${idPago}/estado`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token || sessionStorage.getItem('vialuna_token')}` },
+                body: JSON.stringify({ estado: 'Aprobado' })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            Swal.fire('¡Éxito!', data.mensaje, 'success').then(async () => {
+                await this.reloadData();
+                this.renderReservationsTable(this.currentFilteredData || this.currentData.reservas);
+                document.getElementById('reservaDetalleModal').classList.add('hidden');
+                this.showReservationsList();
+            });
+        } catch(err) {
+            Swal.fire('Error', err.message, 'error');
+        }
+    };
+
+    window.adminRechazarPagoAdicional = async (idPago) => {
+        try {
+            const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
+                ? "http://localhost:10000"
+                : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+            const res = await fetch(`${baseUrl}/api/reservas/pagos/${idPago}/estado`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token || sessionStorage.getItem('vialuna_token')}` },
+                body: JSON.stringify({ estado: 'Rechazado' })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            Swal.fire('¡Éxito!', data.mensaje, 'success').then(async () => {
+                await this.reloadData();
+                this.renderReservationsTable(this.currentFilteredData || this.currentData.reservas);
+                document.getElementById('reservaDetalleModal').classList.add('hidden');
+                this.showReservationsList();
+            });
+        } catch(err) {
+            Swal.fire('Error', err.message, 'error');
+        }
+    };
+
     // Initialize PaymentDetailsForm for creation
     this.paymentFormCreate = new PaymentDetailsForm('paymentDetailsContainer', {
       mode: 'admin',
@@ -239,46 +287,130 @@ export class ReservasAdminModule {
     // Guardamos activeClients en la instancia para buscar después
     this.activeClients = activeClients;
 
-    // Populate datalist for documentoInput
-    const datalist = this.container.querySelector("#documentosList");
-    if (datalist) {
+    // Populate custom dropdown for documentoInput
+    if (this.refs.documentosDropdown && this.refs.documentoInput) {
+      const dropdown = this.refs.documentosDropdown;
+      const input = this.refs.documentoInput;
+      
       const docSet = new Set();
-      datalist.innerHTML = activeClients.map(c => {
+      const optionsHTML = activeClients.map(c => {
         const doc = String(c.NroDocumento || c.nro_documento || c.documento || '').trim();
         if (!doc || docSet.has(doc)) return '';
         docSet.add(doc);
-        return `<option value="${doc}"></option>`;
+        const name = String(c.NombreCompleto || `${c.Nombre || c.Nombres || ''} ${c.Apellido || c.Apellidos || ''}`.trim() || c.Email || '').trim();
+        return `<div class="px-4 py-2 hover:bg-brand/5 cursor-pointer text-sm transition-colors duration-200 flex flex-col" data-value="${doc}">
+            <span class="font-bold text-brand-deep">${doc}</span>
+            <span class="text-xs text-muted font-medium">${name}</span>
+        </div>`;
       }).join('');
-    }
+      
+      dropdown.innerHTML = optionsHTML || '<div class="px-4 py-3 text-sm text-muted text-center">No hay documentos disponibles</div>';
 
-    // Sync from documentoInput (datalist selection) to readonly & hidden field
-    if (this.refs.documentoInput) {
-      this.refs.documentoInput.addEventListener('input', (e) => {
-        const doc = e.target.value.trim();
-        const foundClient = this.activeClients.find(c => String(c.NroDocumento || c.nro_documento || c.documento || '').trim() === doc);
+      // Dropdown logic setup (only once)
+      if (!input.dataset.dropdownInitialized) {
+        input.dataset.dropdownInitialized = 'true';
         
-        if (foundClient) {
-          const nombreCompleto = foundClient.NombreCompleto || 
-                               `${foundClient.Nombres || ''} ${foundClient.Apellidos || ''}`.trim() || 
-                               foundClient.nombre_completo ||
-                               `${foundClient.nombres || ''} ${foundClient.apellidos || ''}`.trim() ||
-                               foundClient.nombre || 
-                               foundClient.Nombre ||
-                               `${foundClient.PrimerNombre || ''} ${foundClient.PrimerApellido || ''}`.trim() ||
-                               'Cliente sin nombre';
-          const clienteId = foundClient.id_cliente || foundClient.IDCliente || foundClient.id || foundClient.ID || foundClient.NroDocumento || foundClient.nro_documento;
-          
-          if (this.refs.nombreClienteReadOnly) this.refs.nombreClienteReadOnly.value = nombreCompleto;
-          if (this.refs.clienteSelect) this.refs.clienteSelect.value = clienteId;
-        } else {
-          if (this.refs.nombreClienteReadOnly) this.refs.nombreClienteReadOnly.value = '';
-          if (this.refs.clienteSelect) this.refs.clienteSelect.value = '';
+        const showDropdown = () => dropdown.classList.remove('hidden');
+        const hideDropdown = () => setTimeout(() => dropdown.classList.add('hidden'), 200);
+
+        const chevron = input.parentElement.querySelector('.fa-chevron-down')?.parentElement;
+        if (chevron) {
+            chevron.classList.remove('pointer-events-none');
+            chevron.style.cursor = 'pointer';
+            chevron.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // Prevent input blur
+                if (dropdown.classList.contains('hidden')) {
+                    input.focus();
+                    filterDropdown(input.value.trim());
+                    showDropdown();
+                } else {
+                    dropdown.classList.add('hidden');
+                }
+            });
         }
-        this.calculateTotal();
-      });
+
+        const filterDropdown = (searchTerm) => {
+          const items = dropdown.querySelectorAll('div[data-value]');
+          let hasVisible = false;
+          items.forEach(item => {
+            const val = item.getAttribute('data-value');
+            if (val.includes(searchTerm)) {
+              item.style.display = 'block';
+              hasVisible = true;
+            } else {
+              item.style.display = 'none';
+            }
+          });
+          
+          let noResultsMsg = dropdown.querySelector('.no-results-msg');
+          if (!hasVisible) {
+            if (!noResultsMsg) {
+              dropdown.insertAdjacentHTML('beforeend', '<div class="no-results-msg px-4 py-3 text-sm text-muted text-center">No se encontraron coincidencias</div>');
+            } else {
+              noResultsMsg.style.display = 'block';
+            }
+          } else if (noResultsMsg) {
+            noResultsMsg.style.display = 'none';
+          }
+        };
+
+        input.addEventListener('focus', () => {
+          filterDropdown(input.value.trim());
+          showDropdown();
+        });
+        
+        input.addEventListener('blur', hideDropdown);
+
+        // Prevent blur when clicking or scrolling the dropdown
+        dropdown.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+        });
+        
+        input.addEventListener('input', (e) => {
+          const doc = e.target.value.trim();
+          filterDropdown(doc);
+          showDropdown();
+          
+          const foundClient = this.activeClients.find(c => String(c.NroDocumento || c.nro_documento || c.documento || '').trim() === doc);
+          this.updateClientFields(foundClient);
+        });
+
+        dropdown.addEventListener('click', (e) => {
+          const item = e.target.closest('div[data-value]');
+          if (item) {
+            const val = item.getAttribute('data-value');
+            input.value = val;
+            dropdown.classList.add('hidden');
+            
+            const foundClient = this.activeClients.find(c => String(c.NroDocumento || c.nro_documento || c.documento || '').trim() === val);
+            this.updateClientFields(foundClient);
+          }
+        });
+      }
     }
     
     this.setupDateRestrictions();
+  }
+
+  updateClientFields(foundClient) {
+    if (foundClient) {
+      const nombreCompleto = foundClient.NombreCompleto || 
+                           `${foundClient.Nombres || ''} ${foundClient.Apellidos || ''}`.trim() || 
+                           foundClient.nombre_completo ||
+                           `${foundClient.nombres || ''} ${foundClient.apellidos || ''}`.trim() ||
+                           foundClient.nombre || 
+                           foundClient.Nombre ||
+                           `${foundClient.PrimerNombre || ''} ${foundClient.PrimerApellido || ''}`.trim() ||
+                           'Cliente sin nombre';
+      const clienteId = foundClient.id_cliente || foundClient.IDCliente || foundClient.id || foundClient.ID || foundClient.NroDocumento || foundClient.nro_documento;
+      
+      if (this.refs.nombreClienteReadOnly) this.refs.nombreClienteReadOnly.value = nombreCompleto;
+      if (this.refs.clienteSelect) this.refs.clienteSelect.value = clienteId;
+    } else {
+      if (this.refs.nombreClienteReadOnly) this.refs.nombreClienteReadOnly.value = '';
+      if (this.refs.clienteSelect) this.refs.clienteSelect.value = '';
+    }
+    this.calculateTotal();
   }
 
   // ── UTILIDAD FECHAS ──────────────────────────────────────────
@@ -790,12 +922,14 @@ export class ReservasAdminModule {
             <button class="btn-action-modern view" 
                     onclick="window.reservasModule.verDetalleReserva(${resId})" 
                     title="Ver detalle"><i class="fa-solid fa-eye"></i></button>
+            ${['3', '4', '5', '6'].includes(String(status)) ? '' : `
             <button class="btn-action-modern edit" 
                     onclick="window.reservasModule.editReserva(${resId})" 
                     title="Editar"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn-action-modern delete" 
+            <button class="btn-action-modern delete" 
                   onclick="window.reservasModule.deleteReserva(${resId})" 
                   title="Anular"><i class="fa-solid fa-ban"></i></button>
+            `}
           </div>
         </td>
       </tr>
@@ -898,7 +1032,7 @@ export class ReservasAdminModule {
         const isOverlapping = (start1, end1, start2, end2) => start1 < end2 && start2 < end1;
         const currentRoomId = String(this.currentData.selectedRoom.id_habitacion || this.currentData.selectedRoom.IDHabitacion);
         const conflictingRoom = this.currentData.reservas.find(r => {
-            if (this._extractStatusId(r) === '2') return false;
+            if (!['1', '2', '3'].includes(String(this._extractStatusId(r)))) return false;
             const rRoomId = String(r.id_habitacion || r.IDHabitacion || (r.habitacion ? r.habitacion.id : null));
             const fIn = r.fecha_inicio || r.FechaInicio || r.fecha_reserva;
             const fOut = r.fecha_fin || r.FechaFin || r.fecha_salida;
@@ -915,7 +1049,7 @@ export class ReservasAdminModule {
         const currentClientId = String(this.refs.clienteSelect?.value || '');
         if (currentClientId) {
           const conflictingClient = this.currentData.reservas.find(r => {
-              if (this._extractStatusId(r) === '2') return false;
+              if (!['1', '2', '3'].includes(String(this._extractStatusId(r)))) return false;
               const rClientId = String(r.id_cliente || r.IDCliente || (r.cliente ? r.cliente.id : null));
               const fIn = r.fecha_inicio || r.FechaInicio || r.fecha_reserva;
               const fOut = r.fecha_fin || r.FechaFin || r.fecha_salida;
@@ -930,24 +1064,6 @@ export class ReservasAdminModule {
         }
       }
 
-      // Update flatpickr disabled dates for the selected room
-      if (this.fpInicio && this.fpFin) {
-        const currentRoomId = String(this.currentData.selectedRoom.id_habitacion || this.currentData.selectedRoom.IDHabitacion);
-        const disabledRanges = this.currentData.reservas
-            .filter(r => {
-                const isCancelled = this._extractStatusId(r) === '2';
-                const rRoomId = String(r.id_habitacion || r.IDHabitacion || (r.habitacion ? r.habitacion.id : null));
-                return !isCancelled && rRoomId === currentRoomId;
-            })
-            .map(r => ({
-                from: r.fecha_inicio || r.FechaInicio || r.fecha_reserva,
-                to: r.fecha_fin || r.FechaFin || r.fecha_salida
-            }))
-            .filter(range => range.from && range.to);
-            
-        this.fpInicio.set('disable', disabledRanges);
-        this.fpFin.set('disable', disabledRanges);
-      }
 
       const room = this.currentData.selectedRoom;
       const roomPrice = Number(room.precio || room.Precio || room.Costo || room.costo || 0);
@@ -975,6 +1091,38 @@ export class ReservasAdminModule {
       if (summaryRoom) {
         summaryRoom.innerHTML = '<p class="empty-state-small">No has seleccionado habitación</p>';
       }
+    }
+    
+    // Update flatpickr disabled dates
+    if (this.fpInicio && this.fpFin) {
+      let disabledRanges = [];
+      if (this.currentData.selectedRoom) {
+        const currentRoomId = String(this.currentData.selectedRoom.id_habitacion || this.currentData.selectedRoom.IDHabitacion);
+        disabledRanges = this.currentData.reservas
+            .filter(r => {
+                const isCancelled = !['1', '2', '3'].includes(String(this._extractStatusId(r)));
+                const rRoomId = String(r.id_habitacion || r.IDHabitacion || (r.habitacion ? r.habitacion.id : null));
+                return !isCancelled && rRoomId === currentRoomId;
+            })
+            .map(r => ({
+                from: r.fecha_inicio || r.FechaInicio || r.fecha_reserva,
+                to: r.fecha_fin || r.FechaFin || r.fecha_salida
+            }))
+            .filter(range => range.from && range.to);
+      } else {
+        disabledRanges = this.currentData.reservas
+            .filter(r => {
+                const isCancelled = !['1', '2', '3'].includes(String(this._extractStatusId(r)));
+                return !isCancelled;
+            })
+            .map(r => ({
+                from: r.fecha_inicio || r.FechaInicio || r.fecha_reserva,
+                to: r.fecha_fin || r.FechaFin || r.fecha_salida
+            }))
+            .filter(range => range.from && range.to);
+      }
+      this.fpInicio.set('disable', disabledRanges);
+      this.fpFin.set('disable', disabledRanges);
     }
     
     // Package prices
@@ -1087,6 +1235,18 @@ export class ReservasAdminModule {
             const minEnd = this._addDays(dateStr, 1);
             if (this.fpFin) {
               this.fpFin.set('minDate', minEnd);
+              
+              let maxEnd = null;
+              if (this.fechasOcupadas && this.fechasOcupadas.length > 0) {
+                 const futureOccupied = this.fechasOcupadas
+                    .filter(r => r.from >= minEnd)
+                    .sort((a, b) => a.from.localeCompare(b.from));
+                 if (futureOccupied.length > 0) {
+                    maxEnd = futureOccupied[0].from;
+                 }
+              }
+              this.fpFin.set('maxDate', maxEnd);
+
               const curEnd = this.fpFin.selectedDates[0];
               if (curEnd) {
                 // Comparamos en zona local
@@ -1095,10 +1255,15 @@ export class ReservasAdminModule {
                   String(curEnd.getMonth() + 1).padStart(2, '0'),
                   String(curEnd.getDate()).padStart(2, '0')
                 ].join('-');
-                if (curEndStr <= dateStr) this.fpFin.clear();
+                if (curEndStr <= dateStr || (maxEnd && curEndStr > maxEnd)) this.fpFin.clear();
               }
               setTimeout(() => this.fpFin.open(), 80);
             }
+          } else {
+             if (this.fpFin) {
+                 this.fpFin.set('minDate', this._addDays(todayLocal, 1));
+                 this.fpFin.set('maxDate', null);
+             }
           }
           this.calculateTotal();
         }
@@ -1134,6 +1299,7 @@ export class ReservasAdminModule {
       }))
       .filter(range => range.from && range.to);
 
+    this.fechasOcupadas = fechasOcupadas;
     this.fpInicio.set('disable', fechasOcupadas);
     this.fpFin.set('disable', fechasOcupadas);
   }
@@ -1339,7 +1505,7 @@ if (this.refs.reservationForm) {
       const isOverlapping = (start1, end1, start2, end2) => start1 < end2 && start2 < end1;
 
       const conflictingRoom = this.currentData.reservas.find(r => {
-          if (this._extractStatusId(r) === '2') return false;
+          if (!['1', '2', '3'].includes(String(this._extractStatusId(r)))) return false;
           const rRoomId = String(r.id_habitacion || r.IDHabitacion || (r.habitacion ? r.habitacion.id : null));
           const currentRoomId = String(this.currentData.selectedRoom.id_habitacion || this.currentData.selectedRoom.IDHabitacion);
           const fIn = r.fecha_inicio || r.FechaInicio || r.fecha_reserva;
@@ -1356,7 +1522,7 @@ if (this.refs.reservationForm) {
 
       if (!this.options.isClientMode) {
           const conflictingClient = this.currentData.reservas.find(r => {
-              if (this._extractStatusId(r) === '2') return false;
+              if (!['1', '2', '3'].includes(String(this._extractStatusId(r)))) return false;
               const rClientId = String(r.id_cliente || r.IDCliente || (r.cliente ? r.cliente.id : null));
               const currentClientId = String(this.refs.clienteSelect.value);
               const fIn = r.fecha_inicio || r.FechaInicio || r.fecha_reserva;
@@ -1734,6 +1900,26 @@ if (this.refs.reservationForm) {
       badge.textContent = statusText;
     }
 
+    // Estado de Pago
+    const detResEstadoPagoBadge = document.getElementById('detResEstadoPagoBadge');
+    if (detResEstadoPagoBadge) {
+        let estadoPagoText = reserva.estado_pago || 'Pendiente';
+        if ((String(status) === '2' || String(status).toLowerCase() === 'confirmada') && (estadoPagoText === 'En revisión' || estadoPagoText === 'Pendiente')) {
+            estadoPagoText = 'Confirmado';
+        }
+        
+        detResEstadoPagoBadge.textContent = estadoPagoText;
+        if (estadoPagoText === 'Pagado' || estadoPagoText === 'Confirmado') {
+            detResEstadoPagoBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800";
+        } else if (estadoPagoText === 'En revisión') {
+            detResEstadoPagoBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800";
+        } else if (estadoPagoText === 'Rechazado') {
+            detResEstadoPagoBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800";
+        } else {
+            detResEstadoPagoBadge.className = "inline-block px-3 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800";
+        }
+    }
+
     // Motivo de cancelación (si aplica)
     const motivoElem = document.getElementById('detResMotivoCancelacion');
     const motivoContainer = document.getElementById('detResMotivoCancelacionContainer');
@@ -1753,13 +1939,107 @@ if (this.refs.reservationForm) {
     if (adminComprobanteViewer && adminComprobanteLink) {
         if (reserva.comprobante_url) {
             adminComprobanteViewer.style.display = 'block';
-            const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+            const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
                 ? "http://localhost:10000"
                 : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
             adminComprobanteLink.href = baseUrl + reserva.comprobante_url;
         } else {
             adminComprobanteViewer.style.display = 'none';
         }
+    }
+
+    // Pagos adicionales
+    const pagosAdicionalesContainer = document.getElementById('detResPagosAdicionalesContainer');
+    const pagosAdicionalesLista = document.getElementById('detResPagosAdicionalesLista');
+    if (pagosAdicionalesContainer && pagosAdicionalesLista) {
+        if (reserva.pagos_adicionales && reserva.pagos_adicionales.length > 0) {
+            pagosAdicionalesContainer.style.display = 'flex';
+            const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
+                ? "http://localhost:10000"
+                : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+            pagosAdicionalesLista.innerHTML = reserva.pagos_adicionales.map(p => {
+                let badgeColor = 'bg-yellow-100 text-yellow-800';
+                if (p.estado === 'Aprobado') badgeColor = 'bg-emerald-100 text-emerald-800';
+                if (p.estado === 'Rechazado') badgeColor = 'bg-rose-100 text-rose-800';
+                
+                let actionsHtml = '';
+                if (p.estado === 'Pendiente') {
+                    actionsHtml = `
+                    <div class="flex gap-2 mt-2">
+                        <button type="button" onclick="window.adminAprobarPagoAdicional(${p.id_pago})" class="flex-1 px-3 py-1 bg-emerald-500 text-white rounded text-xs font-bold hover:bg-emerald-600 transition border-none cursor-pointer">Aprobar</button>
+                        <button type="button" onclick="window.adminRechazarPagoAdicional(${p.id_pago})" class="flex-1 px-3 py-1 bg-rose-500 text-white rounded text-xs font-bold hover:bg-rose-600 transition border-none cursor-pointer">Rechazar</button>
+                    </div>
+                    `;
+                }
+
+                return `
+                <div class="p-3 border border-gray-100 rounded-xl bg-gray-50 flex flex-col gap-1">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <strong class="text-brand-deep">$${this.formatCurrency(p.monto)}</strong>
+                            <span class="text-[10px] text-muted ml-2">${p.fecha_pago ? p.fecha_pago.substring(0,10) : ''}</span>
+                        </div>
+                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${p.estado}</span>
+                    </div>
+                    ${p.comprobante_url ? `<a href="${baseUrl}${p.comprobante_url}" target="_blank" class="text-xs text-blue-600 font-bold hover:underline"><i class="fa-solid fa-file-invoice"></i> Ver Comprobante</a>` : ''}
+                    ${actionsHtml}
+                </div>
+                `;
+            }).join('');
+        } else {
+            pagosAdicionalesContainer.style.display = 'none';
+            pagosAdicionalesLista.innerHTML = '';
+        }
+    }
+
+    // Admin upload comprobante
+    const btnAdminSubirComprobante = document.getElementById('btnAdminSubirComprobante');
+    const adminInputComprobante = document.getElementById('adminInputComprobante');
+    if (btnAdminSubirComprobante && adminInputComprobante) {
+        adminInputComprobante.value = ''; // Reset
+        btnAdminSubirComprobante.onclick = async () => {
+            const file = adminInputComprobante.files[0];
+            if (!file) {
+                Swal.fire('Atención', 'Por favor, selecciona un archivo (JPG, PNG, PDF) para subir.', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('comprobante', file);
+
+            try {
+                btnAdminSubirComprobante.disabled = true;
+                btnAdminSubirComprobante.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Subiendo...';
+                
+                const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
+                    ? "http://localhost:10000"
+                    : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
+                    
+                const res = await fetch(`${baseUrl}/api/reservas/${reserva.id_reserva || reserva.IDReserva}/comprobante`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${this.token || sessionStorage.getItem('vialuna_token')}`
+                    },
+                    body: formData
+                });
+                
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Error al subir el comprobante');
+                
+                Swal.fire('¡Éxito!', 'Comprobante subido correctamente.', 'success').then(async () => {
+                    document.getElementById('reservaDetalleModal').classList.add('hidden');
+                    await this.reloadData();
+                    this.renderReservationsTable(this.currentFilteredData || this.currentData.reservas);
+                    this.updateMetrics();
+                    this.showReservationsList();
+                });
+            } catch(err) {
+                Swal.fire('Error', err.message, 'error');
+            } finally {
+                btnAdminSubirComprobante.disabled = false;
+                btnAdminSubirComprobante.innerHTML = '<i class="fa-solid fa-upload"></i> Subir';
+            }
+        };
     }
 
     // Botones de pago (Aceptar / Rechazar)
@@ -1770,7 +2050,7 @@ if (this.refs.reservationForm) {
             
             document.getElementById('btnAprobarPago').onclick = async () => {
                 try {
-                    const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+                    const baseUrl = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "" 
                         ? "http://localhost:10000"
                         : "https://ficha-3312967-proyecto-hospedaje-vialuna.onrender.com";
                     const res = await fetch(`${baseUrl}/api/reservas/${reserva.id_reserva || reserva.IDReserva}/estado-pago`, {
@@ -1801,6 +2081,21 @@ if (this.refs.reservationForm) {
             };
         } else {
             adminPaymentActions.style.display = 'none';
+        }
+    }
+
+    // Botón de Agregar Servicios
+    const btnAdminAgregarServicios = document.getElementById('btnAdminAgregarServicios');
+    if (btnAdminAgregarServicios) {
+        const estadoReservaId = String(reserva.id_estado_reserva || reserva.estado?.id || reserva.estado || 1);
+        if (['3', '4', '5', '6', '7'].includes(estadoReservaId) || String(estadoReservaId).toLowerCase() === 'completada' || String(estadoReservaId).toLowerCase() === 'rechazada' || String(estadoReservaId).toLowerCase() === 'cancelada') {
+            btnAdminAgregarServicios.style.display = 'none';
+        } else {
+            btnAdminAgregarServicios.style.display = 'flex';
+            btnAdminAgregarServicios.onclick = () => {
+                document.getElementById('reservaDetalleModal').classList.add('hidden');
+                this.editReserva(reserva.id_reserva || reserva.IDReserva);
+            };
         }
     }
 
@@ -2107,15 +2402,11 @@ if (this.refs.reservationForm) {
               </div>`}
 
               <div>
-                <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Estado</label>
-                <select id="editEstadoReserva" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:#f9fafb;font-size:0.9rem;font-weight:600;color:#173029;">
-                  <option value="1" ${idEstado=='1'?'selected':''}>Pendiente</option>
-                  <option value="2" ${idEstado=='2'?'selected':''}>Confirmada</option>
-                  <option value="3" ${idEstado=='3'?'selected':''}>En Proceso</option>
-                  <option value="4" ${idEstado=='4'?'selected':''}>Completada</option>
-                  <option value="6" ${idEstado=='6'?'selected':''}>Rechazada</option>
-                  <option value="7" ${idEstado=='7'?'selected':''}>Cancelada</option>
-                </select>
+                <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Estado Actual</label>
+                <div style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:#f3f4f6;font-size:0.9rem;font-weight:700;color:#374151;box-sizing:border-box;display:flex;align-items:center;">
+                  <span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:0.75rem;${estadoColor}">${estadoTexto}</span>
+                  <input type="hidden" id="editEstadoReserva" value="${idEstado}">
+                </div>
               </div>
 
               <div>
@@ -2137,7 +2428,6 @@ if (this.refs.reservationForm) {
                 <label style="font-size:0.8rem;font-weight:700;color:#373737;display:block;margin-bottom:6px;">Método de Pago</label>
                 <select id="editMetodoPago" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;background:#f9fafb;font-size:0.9rem;font-weight:600;color:#173029;">
                   <option value="1" ${idMetodoPago==1?'selected':''}>Efectivo</option>
-                  <option value="2" ${idMetodoPago==2?'selected':''}>Tarjeta Débito/Crédito</option>
                   <option value="3" ${idMetodoPago==3?'selected':''}>Transferencia Bancaria</option>
                 </select>
               </div>
